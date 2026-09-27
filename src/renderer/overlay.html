@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:">
+  <title>Overlay</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;600;700&family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&family=Roboto+Mono:wght@400;700&family=Titillium+Web:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <div id="frame">
+    <div id="header"><span id="title"></span><span id="header-right"></span></div>
+    <div id="body"></div>
+  </div>
+  <div id="edit-chrome">
+    <div id="edit-label"></div>
+    <div id="grip" title="Drag to resize"></div>
+  </div>
+  <script src="../shared/registry.js"></script>
+  <script src="lib/fmt.js"></script>
+  <script src="overlay.js"></script>
+  <script src="widgets/standings.js"></script>
+  <script src="widgets/relative.js"></script>
+  <script src="widgets/inputs.js"></script>
+  <script src="widgets/dash.js"></script>
+  <script src="widgets/fuel.js"></script>
+  <script src="widgets/delta.js"></script>
+  <script src="widgets/radar.js"></script>
+  <script src="widgets/trackmap.js"></script>
+  <script src="widgets/session.js"></script>
+  <script src="widgets/flags.js"></script>
+  <script src="boot.js"></script>
+</body>
+</html>

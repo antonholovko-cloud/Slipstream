@@ -1,0 +1,80 @@
+# Slipstream
+
+Customizable, open overlays for iRacing, in the spirit of RaceLab. The app is built on Electron and reads iRacing's
+telemetry straight from shared memory. It needs no native build and no extra services.
+
+## Quick start
+
+```powershell
+npm install
+npm start          # normal mode: live iRacing data, demo preview while configuring
+npm run demo       # force demo data (a simulated multiclass race)
+npm run check      # self-test: fake iRacing memory map → reader → model
+```
+
+> Run iRacing in **Borderless** or **Windowed** mode. Windows can't draw overlays on top of exclusive fullscreen.
+
+The app lives in the system tray. Click the tray icon to open settings.
+
+## Overlays
+
+| Overlay | Highlights |
+|---|---|
+| **Standings** | Multiclass grouping with class SOF, gap/interval, last/best (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit-stop count, and "keep my car visible" windowing |
+| **Relative** | Cars around you by live time gap, lapping/lapped coloring, pit tags, and an info bar (position, SOF, incidents, time left) |
+| **Inputs** | Throttle, brake, clutch and optional steering trace, ABS-colored brake, pedal bars, a rotating wheel, gear and speed |
+| **Dashboard** | Car-specific shift lights (from iRacing's SL RPMs) with flash and blink, gear, speed, RPM bar, fuel, brake bias, engine warnings, pit limiter |
+| **Fuel Calculator** | Rolling average, last and max per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
+| **Delta Bar** | Delta vs best, optimal, session best, session optimal or last lap, trend coloring, predicted lap |
+| **Radar** | Proximity radar from `CarLeftRight` plus track distance, side warnings, and auto-hide when clear |
+| **Track Map** | **Learned automatically** by dead-reckoning your first clean lap, then saved per track. Shows class colors, pit cars and the S/F line, with rotate/mirror |
+| **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, wetness, local and sim clock |
+| **Flags** | Checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green, with a waving animation |
+
+## Customization
+
+- **Every overlay**: position, size, scale (50–250%), background opacity, header, accent color, refresh rate, and
+  per-session visibility (practice, qualifying, race, or hidden when you're not in the car).
+- **Columns**: drag-and-drop reorder plus per-column toggles for Standings, Relative and Session Info.
+- **Themes**: five built-in themes. Every color, the font and the corner radius can be overridden.
+- **Profiles**: unlimited layouts (e.g. road, oval, streaming). Duplicate, rename, and import/export as JSON.
+  Switch from the tray or with a hotkey.
+- **Hotkeys** (global, rebindable): toggle edit mode `Ctrl+Shift+E`, show/hide `Ctrl+Shift+H`,
+  open settings `Ctrl+Shift+S`, next profile `Ctrl+Shift+P`.
+- **Edit layout**: drag an overlay anywhere, resize it from the corner grip, and use the arrow keys to nudge
+  (`Shift` = 10px, `Ctrl` = resize). Snap-to-grid is configurable.
+- **Units** follow iRacing's setting, or can be forced to metric or imperial.
+- In replays or when spectating, the overlays follow the camera car.
+
+Settings are stored in `%APPDATA%\Slipstream\overlay-config.json`.
+
+## Architecture
+
+```
+src/main/irsdk.js     shared-memory reader (koffi → kernel32), var decoding, tolerant session YAML parsing
+src/main/model.js     derived state: standings, classes/SOF, relative, radar, fuel, track learning, iRating
+src/main/mock.js      physically plausible demo race (speed profile, pit stops, flags, duels)
+src/main/main.js      windows, 60 Hz loop, per-overlay fps throttling and data slicing, IPC, tray, hotkeys
+src/main/config.js    profiles + forward-compatible migration of saved configs
+src/shared/registry.js  overlay definitions and settings schemas (drives the settings UI)
+src/renderer/         overlay host + one self-contained widget per overlay, settings app
+```
+
+### Adding a new overlay
+
+1. Add an entry to `OVERLAYS` in `src/shared/registry.js`, with `id`, `bounds`, `needs` (the state slices it uses)
+   and a `schema`. The settings page is generated from the schema automatically.
+2. Create `src/renderer/widgets/<id>.js` with `Host.register('<id>', (root) => ({ update(state, ctx) {…} }))`.
+3. Add a `<script>` tag for it in `overlay.html`.
+
+### Dev flags
+
+`IRO_USERDATA=<dir>` isolates the config. `IRO_SCREENSHOT=<dir>` captures every window and quits.
+`IRO_EDIT=1` starts in edit mode. `IRO_DEMO_SKIP=<sec>` sets where the demo race starts. `IRO_PAGE=ov:standings`
+opens a specific settings page.
+
+## Notes
+
+- Slipstream is an independent project and is not affiliated with or endorsed by iRacing.com Motorsport Simulations.
+- The iRating change is an estimate that uses the community-derived iRacing formula, per class.
+- The Track Map needs one clean lap per track/config to learn the shape. Until then it shows a ring layout.

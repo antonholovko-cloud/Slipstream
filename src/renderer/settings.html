@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:">
+  <title>Slipstream</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&family=Roboto+Mono:wght@400;700&family=Titillium+Web:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <aside id="side">
+    <div class="brand"><span class="logo"></span><div><b>Slipstream</b><small id="profile-name"></small></div></div>
+    <nav id="nav-main"></nav>
+    <div class="nav-title">Overlays</div>
+    <nav id="nav-overlays"></nav>
+  </aside>
+  <main>
+    <header id="top">
+      <div id="status" class="pill"></div>
+      <div class="spacer"></div>
+      <button id="btn-hide" class="btn ghost"></button>
+      <button id="btn-edit" class="btn primary"></button>
+    </header>
+    <section id="page"></section>
+  </main>
+  <script src="../shared/registry.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>
