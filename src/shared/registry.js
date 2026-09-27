@@ -60,7 +60,7 @@
       needs: ['session', 'player', 'cars', 'classes'],
       schema: [
         { key: 'columns', label: 'Columns', type: 'columns', columns: STANDINGS_COLUMNS },
-        { key: 'maxRows', label: 'Max rows per class', type: 'number', min: 3, max: 64, default: 20 },
+        { key: 'maxRows', label: 'Max rows per class', type: 'number', min: 3, max: 64, default: 10 },
         { key: 'multiclass', label: 'Group by class', type: 'bool', default: true },
         { key: 'keepPlayerVisible', label: 'Always keep my car visible', type: 'bool', default: true },
         { key: 'topRows', label: 'Rows pinned to top when scrolling to me', type: 'number', min: 0, max: 10, default: 3 },

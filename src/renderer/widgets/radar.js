@@ -40,18 +40,24 @@ Host.register('radar', function (root) {
       g.beginPath(); g.moveTo(cx, 4); g.lineTo(cx, h - 4); g.stroke();
       g.setLineDash([]);
 
-      // side warning glow
+      // side warning glow: a soft radial wash on the occupied side, clipped to the radar
+      const rx = Math.min(w / 2 - 2, s.range * scale), ry = s.range * scale;
+      g.save();
+      g.beginPath();
+      g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      g.clip();
       const glow = (side, n) => {
         if (!n) return;
-        const x = side < 0 ? 0 : w;
-        const grad = g.createLinearGradient(x, 0, cx, 0);
-        grad.addColorStop(0, Fmt.rgba(n > 1 ? s.dangerColor : s.warnColor, 0.55));
+        const gx = cx + side * rx * 0.75;
+        const grad = g.createRadialGradient(gx, cy, 0, gx, cy, ry * 0.6);
+        grad.addColorStop(0, Fmt.rgba(n > 1 ? s.dangerColor : s.warnColor, 0.5));
         grad.addColorStop(1, Fmt.rgba(s.warnColor, 0));
         g.fillStyle = grad;
-        g.fillRect(side < 0 ? 0 : cx, cy - CAR_L * 1.6 * scale, cx, CAR_L * 3.2 * scale);
+        g.fillRect(0, 0, w, h);
       };
       glow(-1, leftN);
       glow(1, rightN);
+      g.restore();
 
       // Assign cars alongside (|m| < car length) to sides reported by iRacing.
       const alongside = near.filter((c) => Math.abs(c.meters) < CAR_L * 1.4).sort((a, b) => Math.abs(a.meters) - Math.abs(b.meters));

@@ -6,9 +6,16 @@
   "scripts": {
     "start": "electron .",
     "demo": "electron . --demo",
-    "check": "node scripts/check.js"
+    "check": "node scripts/check.js",
+    "dist": "electron-builder --win --publish never",
+    "release": "electron-builder --win --publish always",
+    "icon": "electron scripts/render-icon.js",
+    "screenshots": "electron scripts/screenshots.js"
   },
-  "author": "",
+  "author": {
+    "name": "Anton Holovko",
+    "email": "anton.holovko@gmail.com"
+  },
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
@@ -16,11 +23,72 @@
     "koffi": "^3.3.2"
   },
   "devDependencies": {
-    "electron": "^44.4.5"
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
   },
   "allowScripts": {
     "electron@44.4.5": true,
-    "koffi@3.3.2": true
+    "koffi@3.3.2": true,
+    "electron-winstaller@5.4.0": true
   },
-  "productName": "Slipstream"
+  "productName": "Slipstream",
+  "homepage": "https://github.com/antonholovko-cloud/Slipstream",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antonholovko-cloud/Slipstream.git"
+  },
+  "build": {
+    "appId": "com.antonholovko.slipstream",
+    "productName": "Slipstream",
+    "copyright": "Copyright © 2026 Anton Holovko",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "!src/**/*.svg"
+    ],
+    "asarUnpack": [
+      "node_modules/@koromix/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "src/assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Slipstream",
+      "artifactName": "Slipstream-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Slipstream-Portable-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "antonholovko-cloud",
+        "repo": "Slipstream",
+        "releaseType": "release"
+      }
+    ]
+  }
 }

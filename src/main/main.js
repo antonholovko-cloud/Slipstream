@@ -274,23 +274,11 @@ function registerHotkeys() {
 
 // ---------------- Tray ----------------
 
+const ICON_PATH = path.join(__dirname, '..', 'assets', 'icon.png');
+
 function makeIcon(size) {
-  // Draw a simple chequered-flag style icon into a BGRA bitmap.
-  const buf = Buffer.alloc(size * size * 4);
-  const r = size / 2;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const i = (y * size + x) * 4;
-      const d = Math.hypot(x - r + 0.5, y - r + 0.5);
-      if (d > r - 0.5) continue;
-      const cell = Math.floor((x / size) * 4) + Math.floor((y / size) * 4);
-      const white = cell % 2 === 0;
-      const edge = d > r - size * 0.12;
-      const [R, G, B] = edge ? [225, 29, 72] : white ? [240, 240, 240] : [20, 24, 30];
-      buf[i] = B; buf[i + 1] = G; buf[i + 2] = R; buf[i + 3] = 255;
-    }
-  }
-  return nativeImage.createFromBitmap(buf, { width: size, height: size });
+  const img = nativeImage.createFromPath(ICON_PATH);
+  return img.isEmpty() ? img : img.resize({ width: size, height: size, quality: 'best' });
 }
 
 function updateTray() {
@@ -413,6 +401,14 @@ app.whenReady().then(() => {
   if (process.env.IRO_EDIT) setTimeout(() => setEditMode(true), 1500);
   if (process.env.IRO_SCREENSHOT) setTimeout(() => captureAll(process.env.IRO_SCREENSHOT), +(process.env.IRO_SCREENSHOT_DELAY || 8000));
 });
+
+// Hook for dev scripts (scripts/screenshots.js) that drive the running app.
+global.__slipstream = {
+  overlayWins, openSettings, setEditMode,
+  get settingsWin() { return settingsWin; },
+  get config() { return config; },
+  get mock() { return mock; },
+};
 
 app.on('second-instance', () => openSettings());
 app.on('window-all-closed', (e) => { /* keep running in tray */ });

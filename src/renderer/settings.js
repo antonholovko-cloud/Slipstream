@@ -13,6 +13,7 @@
   const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
   const profile = () => cfg.profiles[cfg.activeProfile];
   const ov = (id) => profile().overlays[id];
+  const keyLabel = (acc) => String(acc || '').replace(/CommandOrControl/g, 'Ctrl');
 
   function setOverlay(id, patch) { localEchoes++; Object.assign(ov(id), patch); return api.invoke('settings:setOverlay', id, patch); }
   function setGlobal(patch) { localEchoes++; Object.assign(cfg.global, patch); return api.invoke('settings:setGlobal', patch); }
@@ -187,7 +188,7 @@
   }
 
   function pageHome(el) {
-    el.append(h(`<div><h1>Overview</h1><p class="lead">Turn overlays on, then press <b>Edit layout</b> (or <kbd>${esc(cfg.global.hotkeys.toggleEdit)}</kbd>) to drag and resize them on screen. Arrow keys nudge the focused overlay, <kbd>Shift</kbd> for 10px, <kbd>Ctrl</kbd> to resize.</p></div>`));
+    el.append(h(`<div><h1>Overview</h1><p class="lead">Turn overlays on, then press <b>Edit layout</b> (or <kbd>${esc(keyLabel(cfg.global.hotkeys.toggleEdit))}</kbd>) to drag and resize them on screen. Arrow keys nudge the focused overlay, <kbd>Shift</kbd> for 10px, <kbd>Ctrl</kbd> to resize.</p></div>`));
     el.append(h(`<div class="tip">💡 Run iRacing in <b>Borderless / Windowed</b> mode — overlays can't be drawn over exclusive fullscreen. While iRacing isn't running, overlays show demo data whenever this window is open or edit mode is on.</div>`));
     el.append(screenMap());
     const grid = h('<div class="overview"></div>');
@@ -264,7 +265,7 @@
   function hotkeyField(label, key) {
     const wrap = h(`<div class="field"><label>${esc(label)}</label><div class="ctl"><button class="btn hk"></button><button class="btn small ghost" title="Clear">✕</button></div></div>`);
     const [btn, clr] = wrap.querySelectorAll('button');
-    btn.textContent = cfg.global.hotkeys[key] || '— none —';
+    btn.textContent = keyLabel(cfg.global.hotkeys[key]) || '— none —';
     btn.onclick = () => {
       btn.classList.add('rec');
       btn.textContent = 'Press keys… (Esc to cancel)';
@@ -282,7 +283,7 @@
         setGlobal({ hotkeys: { ...cfg.global.hotkeys, [key]: parts.join('+') } });
         done();
       };
-      const done = () => { window.removeEventListener('keydown', onKey, true); btn.classList.remove('rec'); btn.textContent = cfg.global.hotkeys[key] || '— none —'; };
+      const done = () => { window.removeEventListener('keydown', onKey, true); btn.classList.remove('rec'); btn.textContent = keyLabel(cfg.global.hotkeys[key]) || '— none —'; };
       window.addEventListener('keydown', onKey, true);
     };
     clr.onclick = () => { setGlobal({ hotkeys: { ...cfg.global.hotkeys, [key]: '' } }).then(renderPage); };

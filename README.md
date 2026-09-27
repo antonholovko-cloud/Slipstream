@@ -1,20 +1,51 @@
-# Slipstream
+<p align="center"><img src="src/assets/icon.png" width="96" alt="Slipstream logo"></p>
 
-Customizable, open overlays for iRacing, in the spirit of RaceLab. The app is built on Electron and reads iRacing's
-telemetry straight from shared memory. It needs no native build and no extra services.
+<h1 align="center">Slipstream</h1>
 
-## Quick start
+<p align="center">
+Customizable, open overlays for iRacing, in the spirit of RaceLab.<br>
+Standings, relative, inputs, fuel, delta, radar, an auto-learned track map and more.
+</p>
+
+<p align="center">
+  <a href="https://github.com/antonholovko-cloud/Slipstream/releases/latest"><b>⬇ Download for Windows</b></a>
+</p>
+
+![Slipstream overlays in a race](docs/screenshots/hero.png)
+
+<sub>Screenshot generated from Slipstream's built-in demo race (`npm run screenshots`), drawn over a painted backdrop.</sub>
+
+## Install
+
+Download from the [latest release](https://github.com/antonholovko-cloud/Slipstream/releases/latest):
+
+- **`Slipstream-Setup-x.y.z.exe`**: installer with Start menu and desktop shortcuts.
+- **`Slipstream-Portable-x.y.z.exe`**: a single exe that needs no installation.
+
+The builds aren't code-signed yet, so Windows SmartScreen may warn on first launch. Click **More info → Run anyway**.
+
+Then:
+
+1. Set iRacing's display mode to **Borderless** or **Windowed**. Windows can't draw overlays on top of exclusive fullscreen.
+2. Start Slipstream. It lives in the system tray; click the tray icon to open settings.
+3. Press **Ctrl+Shift+E** to enter edit mode and drag or resize the overlays. Press it again to lock them.
+
+While iRacing isn't running, the overlays show a simulated race whenever the settings window is open, so you can
+set everything up without the sim.
+
+## Run from source
 
 ```powershell
 npm install
-npm start          # normal mode: live iRacing data, demo preview while configuring
-npm run demo       # force demo data (a simulated multiclass race)
-npm run check      # self-test: fake iRacing memory map → reader → model
+npm start             # live iRacing data, demo preview while configuring
+npm run demo          # force demo data
+npm run check         # self-test: fake iRacing memory map → reader → model
+npm run dist          # build installer + portable exe into dist/
+npm run screenshots   # regenerate docs/screenshots
 ```
 
-> Run iRacing in **Borderless** or **Windowed** mode. Windows can't draw overlays on top of exclusive fullscreen.
-
-The app lives in the system tray. Click the tray icon to open settings.
+The app is built on Electron and reads iRacing's telemetry straight from shared memory. It needs no native build
+and no extra services.
 
 ## Overlays
 
@@ -30,6 +61,20 @@ The app lives in the system tray. Click the tray icon to open settings.
 | **Track Map** | **Learned automatically** by dead-reckoning your first clean lap, then saved per track. Shows class colors, pit cars and the S/F line, with rotate/mirror |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, wetness, local and sim clock |
 | **Flags** | Checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green, with a waving animation |
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Standings](docs/screenshots/standings.png) | ![Relative](docs/screenshots/relative.png) |
+| ![Track map](docs/screenshots/trackmap.png) | ![Fuel calculator](docs/screenshots/fuel.png) |
+| ![Dashboard](docs/screenshots/dash.png) | ![Inputs](docs/screenshots/inputs.png) |
+| ![Radar](docs/screenshots/radar.png) | ![Delta bar](docs/screenshots/delta.png) |
+
+**Settings:** every overlay is configured live, with drag-and-drop columns, themes and profiles.
+
+![Settings: standings columns](docs/screenshots/settings-standings.png)
+![Settings: appearance](docs/screenshots/settings-appearance.png)
 
 ## Customization
 
@@ -66,6 +111,16 @@ src/renderer/         overlay host + one self-contained widget per overlay, sett
    and a `schema`. The settings page is generated from the schema automatically.
 2. Create `src/renderer/widgets/<id>.js` with `Host.register('<id>', (root) => ({ update(state, ctx) {…} }))`.
 3. Add a `<script>` tag for it in `overlay.html`.
+
+### Releasing
+
+Bump `version` in `package.json`, commit, then push a matching tag:
+
+```powershell
+git tag v0.2.0; git push origin v0.2.0
+```
+
+The **Release** workflow builds the installer and portable exe on GitHub Actions and publishes them as a GitHub Release.
 
 ### Dev flags
 

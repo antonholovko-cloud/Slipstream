@@ -163,6 +163,15 @@ class MockSource {
 
   step(dt) {
     this.sessionTime += dt;
+    // Showcase helpers: keep chosen cars at a fixed distance from the player.
+    if (this.pinned) {
+      const me = this.cars[this.playerIdx];
+      for (const p of this.pinned) {
+        const c = this.cars[p.idx];
+        c.dist = me.dist + p.meters / TRACK_LEN;
+        c.pit = null;
+      }
+    }
     const T = this.track;
     const racing = true;
     const vars = {};
@@ -269,6 +278,7 @@ class MockSource {
     const lapping = running.find((c) => c.cls.id !== me.cls.id && c.dist > me.dist && (c.dist - me.dist) % 1 > 0.985);
     if (lapping) flags |= 0x20;
     if (this.fuel < 1) flags |= 0x100000;
+    if (this.flagOverride !== undefined) flags = this.flagOverride;
 
     const leaderLaps = Math.floor(leader.dist);
 
