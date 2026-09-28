@@ -30,8 +30,6 @@ Host.css(`
 .dash .bar i { position:absolute; left:0; right:0; bottom:0; border-radius:3px; }
 .dash .bar span { display:none; }
 .dash .wheel { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem; flex:none; height:100%; max-height:100%; overflow:visible; }
-.dash .wheel .rot { transform-box:view-box; transform-origin:50% 50%; }
-.dash .wheel.smooth .rot { transition:transform 70ms linear; }
 .dash .wheel.smooth .steerbar .fill, .dash .wheel.smooth .steerbar .knob { transition:all 70ms linear; }
 .dash .wheel svg.steerbar { flex:none; width:6rem; height:1.4rem; aspect-ratio:auto; filter:none; }
 .dash .wheel .ang { font-size:.75rem; font-weight:700; color:var(--dim); white-space:nowrap; line-height:1; flex:none; }
@@ -72,6 +70,17 @@ Host.register('dash', function (root) {
   const g = canvas.getContext('2d');
   const bars = { th: q('.b-th'), br: q('.b-br'), cl: q('.b-cl') };
   let rot = null, bar = null, wheelStyle = '', lastAng = '';
+  // Wheel rotation uses the SVG transform attribute, which always rotates around the
+  // viewBox origin (the wheel's center). Smoothing runs per display frame.
+  let steerTarget = 0, steerShown = 0, smoothOn = true, rafOn = false;
+  function steerFrame() {
+    rafOn = false;
+    if (!rot) return;
+    steerShown = smoothOn ? steerShown + (steerTarget - steerShown) * 0.45 : steerTarget;
+    if (Math.abs(steerTarget - steerShown) < 0.05) steerShown = steerTarget;
+    rot.setAttribute('transform', `rotate(${steerShown.toFixed(2)})`);
+    if (steerShown !== steerTarget) { rafOn = true; requestAnimationFrame(steerFrame); }
+  }
   const samples = []; // { time, th, br, cl, st, abs }
   let lights = [];
   let lightCount = 0;
@@ -268,7 +277,9 @@ Host.register('dash', function (root) {
           bar.fill.setAttribute('x', Math.min(0, f * 43).toFixed(1));
           bar.fill.setAttribute('width', Math.abs(f * 43).toFixed(1));
         } else if (rot) {
-          rot.style.transform = `rotate(${deg.toFixed(1)}deg)`;
+          steerTarget = deg;
+          smoothOn = s.smoothSteering !== false;
+          if (!rafOn) { rafOn = true; requestAnimationFrame(steerFrame); }
         }
         if (s.showSteerAngle) {
           const a = Math.round(deg);
