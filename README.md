@@ -15,6 +15,22 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 
 <sub>Screenshot generated from Slipstream's built-in demo race (`npm run screenshots`), drawn over a painted backdrop.</sub>
 
+## Free forever, made for the community
+
+Slipstream is a community project for sim racers. **It is free and always will be.** There is no paid version,
+no subscription, no "pro" features behind a paywall, and no ads. It is open source under the MIT license, so
+anyone can read, build and improve it.
+
+## Your privacy
+
+**Slipstream collects no personal data and sends nothing to any server.**
+
+- No accounts, no sign-in, no analytics, no telemetry, no crash reporting.
+- It makes no network connections at all. It reads iRacing's telemetry from your own PC's memory and draws
+  it on your screen. Even the fonts are bundled with the app, so nothing is loaded from the internet.
+- Your settings, profiles and learned track maps stay in a local file on your computer
+  (`%APPDATA%\Slipstream`), and nowhere else.
+
 ## Install
 
 Download from the [latest release](https://github.com/antonholovko-cloud/Slipstream/releases/latest):
