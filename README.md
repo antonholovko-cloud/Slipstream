@@ -11,6 +11,21 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
   <a href="https://github.com/antonholovko-cloud/Slipstream/releases/latest"><b>⬇ Download for Windows</b></a>
 </p>
 
+<p align="center">
+  <img src="docs/gifs/dash.gif" width="740" alt="Dashboard: accelerating through the gears, shift lights filling up and flashing at the limiter, then braking and downshifting"><br>
+  <sub><b>Dashboard:</b> shift lights fill as you rev through the gears and flash at the limiter; pedal trace, gear, speed and steering wheel update live.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/gifs/delta.gif" width="520" alt="Delta bar swinging between gaining and losing time, with gap bars to the cars ahead and behind"><br>
+  <sub><b>Delta bar:</b> green when you're up on your best lap, red when you're down. Below: gaps to the cars ahead and behind, and how much you gain or lose per lap.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/gifs/slip.gif" width="740" alt="Wheelspin light strobing orange under throttle, then lock-up light strobing red under braking"><br>
+  <sub><b>Wheelspin / lock-up light</b> (top right): strobes orange when the wheels spin under throttle, red when they lock under braking.</sub>
+</p>
+
 ![Slipstream overlays in a race](docs/screenshots/hero.png)
 
 ## Free forever, made for the community
