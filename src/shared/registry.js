@@ -92,7 +92,7 @@
     {
       id: 'dash', name: 'Dashboard & Inputs', icon: '⏱',
       description: 'Shift lights, gear, speed and RPM together with the pedal trace, pedal bars and steering wheel.',
-      bounds: { x: 680, y: 880, width: 580, height: 190 },
+      bounds: { x: 680, y: 920, width: 580, height: 116 },
       needs: ['player', 'session'],
       defaults: { fps: 60, showHeader: false },
       schema: [

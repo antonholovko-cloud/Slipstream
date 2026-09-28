@@ -1,7 +1,7 @@
 name: Release
 
 # Push a tag like v0.2.0 to build the Windows installer + portable exe
-# and publish them as a GitHub Release.
+# and publish them as a single GitHub Release.
 on:
   push:
     tags: ['v*']
@@ -26,7 +26,31 @@ jobs:
       - name: Self-test (fake iRacing memory map)
         run: npm run check
 
-      - name: Build and publish
-        run: npx electron-builder --win --publish always
+      # Build only; publishing from electron-builder raced between the NSIS and
+      # portable targets and created duplicate releases.
+      - name: Build
+        run: npx electron-builder --win --publish never
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Slipstream ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/Slipstream-Setup-*.exe
+            dist/Slipstream-Setup-*.exe.blockmap
+            dist/Slipstream-Portable-*.exe
+            dist/latest.yml
+
+      # Remove leftover duplicate releases (ones without any .exe) from the old race.
+      - name: Remove empty duplicate releases
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/${{ github.repository }}/releases?per_page=100" \
+            --jq '.[] | select([.assets[].name | endswith(".exe")] | any | not) | .id' |
+          while read -r id; do
+            echo "Deleting duplicate release $id"
+            gh api -X DELETE "repos/${{ github.repository }}/releases/$id"
+          done

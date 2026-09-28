@@ -4,27 +4,28 @@
  * the remaining ones reflow.
  */
 Host.css(`
-.dash { position:absolute; inset:0; display:flex; flex-direction:column; padding:.35rem .5rem; gap:.3rem; }
-.dash .lights { display:flex; gap:.3rem; justify-content:center; flex:none; }
-.dash .lights i { flex:none; width:1rem; height:1rem; border-radius:50%; background:rgba(255,255,255,.08); }
+.dash { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:.35rem .6rem .3rem; gap:.35rem; }
+.dash .lights { display:flex; gap:.2rem; flex:none; }
+.dash .lights i { flex:1; height:.3rem; border-radius:2px; background:rgba(255,255,255,.08); }
 .dash .lights.flash i { animation: dashflash .12s steps(2) infinite; }
 @keyframes dashflash { 50% { opacity:.15 } }
-.dash .main { display:flex; align-items:stretch; gap:.6rem; flex:1; min-height:0; }
-.dash .gearbox { display:flex; align-items:center; gap:.6rem; flex:none; }
-.dash .gear { font-size:3.2rem; font-weight:700; line-height:1; min-width:2.2rem; text-align:center; }
-.dash .gcol { display:flex; flex-direction:column; justify-content:center; gap:.15rem; width:6.5rem; }
-.dash .speed { font-size:1.6rem; font-weight:700; line-height:1; }
-.dash .speed small, .dash .rpm small { font-size:.7rem; color:var(--dim); margin-left:.2rem; }
-.dash .rpm { font-size:.85rem; color:var(--dim); }
-.dash .rpmbar { height:.4rem; background:rgba(255,255,255,.08); border-radius:3px; overflow:hidden; }
-.dash .rpmbar i { display:block; height:100%; background:var(--accent); border-radius:3px; }
-.dash canvas.trace { flex:1; min-width:0; height:100%; display:block; }
-.dash .bars { display:flex; gap:.25rem; align-items:stretch; flex:none; }
-.dash .bar { width:1.1rem; background:rgba(255,255,255,.08); border-radius:3px; position:relative; overflow:hidden; }
+.dash .main { display:flex; align-items:center; gap:.7rem; height:3rem; flex:none; }
+.dash .gearbox { display:flex; align-items:center; gap:.55rem; flex:none; }
+.dash .gear { font-size:2.5rem; font-weight:700; line-height:1; min-width:1.6rem; text-align:center; }
+.dash .gcol { display:flex; flex-direction:column; justify-content:center; gap:.2rem; width:4.8rem; }
+.dash .speed { font-size:1.3rem; font-weight:700; line-height:1; }
+.dash .speed small, .dash .rpm small { font-size:.65rem; color:var(--dim); margin-left:.2rem; font-weight:600; }
+.dash .rpm { font-size:.75rem; color:var(--dim); line-height:1; }
+.dash .rpmbar { height:.22rem; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.dash .rpmbar i { display:block; height:100%; background:var(--accent); border-radius:2px; }
+.dash .sep { width:1px; height:2.4rem; background:rgba(255,255,255,.09); flex:none; }
+.dash canvas.trace { flex:1; min-width:0; height:2.5rem; display:block; }
+.dash .bars { display:flex; gap:.22rem; height:2.5rem; flex:none; }
+.dash .bar { width:.45rem; background:rgba(255,255,255,.08); border-radius:3px; position:relative; overflow:hidden; }
 .dash .bar i { position:absolute; left:0; right:0; bottom:0; border-radius:3px; }
-.dash .bar span { position:absolute; left:0; right:0; bottom:.1rem; text-align:center; font-size:.6rem; font-weight:700; color:#fff; text-shadow:0 0 2px #000; }
+.dash .bar span { display:none; }
 .dash .wheel { display:flex; align-items:center; justify-content:center; flex:none; }
-.dash .wheel svg { width:3.4rem; height:3.4rem; }
+.dash .wheel svg { width:2.5rem; height:2.5rem; }
 .dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; flex:none; }
 .dash .foot span { white-space:nowrap; }
 .dash .foot b { font-weight:700; }
@@ -45,12 +46,14 @@ Host.register('dash', function (root) {
           <div class="rpm">0<small>rpm</small></div>
         </div>
       </div>
+      <div class="sep s1"></div>
       <canvas class="trace"></canvas>
       <div class="bars">
         <div class="bar b-cl"><i></i><span></span></div>
         <div class="bar b-br"><i></i><span></span></div>
         <div class="bar b-th"><i></i><span></span></div>
       </div>
+      <div class="sep s2"></div>
       <div class="wheel">
         <svg viewBox="-50 -50 100 100"><g class="rot">
           <circle r="40" fill="none" stroke="currentColor" stroke-width="9" opacity=".9"/>
@@ -145,6 +148,8 @@ Host.register('dash', function (root) {
       show(q('.bars'), s.showBars);
       show(bars.cl, s.showClutch);
       show(q('.wheel'), s.showSteering);
+      show(q('.s1'), s.showGear && (s.showTrace || s.showBars || s.showSteering));
+      show(q('.s2'), s.showSteering && (s.showTrace || s.showBars));
       show(q('.foot'), s.showLapInfo || s.showFuel || s.showBias || s.showWarnings);
       // with no trace, let the gear block take the free space
       q('.gearbox').style.flex = s.showTrace ? 'none' : '1';

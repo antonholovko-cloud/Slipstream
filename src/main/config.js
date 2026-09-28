@@ -52,6 +52,7 @@ function migrate(cfg) {
     const p = out.profiles[key];
     p.overlays = p.overlays || {};
     mergeInputsIntoDash(p.overlays);
+    compactDash(p.overlays.dash);
     for (const odef of Registry.OVERLAYS) {
       const base = Registry.defaultSettingsFor(odef);
       const cur = p.overlays[odef.id] || {};
@@ -89,10 +90,18 @@ function mergeInputsIntoDash(overlays) {
     dash.bounds = { ...dash.bounds, x: Math.min(dash.bounds.x, inp.bounds.x), y: Math.min(dash.bounds.y, inp.bounds.y) };
   }
   dash.enabled = !!(dash.enabled || inp.enabled);
-  if (dash.bounds) dash.bounds = { ...dash.bounds, width: Math.max(dash.bounds.width || 0, 580), height: Math.max(dash.bounds.height || 0, 190) };
+  if (dash.bounds) dash.bounds = { ...dash.bounds, width: Math.max(dash.bounds.width || 0, 580), height: 116 };
+  dash.layoutV2 = true;
   dash.fps = Math.max(dash.fps || 30, inp.fps || 60);
   overlays.dash = dash;
   delete overlays.inputs;
+}
+
+// v0.2.1 made Dashboard & Inputs a single compact row; shrink the tall v0.2.0 box once.
+function compactDash(dash) {
+  if (!dash || dash.layoutV2) return;
+  if (dash.bounds && dash.bounds.height >= 180) dash.bounds = { ...dash.bounds, height: 116 };
+  dash.layoutV2 = true;
 }
 
 const MAX_BACKUPS = 15;
