@@ -18,7 +18,7 @@
     // Simple (default): thin rim, three slim spokes, small hub, only the top stripe in color
     gt: `
       <circle r="40" fill="none" stroke="#5b6270" stroke-width="5"/>
-      <path d="M-38.5 -3 C-28 -4 -18 -6 -10 -6 L-10 11 C-18 11 -28 10 -37.5 12 Z M38.5 -3 C28 -4 18 -6 10 -6 L10 11 C18 11 28 10 37.5 12 Z M-8 12 L8 12 L5.5 38 L-5.5 38 Z" fill="#434955" stroke-linejoin="round"/>
+      <path d="M-38.6 -1 C-28 -2 -18 -3 -10 -3 L-10 9 C-18 9 -28 8.5 -38 9.5 Z M38.6 -1 C28 -2 18 -3 10 -3 L10 9 C18 9 28 8.5 38 9.5 Z M-6 12 L6 12 L4.2 38 L-4.2 38 Z" fill="#434955" stroke-linejoin="round"/>
       <rect x="-12" y="-7" width="24" height="20" rx="6" fill="#2a2f38"/>
       <rect x="-2.6" y="-45" width="5.2" height="10" rx="1.3" fill="var(--accent)"/>`,
 
@@ -76,4 +76,8 @@
         <circle class="knob" cx="0" cy="0" r="5.5" fill="#fff" stroke="var(--accent)" stroke-width="2"/>
       </svg>`;
     }
-    return `<svg viewBox="-50 -50 100 100">${defs}<g class="rot">${STYLES[style
+    return `<svg viewBox="-50 -50 100 100">${defs}<g class="rot">${STYLES[style] || STYLES.gt}</g></svg>`;
+  }
+
+  window.Wheels = { svg, styles: ['gt', 'rs50', 'round', 'formula', 'ring', 'bar'] };
+})();
