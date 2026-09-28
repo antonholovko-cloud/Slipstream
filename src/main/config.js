@@ -25,6 +25,7 @@ function defaultGlobal() {
     startMinimized: false,
     snapToGrid: 10,
     masterOpacity: 100, // multiplies every overlay's own opacity
+    autoUpdate: null, // null = not asked yet; true/false = the player's choice
   };
 }
 

@@ -7,6 +7,7 @@
   let displays = [];
   let page = new URLSearchParams(location.search).get('page') || 'home';
   let localEchoes = 0;
+  let update = null; // updater state from the main process
 
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -208,6 +209,8 @@
 
   function pageHome(el) {
     el.append(h(`<div><h1>Overview</h1><p class="lead">Turn overlays on, then press <b>Edit layout</b> (or <kbd>${esc(keyLabel(cfg.global.hotkeys.toggleEdit))}</kbd>) to drag and resize them on screen. Arrow keys nudge the focused overlay, <kbd>Shift</kbd> for 10px, <kbd>Ctrl</kbd> to resize.</p></div>`));
+    const ub = updateBanner();
+    if (ub) el.append(ub);
     el.append(h(`<div class="tip">💡 Run iRacing in <b>Borderless / Windowed</b> mode — overlays can't be drawn over exclusive fullscreen. While iRacing isn't running, overlays show demo data whenever this window is open or edit mode is on.</div>`));
     el.append(screenMap());
     const grid = h('<div class="overview"></div>');
@@ -225,6 +228,78 @@
       grid.append(card);
     }
     el.append(grid);
+  }
+
+  // ---------------- updates ----------------
+  const UPDATE_WHY = 'Slipstream asks GitHub, where it is published, whether a newer version exists: once at start and every 6 hours. Nothing about you or your PC is sent.';
+
+  function updateText(u) {
+    if (!u) return '';
+    switch (u.status) {
+      case 'checking': return 'Checking for updates…';
+      case 'none': return `You have the latest version (${esc(u.current)}).`;
+      case 'downloading': return `Downloading version ${esc(u.version)}… ${u.percent || 0}%`;
+      case 'ready': return `Version <b>${esc(u.version)}</b> is downloaded and installs when you quit Slipstream.`;
+      case 'available': return `Version <b>${esc(u.version)}</b> is available.`;
+      case 'error': return `Couldn't check for updates: ${esc(u.error)}`;
+      default: return `Version ${esc(u.current)}.`;
+    }
+  }
+
+  function updateAction(u) {
+    if (!u) return null;
+    if (u.status === 'ready') return ['Restart and update now', 'install'];
+    if (u.status === 'available') return ['Download ' + u.version, 'install'];
+    if (['idle', 'none', 'error'].includes(u.status)) return ['Check now', 'check'];
+    return null;
+  }
+
+  function actionButton(u, cls) {
+    const a = updateAction(u);
+    if (!a) return null;
+    const b = h(`<button class="btn ${cls}">${esc(a[0])}</button>`);
+    b.onclick = () => api.invoke('settings:update', a[1]);
+    return b;
+  }
+
+  // Overview: ask once whether to check automatically; later, show a ready/available update.
+  function updateBanner() {
+    if (cfg.global.autoUpdate === null || cfg.global.autoUpdate === undefined) {
+      const box = h(`<div class="tip update"><b>Keep Slipstream up to date?</b><br>${UPDATE_WHY}
+        You can change this any time in <i>General &amp; hotkeys</i>.<div class="row"></div></div>`);
+      const yes = h('<button class="btn primary small">Yes, check for updates</button>');
+      const no = h('<button class="btn small">No thanks</button>');
+      yes.onclick = () => setGlobal({ autoUpdate: true }).then(renderPage);
+      no.onclick = () => setGlobal({ autoUpdate: false }).then(renderPage);
+      $('.row', box).append(yes, no);
+      return box;
+    }
+    if (update && (update.status === 'ready' || update.status === 'available')) {
+      const box = h(`<div class="tip update">⬆ ${updateText(update)}<div class="row"></div></div>`);
+      const b = actionButton(update, 'primary small');
+      if (b) $('.row', box).append(b);
+      return box;
+    }
+    return null;
+  }
+
+  function updatesCard() {
+    const g = cfg.global;
+    const u = update;
+    const kindNote = !u ? '' : u.kind === 'portable'
+      ? 'You are using the portable version: Slipstream tells you when an update is out, and you download it yourself.'
+      : u.kind === 'dev' ? 'Running from source: updates are only checked, never installed.'
+      : 'Updates download in the background and install when you quit Slipstream.';
+    const info = h(`<div class="updinfo"><p>${updateText(u)}</p><p class="dim">${kindNote} ${UPDATE_WHY}</p><div class="row"></div></div>`);
+    const b = actionButton(u, 'small');
+    if (b) $('.row', info).append(b);
+    const rel = h('<button class="btn small ghost">Release notes</button>');
+    rel.onclick = () => api.invoke('settings:update', 'notes');
+    $('.row', info).append(rel);
+    return card('Updates', [
+      field({ label: 'Check for updates automatically', type: 'bool' }, g.autoUpdate === true, (v) => setGlobal({ autoUpdate: v })),
+      info,
+    ], false);
   }
 
   function pageOverlay(el, id) {
@@ -323,6 +398,7 @@
   function pageGeneral(el) {
     const g = cfg.global;
     el.append(h('<div><h1>General</h1><p class="lead">Data source, units and global hotkeys.</p></div>'));
+    el.append(updatesCard());
     el.append(card('Data', [
       field({ label: 'Data source', type: 'select', options: [{ value: 'auto', label: 'Auto (iRacing, demo while editing)' }, { value: 'iracing', label: 'iRacing only' }, { value: 'demo', label: 'Demo data always' }] }, g.dataSource, (v) => setGlobal({ dataSource: v })),
       field({ label: 'Units', type: 'select', options: [{ value: 'auto', label: 'Follow iRacing setting' }, { value: 'metric', label: 'Metric' }, { value: 'imperial', label: 'Imperial' }] }, g.units, (v) => setGlobal({ units: v })),
@@ -417,6 +493,7 @@
   let backups = [];
   async function reload() {
     const d = await api.invoke('settings:get');
+    update = d.update;
     cfg = d.config;
     cfgFile = d.file;
     lastSaved = d.lastSaved;
@@ -442,6 +519,11 @@
     renderPage();
   });
   api.on('settings:status', (s) => { status = s; renderStatus(); });
+  api.on('settings:update', (u) => {
+    const was = update && update.status + update.percent;
+    update = u;
+    if (was !== u.status + u.percent && (page === 'home' || page === 'general')) renderPage();
+  });
 
   reload();
 })();

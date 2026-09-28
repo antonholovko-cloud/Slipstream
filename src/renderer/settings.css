@@ -86,6 +86,10 @@ h1 { margin: 0 0 4px; font: 700 26px Rajdhani, sans-serif; letter-spacing: .02em
 .hk { font-family: 'Roboto Mono', monospace; min-width: 220px; text-align: center; }
 .hk.rec { border-color: var(--accent) !important; color: var(--accent2); }
 .warnbox { background: rgba(245, 158, 11, .1); border: 1px solid rgba(245, 158, 11, .35); color: #fcd34d; padding: 10px 14px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
+.tip.update .row, .updinfo .row { display: flex; gap: 8px; margin-top: 10px; }
+.updinfo { padding: 4px 0 14px; font-size: 13px; }
+.updinfo p { margin: 6px 0; }
+.updinfo .dim { color: var(--dim); font-size: 12px; }
 .tip { background: rgba(56, 189, 248, .08); border: 1px solid rgba(56, 189, 248, .25); color: #bae6fd; padding: 10px 14px; border-radius: 8px; margin: 0 0 18px; font-size: 13px; }
 kbd { background: var(--panel2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font: 12px 'Roboto Mono', monospace; }
 

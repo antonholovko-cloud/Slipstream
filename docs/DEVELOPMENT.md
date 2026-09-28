@@ -51,4 +51,4 @@ The **Release** workflow builds the installer and portable exe on GitHub Actions
 
 `IRO_USERDATA=<dir>` isolates the config. `IRO_SCREENSHOT=<dir>` captures every window and quits.
 `IRO_EDIT=1` starts in edit mode. `IRO_DEMO_SKIP=<sec>` sets where the demo race starts. `IRO_PAGE=ov:standings`
-opens a specific settings page.
+opens a specific settings page. `IRO_UPDATE_CHECK=1` checks for an update at start and prints each update state.

@@ -6,6 +6,7 @@ const { ConfigStore } = require('./config');
 const { IRacingReader } = require('./irsdk');
 const { MockSource } = require('./mock');
 const { RaceModel } = require('./model');
+const { Updater } = require('./updater');
 
 // Dev helper: IRO_USERDATA isolates config (must run before the single-instance lock, which is per user-data dir).
 if (process.env.IRO_USERDATA) app.setPath('userData', process.env.IRO_USERDATA);
@@ -28,6 +29,8 @@ let mock = null;
 let model = null;
 let modelSource = null;
 let loopTimer = null;
+let updater = null;
+let updateNotified = '';
 let hotkeyErrors = [];
 const forceDemo = process.argv.includes('--demo'); // runtime only, never saved
 // Dev/test runs (screenshots) render far off-screen: nothing pops up on the user's
@@ -340,11 +343,33 @@ function updateTray() {
     { label: 'Edit layout', type: 'checkbox', checked: editMode, click: () => setEditMode(!editMode), accelerator: config.data.global.hotkeys.toggleEdit },
     { label: 'Hide overlays', type: 'checkbox', checked: hiddenByUser, click: () => { hiddenByUser = !hiddenByUser; updateTray(); } },
     { label: 'Profile', submenu: profiles },
+    ...updateMenu(),
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   ]);
   tray.setContextMenu(menu);
   tray.setToolTip('Slipstream — ' + (source === 'iracing' ? 'connected' : source));
+}
+
+function updateMenu() {
+  const u = updater && updater.state;
+  if (!u) return [];
+  if (u.status === 'ready') return [{ type: 'separator' }, { label: `Restart to update to ${u.version}`, click: () => updater.install() }];
+  if (u.status === 'available') return [{ type: 'separator' }, { label: `Download Slipstream ${u.version}…`, click: () => updater.install() }];
+  return [{ type: 'separator' }, { label: 'Check for updates', click: () => { updater.check(); openSettings(); } }];
+}
+
+function onUpdateState(u) {
+  sendSettings('settings:update', u);
+  updateTray();
+  // one Windows notification per new version
+  if (tray && (u.status === 'ready' || u.status === 'available') && updateNotified !== u.version) {
+    updateNotified = u.version;
+    tray.displayBalloon({
+      iconType: 'info', title: 'Slipstream update',
+      content: u.status === 'ready' ? `Version ${u.version} is ready. It installs when you quit Slipstream.` : `Version ${u.version} is available. Click to download.`,
+    });
+  }
 }
 
 // ---------------- IPC ----------------
@@ -371,7 +396,14 @@ function registerIpc() {
     }
   });
 
-  ipcMain.handle('settings:get', () => ({ ...settingsPayload(), status: statusPayload() }));
+  ipcMain.handle('settings:get', () => ({ ...settingsPayload(), status: statusPayload(), update: updater ? updater.state : null }));
+  ipcMain.handle('settings:update', (e, op) => {
+    if (!updater) return null;
+    if (op === 'check') updater.check();
+    else if (op === 'install') updater.install();
+    else if (op === 'notes') updater.openNotes();
+    return updater.state;
+  });
 
   ipcMain.handle('settings:setOverlay', (e, id, patch) => { config.setOverlay(id, patch); broadcastConfig(); });
   ipcMain.handle('settings:resetOverlay', (e, id) => { config.resetOverlay(id); broadcastConfig(); });
@@ -379,6 +411,7 @@ function registerIpc() {
     config.setGlobal(patch);
     if (patch.hotkeys) registerHotkeys();
     if (patch.dataSource) { model = null; mock = null; }
+    if ('autoUpdate' in patch && updater) updater.setEnabled(patch.autoUpdate === true);
     broadcastConfig();
     updateTray();
   });
@@ -466,6 +499,17 @@ app.whenReady().then(() => {
     registerHotkeys();
     tray = new Tray(makeIcon(32));
     tray.on('click', openSettings);
+  }
+  updater = new Updater({ onChange: onUpdateState });
+  // Dev helper: IRO_UPDATE_CHECK=1 checks right away and prints each update state.
+  if (process.env.IRO_UPDATE_CHECK) {
+    const log = (u) => console.log('update:', JSON.stringify(u));
+    updater.onChange = (u) => { log(u); onUpdateState(u); };
+    updater.check();
+  }
+  if (!OFFSCREEN) {
+    updater.setEnabled(config.data.global.autoUpdate === true);
+    tray.on('balloon-click', () => (updater.state.status === 'available' ? updater.install() : openSettings()));
   }
   updateTray();
   syncOverlayWindows();

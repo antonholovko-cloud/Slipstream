@@ -21,11 +21,13 @@ anyone can read, build and improve it.
 
 ## Your privacy
 
-**Slipstream collects no personal data and sends nothing to any server.**
+**Slipstream collects no personal data and never sends anything about you anywhere.**
 
 - No accounts, no sign-in, no analytics, no telemetry, no crash reporting.
-- It makes no network connections at all. It reads iRacing's telemetry from your own PC's memory and draws
-  it on your screen. Even the fonts are bundled with the app, so nothing is loaded from the internet.
+- It reads iRacing's telemetry from your own PC's memory and draws it on your screen. 
+- The **only** internet connection it can make is the **update check**, and only if you allow it. It asks
+  GitHub, where Slipstream is published, whether a newer version exists. Nothing about you or your PC is sent.
+  Say no, or turn it off any time, and Slipstream never goes online.
 - Your settings, profiles and learned track maps stay in a local file on your computer
   (`%APPDATA%\Slipstream`), and nowhere else.
 
@@ -160,8 +162,19 @@ Slipstream draws on your monitor, so the overlays won't appear inside a VR heads
 
 ## Updating and uninstalling
 
-- **Update:** download the new version from the [releases page](https://github.com/antonholovko-cloud/Slipstream/releases/latest)
-  and install it over the old one. Your settings and layouts are kept.
+The first time you open Slipstream it asks whether to **check for updates automatically**. You can change
+this any time in **General & hotkeys → Updates**, which also has a **Check now** button.
+
+- **Installed version:** new versions download in the background and install when you quit Slipstream. A
+  notification tells you when one is ready; click **Restart and update now** to install it straight away.
+- **Portable version:** Slipstream tells you when a new version is out, with a link to download it.
+- **Manually:** download the new version from the [releases page](https://github.com/antonholovko-cloud/Slipstream/releases/latest)
+  and install it over the old one.
+
+Your settings and layouts are always kept.
+
+- **Versions before 0.4.6** can't update themselves. Install the latest version once by hand, and it keeps
+  itself up to date from then on.
 - **Uninstall:** Windows **Settings → Apps → Installed apps → Slipstream → Uninstall**. To also remove your
   settings, delete the `%APPDATA%\Slipstream` folder.
 
