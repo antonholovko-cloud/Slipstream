@@ -11,6 +11,7 @@
   // Settings applied to every overlay (rendered in the "Common" section).
   const COMMON_SCHEMA = [
     { key: 'scale', label: 'Scale (%)', type: 'range', min: 50, max: 250, step: 5, default: 100 },
+    { key: 'opacity', label: 'Overlay opacity (%)', type: 'range', min: 10, max: 100, step: 1, default: 100 },
     { key: 'bgOpacity', label: 'Background opacity (%)', type: 'range', min: 0, max: 100, step: 1, default: 85 },
     { key: 'showHeader', label: 'Show header', type: 'bool', default: true },
     { key: 'accent', label: 'Accent color override', type: 'color', default: '', allowEmpty: true },
@@ -186,8 +187,11 @@
         { key: 'range', label: 'View radius (m)', type: 'range', min: 5, max: 100, step: 1, default: 20 },
         { key: 'shape', label: 'Shape', type: 'select', default: 'circle',
           options: [{ value: 'circle', label: 'Circle' }, { value: 'lane', label: 'Lane (tall)' }] },
-        { key: 'panelOpacity', label: 'Panel opacity (%)', type: 'range', min: 0, max: 100, step: 1, default: 60 },
-        { key: 'guides', label: 'Distance guides', type: 'bool', default: true },
+        { key: 'fill', label: 'Fill the panel (off = transparent inside)', type: 'bool', default: false },
+        { key: 'panelOpacity', label: 'Panel fill opacity (%)', type: 'range', min: 0, max: 100, step: 1, default: 60 },
+        { key: 'border', label: 'Thin border', type: 'bool', default: true },
+        { key: 'borderOpacity', label: 'Border opacity (%)', type: 'range', min: 5, max: 100, step: 1, default: 35 },
+        { key: 'guides', label: 'Distance guides (radius labels)', type: 'bool', default: false },
         { key: 'carScale', label: 'Car box size', type: 'range', min: 0.6, max: 2.5, step: 0.1, default: 1.2 },
         { key: 'showNumbers', label: 'Show car numbers on boxes', type: 'bool', default: false },
         { key: 'showDistance', label: 'Show gap in meters', type: 'bool', default: true },

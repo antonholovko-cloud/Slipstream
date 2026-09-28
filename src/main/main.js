@@ -30,6 +30,10 @@ let modelSource = null;
 let loopTimer = null;
 let hotkeyErrors = [];
 const forceDemo = process.argv.includes('--demo'); // runtime only, never saved
+// Dev/test runs (screenshots) render far off-screen: nothing pops up on the user's
+// desktop, and no tray icon or global hotkeys that would clash with a real instance.
+const OFFSCREEN = !!(process.env.IRO_SCREENSHOT || process.env.IRO_OFFSCREEN);
+const place = (b) => (OFFSCREEN ? { ...b, x: b.x - 30000, y: b.y - 30000 } : b);
 
 const RENDERER = path.join(__dirname, '..', 'renderer');
 const PRELOAD = path.join(__dirname, '..', 'preload.js');
@@ -50,7 +54,7 @@ function overlayPayload(id) {
 
 function createOverlay(id) {
   const s = config.overlay(id);
-  const b = clampToDisplays(s.bounds);
+  const b = OFFSCREEN ? place(s.bounds) : clampToDisplays(s.bounds);
   const win = new BrowserWindow({
     x: b.x, y: b.y, width: b.width, height: b.height,
     transparent: true, frame: false, resizable: false, movable: true,
@@ -92,7 +96,7 @@ function syncOverlayWindows() {
     if (!s.enabled && o) { o.win.destroy(); overlayWins.delete(def.id); }
   }
   for (const [id, o] of overlayWins) {
-    const b = config.overlay(id).bounds;
+    const b = place(config.overlay(id).bounds);
     const cur = o.win.getBounds();
     if (cur.x !== b.x || cur.y !== b.y || cur.width !== b.width || cur.height !== b.height) o.win.setBounds(b);
     if (o.ready) o.win.webContents.send('overlay:config', overlayPayload(id));
@@ -239,8 +243,9 @@ function openSettings() {
   }
   settingsWin = new BrowserWindow({
     width: 1180, height: 800, minWidth: 900, minHeight: 600, title: 'Slipstream',
+    ...(OFFSCREEN ? { x: -30000, y: -30000, skipTaskbar: true } : {}),
     backgroundColor: '#0b0f14', autoHideMenuBar: true, icon: makeIcon(64),
-    webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false },
+    webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, offscreen: OFFSCREEN },
   });
   settingsWin.loadFile(path.join(RENDERER, 'settings.html'), { query: { page: process.env.IRO_PAGE || 'home' } });
   settingsWin.on('closed', () => { settingsWin = null; });
@@ -415,9 +420,11 @@ app.whenReady().then(() => {
   config = new ConfigStore();
   config.onSaved = () => sendSettings('settings:saved', { lastSaved: config.lastSaved });
   registerIpc();
-  registerHotkeys();
-  tray = new Tray(makeIcon(32));
-  tray.on('click', openSettings);
+  if (!OFFSCREEN) {
+    registerHotkeys();
+    tray = new Tray(makeIcon(32));
+    tray.on('click', openSettings);
+  }
   updateTray();
   syncOverlayWindows();
   if (!config.data.global.startMinimized && !process.argv.includes('--hidden')) openSettings();

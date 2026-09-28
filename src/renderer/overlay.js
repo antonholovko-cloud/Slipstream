@@ -39,6 +39,9 @@
     for (const k of ['purple', 'green', 'red', 'yellow', 'blue', 'border']) root.setProperty('--' + k, t[k]);
     root.setProperty('--radius', (t.radius ?? 6) + 'px');
     root.setProperty('--font', `'${t.font}'`);
+    // whole-overlay opacity: this overlay's own setting times the global master
+    const master = ((p.global && p.global.masterOpacity) ?? 100) / 100;
+    $('#frame').style.opacity = String(Math.max(0.05, ((s.opacity ?? 100) / 100) * master));
     document.body.classList.toggle('no-header', !s.showHeader);
     document.body.classList.toggle('edit', !!p.editMode);
     $('#title').textContent = def.name;

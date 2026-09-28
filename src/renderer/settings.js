@@ -31,6 +31,7 @@
   }
 
   document.addEventListener('click', (e) => {
+    if (e.target.closest('.nonav')) return;
     const tg = e.target.closest('[data-toggle]');
     if (tg) {
       if (e.target.tagName === 'INPUT') {
@@ -212,8 +213,16 @@
     const grid = h('<div class="overview"></div>');
     for (const d of R.OVERLAYS) {
       const s = ov(d.id);
-      grid.append(h(`<div class="ov" data-page="ov:${d.id}"><div class="t"><span>${d.icon}</span><span class="grow">${esc(d.name)}</span>
-        <label class="sw" data-toggle="${d.id}"><input type="checkbox" ${s.enabled ? 'checked' : ''}><span></span></label></div><p>${esc(d.description)}</p></div>`));
+      const card = h(`<div class="ov" data-page="ov:${d.id}"><div class="t"><span>${d.icon}</span><span class="grow">${esc(d.name)}</span>
+        <label class="sw" data-toggle="${d.id}"><input type="checkbox" ${s.enabled ? 'checked' : ''}><span></span></label></div><p>${esc(d.description)}</p>
+        <div class="quick nonav">
+          <label>Opacity</label><input type="range" min="10" max="100" step="1" data-k="opacity" value="${s.opacity ?? 100}"><span>${s.opacity ?? 100}%</span>
+          <label>Background</label><input type="range" min="0" max="100" step="1" data-k="bgOpacity" value="${s.bgOpacity ?? 85}"><span>${s.bgOpacity ?? 85}%</span>
+        </div></div>`);
+      for (const r of card.querySelectorAll('.quick input')) {
+        r.oninput = () => { r.nextElementSibling.textContent = r.value + '%'; setOverlay(d.id, { [r.dataset.k]: +r.value }); };
+      }
+      grid.append(card);
     }
     el.append(grid);
   }
@@ -271,6 +280,9 @@
     const colorKeys = [['bg', 'Background'], ['bgAlt', 'Alternate row'], ['header', 'Header'], ['text', 'Text'], ['dim', 'Secondary text'], ['accent', 'Accent'], ['player', 'My car highlight'], ['purple', 'Fastest lap'], ['green', 'Positive / gain'], ['red', 'Negative / loss'], ['yellow', 'Warning'], ['blue', 'Info']];
     const setO = (k) => (v) => { const o = { ...(cfg.global.themeOverrides || {}), [k]: v }; setGlobal({ themeOverrides: o }); };
     el.append(card('Colors', colorKeys.map(([k, label]) => field({ label, type: 'color' }, ovr[k] || base[k], setO(k)))));
+    el.append(card('Transparency', [
+      field({ label: 'Master opacity (%): applies to all overlays on top of their own setting', type: 'range', min: 10, max: 100, step: 1 }, g.masterOpacity ?? 100, (v) => setGlobal({ masterOpacity: v })),
+    ]));
     el.append(card('Typography & shape', [
       field({ label: 'Font', type: 'select', options: [{ value: '', label: `Theme default (${base.font})` }].concat(R.FONTS.map((f) => ({ value: f, label: f }))) }, g.font || '', (v) => setGlobal({ font: v })),
       field({ label: 'Corner radius', type: 'range', min: 0, max: 20, step: 1 }, ovr.radius ?? base.radius, setO('radius')),

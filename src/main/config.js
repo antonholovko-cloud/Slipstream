@@ -21,6 +21,7 @@ function defaultGlobal() {
     focusCamCar: true, // follow the camera car when spectating / replay
     startMinimized: false,
     snapToGrid: 10,
+    masterOpacity: 100, // multiplies every overlay's own opacity
   };
 }
 
@@ -53,6 +54,7 @@ function migrate(cfg) {
     p.overlays = p.overlays || {};
     mergeInputsIntoDash(p.overlays);
     compactDash(p.overlays.dash);
+    radarRing(p.overlays.radar);
     for (const odef of Registry.OVERLAYS) {
       const base = Registry.defaultSettingsFor(odef);
       const cur = p.overlays[odef.id] || {};
@@ -102,6 +104,12 @@ function compactDash(dash) {
   if (!dash || dash.layoutV2) return;
   if (dash.bounds && dash.bounds.height >= 180) dash.bounds = { ...dash.bounds, height: 116 };
   dash.layoutV2 = true;
+}
+
+// v0.3.2 radar look: transparent inside, thin border, no radius guides (applied once).
+function radarRing(radar) {
+  if (!radar || radar.radarV3) return;
+  Object.assign(radar, { fill: false, border: true, guides: false, radarV3: true });
 }
 
 const MAX_BACKUPS = 15;

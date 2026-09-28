@@ -13,6 +13,7 @@ const os = require('os');
 const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
 process.env.IRO_USERDATA = fs.mkdtempSync(path.join(os.tmpdir(), 'slipstream-shots-'));
 process.env.IRO_DEMO_SKIP = process.env.IRO_DEMO_SKIP || '520';
+process.env.IRO_OFFSCREEN = '1'; // render off-screen so nothing pops up on the desktop
 if (!process.argv.includes('--demo')) process.argv.push('--demo');
 
 require('../src/main/main.js');

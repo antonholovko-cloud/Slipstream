@@ -56,7 +56,7 @@ Host.register('radar', function (root) {
         else roundRect(cx - halfW, cy - R, halfW * 2, R * 2, Math.min(18, halfW * 0.4));
       };
       const alpha = (s.panelOpacity ?? 60) / 100;
-      if (alpha > 0) {
+      if (s.fill && alpha > 0) {
         const bg = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(R, halfW));
         bg.addColorStop(0, Fmt.rgba(t.bg, alpha * 0.45));
         bg.addColorStop(0.8, Fmt.rgba(t.bg, alpha * 0.85));
@@ -64,8 +64,11 @@ Host.register('radar', function (root) {
         panelPath();
         g.fillStyle = bg;
         g.fill();
+      }
+      if (s.border !== false) {
+        panelPath();
         g.lineWidth = 1;
-        g.strokeStyle = Fmt.rgba(t.text, 0.1 * Math.min(1, alpha * 2));
+        g.strokeStyle = Fmt.rgba(t.text, (s.borderOpacity ?? 35) / 100);
         g.stroke();
       }
       g.save();

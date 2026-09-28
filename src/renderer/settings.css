@@ -110,3 +110,8 @@ kbd { background: var(--panel2); border: 1px solid var(--line); border-bottom-wi
 .saved { color: var(--ok); font-size: 12.5px; font-weight: 600; opacity: .85; margin-right: 6px; }
 .saved.pulse { animation: savedpulse 1.2s ease-out; }
 @keyframes savedpulse { 0% { opacity: 1; text-shadow: 0 0 10px var(--ok); } 100% { opacity: .85; text-shadow: none; } }
+
+.ov .quick { display: grid; grid-template-columns: auto 1fr 38px; align-items: center; gap: 2px 8px; margin-top: 4px; cursor: default; }
+.ov .quick label { font-size: 11.5px; color: var(--dim); }
+.ov .quick input[type=range] { width: 100%; accent-color: var(--accent); }
+.ov .quick span { font-size: 11.5px; color: var(--dim); text-align: right; font-variant-numeric: tabular-nums; }
