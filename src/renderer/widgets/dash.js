@@ -4,7 +4,9 @@
  * the remaining ones reflow.
  */
 Host.css(`
-.dash { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:.15rem .6rem; gap:.22rem; }
+.dash { position:absolute; inset:0; display:flex; flex-direction:row; align-items:stretch; padding:.15rem .6rem; gap:.6rem; }
+.dash .col { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:.22rem; }
+.dash .sep.tall { height:auto; align-self:stretch; margin:.3rem 0; }
 .dash .lights { display:flex; gap:.2rem; flex:none; }
 .dash .lights i { flex:1; height:.3rem; border-radius:2px; background:rgba(255,255,255,.08); }
 .dash .lights.flash i:not(.slip) { animation: dashflash .12s steps(2) infinite; }
@@ -27,8 +29,13 @@ Host.css(`
 .dash .bar { width:.45rem; background:rgba(255,255,255,.08); border-radius:3px; position:relative; overflow:hidden; }
 .dash .bar i { position:absolute; left:0; right:0; bottom:0; border-radius:3px; }
 .dash .bar span { display:none; }
-.dash .wheel { display:flex; align-items:center; justify-content:center; flex:none; }
-.dash .wheel svg { width:2.9rem; height:2.9rem; overflow:visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+.dash .wheel { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem; flex:none; height:100%; }
+.dash .wheel .rot { transform-box:view-box; transform-origin:50% 50%; }
+.dash .wheel.smooth .rot { transition:transform 70ms linear; }
+.dash .wheel.smooth .steerbar .fill, .dash .wheel.smooth .steerbar .knob { transition:all 70ms linear; }
+.dash .wheel svg.steerbar { flex:none; width:6rem; height:1.4rem; aspect-ratio:auto; filter:none; }
+.dash .wheel .ang { font-size:.75rem; font-weight:700; color:var(--dim); white-space:nowrap; line-height:1; flex:none; }
+.dash .wheel svg { flex:1; min-height:0; height:100%; width:auto; aspect-ratio:1; overflow:visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
 .dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; line-height:1.15; flex:none; }
 .dash .foot span { white-space:nowrap; }
 .dash .foot b { font-weight:700; }
@@ -38,7 +45,7 @@ Host.css(`
 `);
 
 Host.register('dash', function (root) {
-  root.innerHTML = `<div class="dash">
+  root.innerHTML = `<div class="dash"><div class="col">
     <div class="lights"></div>
     <div class="main">
       <div class="gearbox">
@@ -56,51 +63,15 @@ Host.register('dash', function (root) {
         <div class="bar b-br"><i></i><span></span></div>
         <div class="bar b-th"><i></i><span></span></div>
       </div>
-      <div class="sep s2"></div>
-      <div class="wheel">
-        <svg viewBox="-50 -50 100 100">
-          <defs>
-            <linearGradient id="wRim" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/>
-            </linearGradient>
-            <linearGradient id="wGrip" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#3a4250"/><stop offset=".45" stop-color="#1c212b"/><stop offset="1" stop-color="#0e1117"/>
-            </linearGradient>
-            <linearGradient id="wHub" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#2a303c"/><stop offset="1" stop-color="#12151c"/>
-            </linearGradient>
-          </defs>
-          <g class="rot">
-            <!-- rim: top arc and flat bottom -->
-            <path d="M-37 -14 C-37 -34 -20 -41 0 -41 C20 -41 37 -34 37 -14" fill="none" stroke="url(#wRim)" stroke-width="7" stroke-linecap="round"/>
-            <path d="M-33 20 C-28 31 -16 33 0 33 C16 33 28 31 33 20" fill="none" stroke="url(#wRim)" stroke-width="7" stroke-linecap="round"/>
-            <!-- grips -->
-            <rect x="-47" y="-20" width="16" height="44" rx="8" fill="url(#wGrip)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
-            <rect x="31" y="-20" width="16" height="44" rx="8" fill="url(#wGrip)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
-            <!-- spokes -->
-            <path d="M-31 2 L-15 2 M31 2 L15 2" stroke="#2a303c" stroke-width="7" stroke-linecap="round"/>
-            <!-- hub with display and buttons -->
-            <rect x="-16" y="-13" width="32" height="28" rx="7" fill="url(#wHub)" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-            <rect x="-9" y="-8" width="18" height="9" rx="2" fill="#07090c" stroke="rgba(255,255,255,.08)" stroke-width=".8"/>
-            <path d="M-6 -3.5 H6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="-10.5" cy="7.5" r="2.4" fill="#ef4444"/>
-            <circle cx="-3.5" cy="8.5" r="2.4" fill="#facc15"/>
-            <circle cx="3.5" cy="8.5" r="2.4" fill="#3b82f6"/>
-            <circle cx="10.5" cy="7.5" r="2.4" fill="#22c55e"/>
-            <!-- top center marker -->
-            <rect x="-3.2" y="-45" width="6.4" height="8" rx="1.6" fill="var(--accent)"/>
-          </g>
-        </svg>
-      </div>
     </div>
     <div class="foot"><div class="warn"></div><span class="info"></span></div>
-  </div>`;
+  </div><div class="sep s2 tall"></div><div class="wheel"></div></div>`;
   const q = (s) => root.querySelector(s);
   const lightsEl = q('.lights');
   const canvas = q('canvas');
   const g = canvas.getContext('2d');
   const bars = { th: q('.b-th'), br: q('.b-br'), cl: q('.b-cl') };
-  const rot = q('.rot');
+  let rot = null, bar = null, wheelStyle = '', lastAng = '';
   const samples = []; // { time, th, br, cl, st, abs }
   let lights = [];
   let lightCount = 0;
@@ -184,13 +155,14 @@ Host.register('dash', function (root) {
     // Natural size in rem, measured from the visible blocks, so the contents can
     // scale to fill the window exactly (see Host.applyFontSize).
     fit() {
-      const el = root.firstElementChild;
-      const cs = getComputedStyle(el);
+      const el = root.querySelector('.col');
+      const cs = getComputedStyle(root.firstElementChild);
       const fs = parseFloat(getComputedStyle(document.documentElement).fontSize) || 14;
       const kids = [...el.children].filter((c) => c.offsetParent !== null);
-      let h = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, kids.length - 1);
+      let h = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(getComputedStyle(el).rowGap || 0) * Math.max(0, kids.length - 1);
       for (const c of kids) h += c.getBoundingClientRect().height;
-      return { w: 41.5, h: h / fs };
+      const wheelW = q('.wheel').offsetParent !== null ? h / fs + 0.8 : 0; // square wheel column + gap
+      return { w: 38 + wheelW, h: h / fs };
     },
     configure(ctx) {
       const s = ctx.settings;
@@ -204,8 +176,18 @@ Host.register('dash', function (root) {
       show(q('.bars'), s.showBars);
       show(bars.cl, s.showClutch);
       show(q('.wheel'), s.showSteering);
+      const style = s.wheelStyle || 'gt';
+      if (style !== wheelStyle) {
+        wheelStyle = style;
+        q('.wheel').innerHTML = Wheels.svg(style) + '<span class="ang"></span>';
+        rot = q('.wheel .rot');
+        bar = style === 'bar' ? { fill: q('.steerbar .fill'), knob: q('.steerbar .knob') } : null;
+        lastAng = '';
+      }
+      q('.wheel').classList.toggle('smooth', s.smoothSteering !== false);
+      show(q('.wheel .ang'), !!s.showSteerAngle);
       show(q('.s1'), s.showGear && (s.showTrace || s.showBars || s.showSteering));
-      show(q('.s2'), s.showSteering && (s.showTrace || s.showBars));
+      show(q('.s2'), s.showSteering);
       show(q('.foot'), s.showLapInfo || s.showFuel || s.showBias || s.showWarnings);
       // with no trace, let the gear block take the free space
       q('.gearbox').style.flex = s.showTrace ? 'none' : '1';
@@ -278,7 +260,22 @@ Host.register('dash', function (root) {
         setBar(bars.br, p.brake, p.abs ? s.absColor : s.brakeColor);
         setBar(bars.cl, p.clutch, s.clutchColor);
       }
-      if (s.showSteering) rot.setAttribute('transform', `rotate(${(-p.steer * 180 / Math.PI).toFixed(1)})`);
+      if (s.showSteering) {
+        const deg = (-p.steer * 180) / Math.PI; // iRacing: positive = left; screen: positive = clockwise
+        if (bar) {
+          const f = Math.max(-1, Math.min(1, -p.steer / (p.steerMax / 2 || 4)));
+          bar.knob.setAttribute('cx', (f * 43).toFixed(1));
+          bar.fill.setAttribute('x', Math.min(0, f * 43).toFixed(1));
+          bar.fill.setAttribute('width', Math.abs(f * 43).toFixed(1));
+        } else if (rot) {
+          rot.style.transform = `rotate(${deg.toFixed(1)}deg)`;
+        }
+        if (s.showSteerAngle) {
+          const a = Math.round(deg);
+          const txt = a === 0 ? '0°' : `${a < 0 ? '◀' : '▶'} ${Math.abs(a)}°`;
+          if (txt !== lastAng) { q('.wheel .ang').textContent = txt; lastAng = txt; }
+        }
+      }
 
       // ---- footer ----
       if (s.showWarnings) {
