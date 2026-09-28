@@ -217,7 +217,7 @@ function pushToOverlays() {
 // ---------------- Settings window ----------------
 
 function settingsPayload() {
-  return { config: config.data, theme: theme(), hotkeyErrors, userData: config.dir };
+  return { config: config.data, theme: theme(), hotkeyErrors, userData: config.dir, file: config.file, lastSaved: config.lastSaved, backups: config.listBackups().slice(0, 10) };
 }
 
 function statusPayload() {
@@ -352,6 +352,28 @@ function registerIpc() {
         config.importProfile(fs.readFileSync(r.filePaths[0], 'utf8'));
         break;
       }
+      case 'snapshot': { // save the current layout under a new name, stay on the current profile
+        const cur = config.data.activeProfile;
+        config.createProfile(a, cur);
+        config.setActiveProfile(cur);
+        break;
+      }
+      case 'exportAll': {
+        const r = await dialog.showSaveDialog(settingsWin, { title: 'Export all settings', defaultPath: 'slipstream-settings.json', filters: [{ name: 'Slipstream settings', extensions: ['json'] }] });
+        if (!r.canceled) fs.writeFileSync(r.filePath, config.exportAll());
+        return !r.canceled;
+      }
+      case 'importAll': {
+        const r = await dialog.showOpenDialog(settingsWin, { title: 'Import all settings', filters: [{ name: 'Slipstream settings', extensions: ['json'] }], properties: ['openFile'] });
+        if (r.canceled) return false;
+        config.importAll(fs.readFileSync(r.filePaths[0], 'utf8'));
+        registerHotkeys();
+        break;
+      }
+      case 'restore':
+        config.restoreBackup(a);
+        registerHotkeys();
+        break;
       default: break;
     }
     broadcastConfig();
@@ -389,6 +411,7 @@ async function captureAll(dir) {
 
 app.whenReady().then(() => {
   config = new ConfigStore();
+  config.onSaved = () => sendSettings('settings:saved', { lastSaved: config.lastSaved });
   registerIpc();
   registerHotkeys();
   tray = new Tray(makeIcon(32));

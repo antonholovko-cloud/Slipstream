@@ -21,7 +21,7 @@
   // ---------------- nav ----------------
   function renderNav() {
     $('#profile-name').textContent = 'Profile: ' + profile().name;
-    const main = [['home', '▦', 'Overview'], ['appearance', '🎨', 'Appearance'], ['general', '⚙', 'General & hotkeys'], ['profiles', '🗂', 'Profiles']];
+    const main = [['home', '▦', 'Overview'], ['appearance', '🎨', 'Appearance'], ['general', '⚙', 'General & hotkeys'], ['profiles', '💾', 'Layouts & profiles']];
     $('#nav-main').innerHTML = main.map(([id, ico, label]) => `<a data-page="${id}" class="${page === id ? 'active' : ''}"><span class="ico">${ico}</span><span class="grow">${label}</span></a>`).join('');
     $('#nav-overlays').innerHTML = R.OVERLAYS.map((d) => {
       const on = ov(d.id).enabled;
@@ -53,6 +53,15 @@
     be.classList.toggle('on', !!s.editMode);
     $('#btn-hide').textContent = s.hidden ? '👁 Show overlays' : '🙈 Hide overlays';
   }
+
+  function renderSaved() {
+    const el = $('#saved');
+    if (!lastSaved) { el.textContent = '✓ Changes save automatically'; return; }
+    el.textContent = '✓ Saved ' + new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    el.classList.remove('pulse');
+    void el.offsetWidth;
+    el.classList.add('pulse');
+  }
   $('#btn-edit').onclick = () => api.invoke('settings:setEditMode', !status.editMode);
   $('#btn-hide').onclick = () => api.invoke('settings:setHidden', !status.hidden);
 
@@ -74,10 +83,19 @@
         break;
       }
       case 'range': {
+        // slider plus an editable number box, kept in sync
         const el = h(`<input type="range" min="${f.min}" max="${f.max}" step="${f.step ?? 1}" value="${value}">`);
-        const val = h(`<span class="val">${value}</span>`);
-        el.oninput = () => { val.textContent = el.value; onChange(parseFloat(el.value)); };
-        ctl.append(el, val);
+        const box = h(`<input type="number" class="rangebox" min="${f.min}" max="${f.max}" step="${f.step ?? 1}" value="${value}">`);
+        el.oninput = () => { box.value = el.value; onChange(parseFloat(el.value)); };
+        box.oninput = () => {
+          const v = parseFloat(box.value);
+          if (!Number.isFinite(v)) return;
+          const c = Math.max(f.min, Math.min(f.max, v));
+          el.value = c;
+          onChange(c);
+        };
+        box.onblur = () => { box.value = el.value; };
+        ctl.append(el, box);
         break;
       }
       case 'color': {
@@ -318,7 +336,21 @@
   }
 
   function pageProfiles(el) {
-    el.append(h('<div><h1>Profiles</h1><p class="lead">Each profile stores its own set of overlays, layout and options — e.g. one for oval, one for road, one for streaming. Switch with the tray menu or the hotkey.</p></div>'));
+    el.append(h(`<div><h1>Layouts & profiles</h1><p class="lead">Everything you change (positions, sizes, options, theme) is <b>saved automatically</b> and restored the next time Slipstream starts, including after updates. Each profile is a complete layout: switch with the tray menu or <kbd>${esc(keyLabel(cfg.global.hotkeys.nextProfile))}</kbd>.</p></div>`));
+
+    // save the current layout under a name
+    const snap = h(`<div class="card"><h2>Save current layout</h2><div class="row" style="padding:6px 0 14px">
+      <input type="text" class="snapname" placeholder="Layout name, e.g. Road race" style="background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;width:280px">
+      <button class="btn primary">💾 Save layout as new profile</button><span class="snapmsg" style="color:var(--dim);font-size:13px"></span></div></div>`);
+    const nameIn = $('.snapname', snap);
+    const doSnap = () => {
+      const name = nameIn.value.trim() || `${profile().name} ${new Date().toLocaleDateString()}`;
+      api.invoke('settings:profile', 'snapshot', name).then(() => { $('.snapmsg', snap).textContent = `Saved “${name}”`; });
+    };
+    $('button', snap).onclick = doSnap;
+    nameIn.onkeydown = (e) => { if (e.key === 'Enter') doSnap(); };
+    el.append(snap);
+
     const list = h('<div class="card profiles"></div>');
     for (const [key, p] of Object.entries(cfg.profiles)) {
       const active = key === cfg.activeProfile;
@@ -336,28 +368,58 @@
     const actions = h('<div class="row"></div>');
     const nw = h('<button class="btn primary">+ New profile</button>');
     nw.onclick = () => api.invoke('settings:profile', 'create', 'Profile ' + (Object.keys(cfg.profiles).length + 1));
-    const imp = h('<button class="btn">Import from file…</button>');
+    const imp = h('<button class="btn">Import profile…</button>');
     imp.onclick = () => api.invoke('settings:profile', 'import').catch((e) => alert('Import failed: ' + e.message));
     actions.append(nw, imp);
     el.append(actions);
+
+    // full backup / restore
+    const bk = h(`<div class="card" style="margin-top:18px"><h2>Backup & restore</h2>
+      <p style="color:var(--dim);margin:4px 0 10px;font-size:13px">A backup of your settings is taken automatically every time Slipstream starts (the last 15 are kept).
+      You can also export everything (all profiles, theme, hotkeys, learned track maps) to move to another PC.</p>
+      <div class="row" style="padding-bottom:10px"><button class="btn exp-all">⬆ Export all settings…</button><button class="btn imp-all">⬇ Import all settings…</button></div>
+      <div class="backups"></div></div>`);
+    $('.exp-all', bk).onclick = () => api.invoke('settings:profile', 'exportAll');
+    $('.imp-all', bk).onclick = () => {
+      if (confirm('Replace ALL current settings with the imported file? (A backup of the current settings is taken first.)')) api.invoke('settings:profile', 'importAll').catch((e) => alert('Import failed: ' + e.message));
+    };
+    const list2 = $('.backups', bk);
+    if (!backups.length) list2.append(h('<div style="color:var(--dim);font-size:13px;padding-bottom:10px">No backups yet.</div>'));
+    for (const b of backups) {
+      const reason = (b.name.match(/-([a-z-]+)\.json$/) || [, ''])[1];
+      const row = h(`<div class="prof"><div class="grow" style="font-size:13px">${esc(new Date(b.time).toLocaleString())} <span style="color:var(--dim)">· ${esc(reason)}</span></div><button class="btn small">Restore</button></div>`);
+      $('button', row).onclick = () => { if (confirm(`Restore settings from ${new Date(b.time).toLocaleString()}? Your current settings are backed up first.`)) api.invoke('settings:profile', 'restore', b.name); };
+      list2.append(row);
+    }
+    el.append(bk);
+    el.append(h(`<p style="color:var(--dim);font-size:12px">Settings file: ${esc(cfgFile)}</p>`));
   }
 
   // ---------------- data ----------------
   let cfgPath = '';
+  let cfgFile = '';
+  let lastSaved = null;
+  let backups = [];
   async function reload() {
     const d = await api.invoke('settings:get');
     cfg = d.config;
+    cfgFile = d.file;
+    lastSaved = d.lastSaved;
+    backups = d.backups || [];
     status = d.status;
     hotkeyErrors = d.hotkeyErrors;
     cfgPath = d.userData;
     displays = await api.invoke('settings:displays');
     renderNav();
     renderStatus();
+    renderSaved();
     renderPage();
   }
 
+  api.on('settings:saved', (d) => { lastSaved = d.lastSaved; renderSaved(); });
   api.on('settings:config', (d) => {
     cfg = d.config;
+    backups = d.backups || backups;
     hotkeyErrors = d.hotkeyErrors;
     if (localEchoes > 0) { localEchoes--; renderNav(); return; }
     if (!R.byId(page.slice(3)) && page.startsWith('ov:')) page = 'home';

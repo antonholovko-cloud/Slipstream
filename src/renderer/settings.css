@@ -105,3 +105,8 @@ kbd { background: var(--panel2); border: 1px solid var(--line); border-bottom-wi
 .screen { position: relative; background: #05070a; border: 1px solid var(--line); border-radius: 10px; aspect-ratio: 16 / 9; overflow: hidden; margin: 10px 0 16px; }
 .screen .box { position: absolute; border: 1px solid var(--accent); background: rgba(225, 29, 72, .15); border-radius: 3px; font-size: 10px; padding: 1px 4px; color: #fff; overflow: hidden; white-space: nowrap; cursor: pointer; }
 .screen .box.off { border-color: #334155; background: rgba(51, 65, 85, .2); color: var(--dim); }
+
+.field input.rangebox { width: 64px; padding: 5px 6px; text-align: right; }
+.saved { color: var(--ok); font-size: 12.5px; font-weight: 600; opacity: .85; margin-right: 6px; }
+.saved.pulse { animation: savedpulse 1.2s ease-out; }
+@keyframes savedpulse { 0% { opacity: 1; text-shadow: 0 0 10px var(--ok); } 100% { opacity: .85; text-shadow: none; } }

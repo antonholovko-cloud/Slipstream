@@ -53,11 +53,10 @@ and no extra services.
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, gap/interval, last/best (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit-stop count, and "keep my car visible" windowing |
 | **Relative** | Cars around you by live time gap, lapping/lapped coloring, pit tags, and an info bar (position, SOF, incidents, time left) |
-| **Inputs** | Throttle, brake, clutch and optional steering trace, ABS-colored brake, pedal bars, a rotating wheel, gear and speed |
-| **Dashboard** | Car-specific shift lights (from iRacing's SL RPMs) with flash and blink, gear, speed, RPM bar, fuel, brake bias, engine warnings, pit limiter |
+| **Dashboard & Inputs** | Car-specific shift lights (from iRacing's SL RPMs), gear, speed, RPM bar, a throttle/brake/clutch trace with ABS-colored brake, pedal bars, a rotating wheel, lap/last/best/delta, fuel, brake bias, engine warnings and pit limiter. Every block can be switched off |
 | **Fuel Calculator** | Rolling average, last and max per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Delta vs best, optimal, session best, session optimal or last lap, trend coloring, predicted lap |
-| **Radar** | Proximity radar from `CarLeftRight` plus track distance, side warnings, and auto-hide when clear |
+| **Radar** | A box for every car around you, with glowing side bars when someone is alongside and proximity bars ahead/behind. Adjustable view radius (5–100 m), circle or lane shape, car size and numbers, and auto-hide when clear |
 | **Track Map** | **Learned automatically** by dead-reckoning your first clean lap, then saved per track. Shows class colors, pit cars and the S/F line, with rotate/mirror |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, wetness, local and sim clock |
 | **Flags** | Checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green, with a waving animation |
@@ -68,8 +67,8 @@ and no extra services.
 |---|---|
 | ![Standings](docs/screenshots/standings.png) | ![Relative](docs/screenshots/relative.png) |
 | ![Track map](docs/screenshots/trackmap.png) | ![Fuel calculator](docs/screenshots/fuel.png) |
-| ![Dashboard](docs/screenshots/dash.png) | ![Inputs](docs/screenshots/inputs.png) |
-| ![Radar](docs/screenshots/radar.png) | ![Delta bar](docs/screenshots/delta.png) |
+| ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Radar](docs/screenshots/radar.png) |
+| ![Delta bar](docs/screenshots/delta.png) | ![Session info](docs/screenshots/session.png) |
 
 **Settings:** every overlay is configured live, with drag-and-drop columns, themes and profiles.
 
@@ -82,8 +81,11 @@ and no extra services.
   per-session visibility (practice, qualifying, race, or hidden when you're not in the car).
 - **Columns**: drag-and-drop reorder plus per-column toggles for Standings, Relative and Session Info.
 - **Themes**: five built-in themes. Every color, the font and the corner radius can be overridden.
-- **Profiles**: unlimited layouts (e.g. road, oval, streaming). Duplicate, rename, and import/export as JSON.
-  Switch from the tray or with a hotkey.
+- **Saved automatically**: every change (positions, sizes, options, theme) is written to disk immediately and restored
+  at the next start, including after updates. A backup is taken at every start (last 15 kept) and can be restored
+  from *Layouts & profiles*.
+- **Layouts & profiles**: save the current layout under a name, keep unlimited layouts (e.g. road, oval, streaming), and
+  switch from the tray or with a hotkey. Export/import single profiles or all settings (to move to another PC).
 - **Hotkeys** (global, rebindable): toggle edit mode `Ctrl+Shift+E`, show/hide `Ctrl+Shift+H`,
   open settings `Ctrl+Shift+S`, next profile `Ctrl+Shift+P`.
 - **Edit layout**: drag an overlay anywhere, resize it from the corner grip, and use the arrow keys to nudge

@@ -6,7 +6,7 @@ const INVOKE = new Set([
   'settings:profile', 'settings:forgetTrack', 'settings:displays',
 ]);
 const SEND = new Set(['overlay:setBounds']);
-const ON = new Set(['overlay:config', 'overlay:state', 'settings:config', 'settings:status']);
+const ON = new Set(['overlay:config', 'overlay:state', 'settings:config', 'settings:status', 'settings:saved']);
 
 contextBridge.exposeInMainWorld('api', {
   invoke: (ch, ...args) => (INVOKE.has(ch) ? ipcRenderer.invoke(ch, ...args) : Promise.reject(new Error('blocked channel ' + ch))),
