@@ -1,6 +1,8 @@
 /*
  * Self-test: creates a fake iRacing shared-memory map (same binary layout as the
  * real sim), then runs the real IRacingReader + RaceModel against it.
+ * The fake map has its own unique name, so this is safe while iRacing is running:
+ * it never opens or writes iRacing's real shared memory.
  * Usage: npm run check
  */
 const koffi = require('koffi');
@@ -9,10 +11,13 @@ const assert = require('assert');
 const lib = koffi.load('kernel32.dll');
 const CreateFileMappingW = lib.func('void* __stdcall CreateFileMappingW(void* f, void* s, uint32_t p, uint32_t hi, uint32_t lo, str16 n)');
 const MapViewOfFile = lib.func('void* __stdcall MapViewOfFile(void* h, uint32_t a, uint32_t hi, uint32_t lo, size_t n)');
+const GetLastError = lib.func('uint32_t __stdcall GetLastError()');
 
 const SIZE = 1164 * 1024;
-const h = CreateFileMappingW(null, null, 0x04 /* PAGE_READWRITE */, 0, SIZE, 'Local\\IRSDKMemMapFileName');
-assert(h, 'CreateFileMapping failed (is iRacing running? close it for this test)');
+const TEST_MAP = `Local\\SlipstreamSelfTest-${process.pid}`;
+const h = CreateFileMappingW(null, null, 0x04 /* PAGE_READWRITE */, 0, SIZE, TEST_MAP);
+assert(h, 'CreateFileMapping failed');
+assert.notStrictEqual(GetLastError(), 183 /* ERROR_ALREADY_EXISTS */, 'refusing to write into an existing map');
 const p = MapViewOfFile(h, 0xF001F, 0, 0, 0);
 const buf = Buffer.from(koffi.view(p, SIZE));
 const mem = new DataView(koffi.view(p, SIZE));
@@ -155,7 +160,7 @@ function frameValues(tick) {
 
 const { IRacingReader } = require('../src/main/irsdk');
 const { RaceModel } = require('../src/main/model');
-const reader = new IRacingReader();
+const reader = new IRacingReader({ name: TEST_MAP });
 
 writeFrame(1, frameValues(1));
 let f = reader.read();

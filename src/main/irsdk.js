@@ -74,7 +74,9 @@ function parseSessionInfo(text) {
 }
 
 class IRacingReader {
-  constructor() {
+  // `name` is only overridden by the self-test, which must never touch iRacing's real map.
+  constructor(opts = {}) {
+    this.name = opts.name || MEMMAP_NAME;
     this.handle = null;
     this.ptr = null;
     this.view = null;
@@ -89,7 +91,7 @@ class IRacingReader {
     if (this.view) return true;
     if (process.platform !== 'win32') return false;
     const k = kernel32();
-    const h = k.OpenFileMappingW(FILE_MAP_READ, 0, MEMMAP_NAME);
+    const h = k.OpenFileMappingW(FILE_MAP_READ, 0, this.name);
     if (!h) return false;
     const p = k.MapViewOfFile(h, FILE_MAP_READ, 0, 0, 0);
     if (!p) { k.CloseHandle(h); return false; }

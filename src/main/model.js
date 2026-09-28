@@ -179,12 +179,17 @@ class RaceModel {
     // Positions: live if available, else session results, else by best lap.
     const results = sdef.ResultsPositions || [];
     const resPos = new Map(results.map((r) => [r.CarIdx, r]));
+    // Live lap arrays are -1 for cars not currently in the world, so fill from results.
     for (const c of cars) {
-      if (!c.position && resPos.has(c.idx)) {
-        c.position = resPos.get(c.idx).Position;
-        c.classPosition = resPos.get(c.idx).ClassPosition + 1;
-        if (c.bestLap <= 0) c.bestLap = num(resPos.get(c.idx).FastestTime, -1);
+      const r = resPos.get(c.idx);
+      if (!r) continue;
+      if (!c.position) {
+        c.position = r.Position;
+        c.classPosition = r.ClassPosition + 1;
       }
+      if (c.bestLap <= 0 && num(r.FastestTime, -1) > 0) c.bestLap = num(r.FastestTime);
+      if (c.lastLap <= 0 && num(r.LastTime, -1) > 0) c.lastLap = num(r.LastTime);
+      if (c.lapCompleted < 0 && r.LapsComplete >= 0) c.lapCompleted = r.LapsComplete;
     }
 
     // ---- Classes ----
