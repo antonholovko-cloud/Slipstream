@@ -57,10 +57,14 @@
     if (!payload) return;
     const s = payload.settings;
     let fs = 14;
-    const fit = instance && instance.fit;
-    if (fit && s.autoFit !== false) {
-      const headerRem = s.showHeader ? 1.6 : 0;
-      fs = Math.min(window.innerWidth / fit.w, window.innerHeight / (fit.h + headerRem));
+    const fitFn = instance && instance.fit;
+    if (fitFn && s.autoFit !== false) {
+      // measure at a known size first (everything is in rem, so it scales linearly)
+      document.documentElement.style.setProperty('--fs', '14px');
+      const fit = typeof fitFn === 'function' ? fitFn() : fitFn;
+      const header = document.getElementById('header');
+      const headerRem = s.showHeader && header ? header.getBoundingClientRect().height / 14 : 0;
+      fs = Math.min(window.innerWidth / fit.w, window.innerHeight / (fit.h + headerRem)) * 0.98;
       fs = Math.max(8, Math.min(48, fs));
     }
     document.documentElement.style.setProperty('--fs', (fs * (s.scale || 100) / 100).toFixed(2) + 'px');

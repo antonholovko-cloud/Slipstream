@@ -4,7 +4,7 @@
  * the remaining ones reflow.
  */
 Host.css(`
-.dash { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:.35rem .6rem .3rem; gap:.35rem; }
+.dash { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:.15rem .6rem; gap:.22rem; }
 .dash .lights { display:flex; gap:.2rem; flex:none; }
 .dash .lights i { flex:1; height:.3rem; border-radius:2px; background:rgba(255,255,255,.08); }
 .dash .lights.flash i:not(.slip) { animation: dashflash .12s steps(2) infinite; }
@@ -29,7 +29,7 @@ Host.css(`
 .dash .bar span { display:none; }
 .dash .wheel { display:flex; align-items:center; justify-content:center; flex:none; }
 .dash .wheel svg { width:2.9rem; height:2.9rem; overflow:visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
-.dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; flex:none; }
+.dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; line-height:1.15; flex:none; }
 .dash .foot span { white-space:nowrap; }
 .dash .foot b { font-weight:700; }
 .dash .warn { display:flex; gap:.25rem; }
@@ -181,7 +181,17 @@ Host.register('dash', function (root) {
   const show = (el, on) => { el.style.display = on ? '' : 'none'; };
 
   return {
-    fit: { w: 41.5, h: 8.3 }, // natural size in rem: contents scale to fill the window
+    // Natural size in rem, measured from the visible blocks, so the contents can
+    // scale to fill the window exactly (see Host.applyFontSize).
+    fit() {
+      const el = root.firstElementChild;
+      const cs = getComputedStyle(el);
+      const fs = parseFloat(getComputedStyle(document.documentElement).fontSize) || 14;
+      const kids = [...el.children].filter((c) => c.offsetParent !== null);
+      let h = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.rowGap || cs.gap || 0) * Math.max(0, kids.length - 1);
+      for (const c of kids) h += c.getBoundingClientRect().height;
+      return { w: 41.5, h: h / fs };
+    },
     configure(ctx) {
       const s = ctx.settings;
       if (s.lightCount !== lightCount) buildLights(s.lightCount);
