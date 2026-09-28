@@ -235,10 +235,27 @@ function sendSettings(ch, data) {
   if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send(ch, data);
 }
 
+// Windows won't let a new window take the foreground from a focused (maximized) game, so
+// the settings window used to open hidden behind iRacing. Pin it on top briefly and focus it.
+function bringToFront(win) {
+  if (!win || win.isDestroyed() || OFFSCREEN) return;
+  if (win.isMinimized()) win.restore();
+  const b = win.getBounds();
+  const visible = screen.getAllDisplays().some((d) => {
+    const a = d.workArea;
+    return b.x + 100 > a.x && b.x < a.x + a.width - 100 && b.y + 50 > a.y && b.y < a.y + a.height - 50;
+  });
+  if (!visible) win.center();
+  win.setAlwaysOnTop(true, 'screen-saver');
+  win.show();
+  win.moveTop();
+  win.focus();
+  setTimeout(() => { if (!win.isDestroyed()) win.setAlwaysOnTop(false); }, 1500);
+}
+
 function openSettings() {
   if (settingsWin && !settingsWin.isDestroyed()) {
-    settingsWin.show();
-    settingsWin.focus();
+    bringToFront(settingsWin);
     return;
   }
   settingsWin = new BrowserWindow({
@@ -249,6 +266,7 @@ function openSettings() {
   });
   settingsWin.loadFile(path.join(RENDERER, 'settings.html'), { query: { page: process.env.IRO_PAGE || 'home' } });
   settingsWin.on('closed', () => { settingsWin = null; });
+  settingsWin.once('ready-to-show', () => bringToFront(settingsWin));
 }
 
 // ---------------- Hotkeys ----------------
@@ -316,13 +334,17 @@ function registerIpc() {
 
   ipcMain.handle('overlay:getBounds', (e) => BrowserWindow.fromWebContents(e.sender).getBounds());
 
-  ipcMain.on('overlay:setBounds', (e, id, b, done) => {
+  ipcMain.on('overlay:setBounds', (e, id, b, done, opts) => {
     const win = BrowserWindow.fromWebContents(e.sender);
     if (!win) return;
-    const grid = config.data.global.snapToGrid || 0;
+    const grid = opts && opts.exact ? 0 : config.data.global.snapToGrid || 0; // fit-to-content sizes are exact
     const snap = (v) => (grid > 1 ? Math.round(v / grid) * grid : Math.round(v));
-    const nb = { x: snap(b.x), y: snap(b.y), width: Math.max(60, snap(b.width)), height: Math.max(30, snap(b.height)) };
-    win.setBounds(nb);
+    let nb = { x: snap(b.x), y: snap(b.y), width: Math.max(60, snap(b.width)), height: Math.max(30, snap(b.height)) };
+    if (OFFSCREEN) { // test runs: keep the configured position, only sizes change
+      const cur = config.overlay(id).bounds;
+      nb = { ...nb, x: cur.x, y: cur.y };
+    }
+    win.setBounds(place(nb));
     if (done) {
       config.setOverlay(id, { bounds: nb });
       sendSettings('settings:config', settingsPayload());

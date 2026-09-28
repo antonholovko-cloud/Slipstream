@@ -98,6 +98,8 @@
       defaults: { fps: 60, showHeader: false },
       schema: [
         { key: 'autoFit', label: 'Scale contents to fit the box (resize the box to make it bigger)', type: 'bool', default: true },
+        { key: 'fitHeight', label: 'Shrink box height to fit the contents (no empty space)', type: 'bool', default: true },
+        { key: 'padV', label: 'Vertical padding (px)', type: 'range', min: 0, max: 30, step: 1, default: 4 },
         { key: 'shiftLights', label: 'Shift lights', type: 'bool', default: true },
         { key: 'lightCount', label: 'Number of lights', type: 'number', min: 5, max: 20, default: 12 },
         { key: 'flashOnShift', label: 'Flash at shift point', type: 'bool', default: true },

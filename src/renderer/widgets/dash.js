@@ -4,7 +4,7 @@
  * the remaining ones reflow.
  */
 Host.css(`
-.dash { position:absolute; inset:0; display:flex; flex-direction:row; align-items:stretch; padding:.15rem .6rem; gap:.6rem; overflow:hidden; }
+.dash { position:absolute; inset:0; display:flex; flex-direction:row; align-items:stretch; padding:var(--padv, 4px) .6rem; gap:.6rem; overflow:hidden; }
 .dash .col { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:.22rem; }
 .dash .sep.tall { height:auto; align-self:stretch; margin:.3rem 0; }
 .dash .lights { display:flex; gap:.2rem; flex:none; }
@@ -169,6 +169,7 @@ Host.register('dash', function (root) {
     return h;
   }
   let wheelPx = 0;
+  let ctxSettings = null;
   function sizeWheel() {
     const h = Math.round(contentHeight());
     if (h > 0 && h !== wheelPx) { wheelPx = h; q('.wheel').style.setProperty('--wheel', h + 'px'); }
@@ -183,13 +184,16 @@ Host.register('dash', function (root) {
       const cs = getComputedStyle(root.firstElementChild);
       const fs = parseFloat(getComputedStyle(document.documentElement).fontSize) || 14;
       const kids = [...el.children].filter((c) => c.offsetParent !== null);
-      let h = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(getComputedStyle(el).rowGap || 0) * Math.max(0, kids.length - 1);
+      const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom); // px, does not scale
+      let h = parseFloat(getComputedStyle(el).rowGap || 0) * Math.max(0, kids.length - 1);
       for (const c of kids) h += c.getBoundingClientRect().height;
       const wheelW = q('.wheel').offsetParent !== null ? contentHeight() / fs + 1.4 : 0; // square wheel + divider + gaps
-      return { w: 38 + wheelW, h: h / fs };
+      return { w: 38 + wheelW, h: h / fs, padPx: pad, fitHeight: ctxSettings && ctxSettings.fitHeight !== false };
     },
     configure(ctx) {
       const s = ctx.settings;
+      ctxSettings = s;
+      root.firstElementChild.style.setProperty('--padv', (s.padV ?? 4) + 'px');
       if (s.lightCount !== lightCount) buildLights(s.lightCount);
       for (const el of lights) show(el, s.shiftLights);
       placeSlip(s);

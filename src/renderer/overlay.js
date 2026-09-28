@@ -68,13 +68,31 @@
       const fit = typeof fitFn === 'function' ? fitFn() : fitFn;
       const header = document.getElementById('header');
       const headerRem = s.showHeader && header ? header.getBoundingClientRect().height / 14 : 0;
-      fs = Math.min(window.innerWidth / fit.w, window.innerHeight / (fit.h + headerRem)) * 0.98;
+      const padPx = fit.padPx || 0;
+      const byWidth = window.innerWidth / fit.w;
+      const byHeight = (window.innerHeight - padPx) / (fit.h + headerRem);
+      fs = (fit.fitHeight ? byWidth : Math.min(byWidth, byHeight)) * 0.98;
       fs = Math.max(8, Math.min(48, fs));
       scale = Math.min(1, scale); // fitted contents may shrink but never overflow the box
+      if (fit.fitHeight) {
+        // size the box height to the contents: width decides the size, no empty bands
+        const want = Math.round((fit.h + headerRem) * fs * scale + padPx);
+        requestFitHeight(want);
+      }
     }
     document.documentElement.style.setProperty('--fs', (fs * scale).toFixed(2) + 'px');
   }
   window.addEventListener('resize', () => { applyFontSize(); if (lastState) render(lastState); });
+
+  let fitTimer = null;
+  function requestFitHeight(h) {
+    if (!(h > 20) || Math.abs(window.innerHeight - h) <= 2) return;
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(async () => {
+      const b = await window.api.invoke('overlay:getBounds');
+      if (Math.abs(b.height - h) > 2) window.api.send('overlay:setBounds', id, { ...b, height: h }, true, { exact: true });
+    }, 120);
+  }
 
   function context() {
     return {
