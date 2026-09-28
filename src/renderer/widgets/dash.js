@@ -10,6 +10,9 @@ Host.css(`
 .dash .lights { display:flex; gap:.2rem; flex:none; }
 .dash .lights i { flex:1; height:.3rem; border-radius:2px; background:rgba(255,255,255,.08); }
 .dash .lights.flash i:not(.slip) { animation: dashflash .12s steps(2) infinite; }
+/* over-rev: every light strobes hard on/off (~50 ms lit, ~40 ms dark) with a strong glow */
+.dash .lights.limiter i:not(.slip) { animation: limiterstrobe 90ms steps(1) infinite; }
+@keyframes limiterstrobe { 0% { opacity:1; } 55% { opacity:.05; } }
 .dash .lights i.slip.on { background:var(--slip); box-shadow:0 0 .5rem var(--slip); animation: slipstrobe 60ms steps(1) infinite; }
 /* fast strobe: ~35 ms lit, ~25 ms dark (a couple of display frames each), easy to catch in peripheral vision */
 @keyframes slipstrobe { 0% { opacity:1; } 58% { opacity:.1; } }
@@ -234,7 +237,7 @@ Host.register('dash', function (root) {
       const first = sh.slFirst || red * 0.75;
       const last = sh.slLast || sh.slShift || red * 0.95;
       const shiftAt = sh.slShift || last;
-      const blink = sh.slBlink || red;
+      const blink = s.limiterAt === 'shift' ? shiftAt : s.limiterAt === 'last' ? last : sh.slBlink || red;
       if (s.showGear) {
         q('.gear').textContent = p.gear === -1 ? 'R' : p.gear === 0 ? 'N' : p.gear;
         q('.speed').firstChild.nodeValue = Math.round(Fmt.speed(p.speed, u));
@@ -251,12 +254,13 @@ Host.register('dash', function (root) {
         const blinkAll = p.rpm >= blink;
         lights.forEach((el, i) => {
           const f = i / lightCount;
-          const col = blinkAll ? t.blue : f < 0.4 ? t.green : f < 0.75 ? t.yellow : t.red;
+          const col = blinkAll ? (s.limiterColor || t.blue) : f < 0.4 ? t.green : f < 0.75 ? t.yellow : t.red;
           const lit = i < on || blinkAll;
           el.style.background = lit ? col : '';
-          el.style.boxShadow = lit ? `0 0 .5rem ${col}` : '';
+          el.style.boxShadow = lit ? (blinkAll ? `0 0 .8rem ${col}, 0 0 .25rem ${col}` : `0 0 .5rem ${col}`) : '';
         });
-        lightsEl.classList.toggle('flash', s.flashOnShift && p.rpm >= shiftAt);
+        lightsEl.classList.toggle('limiter', blinkAll);
+        lightsEl.classList.toggle('flash', s.flashOnShift && p.rpm >= shiftAt && !blinkAll);
       }
 
       // ---- wheelspin / lock-up light ----

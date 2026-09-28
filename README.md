@@ -13,7 +13,7 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 
 <p align="center">
   <img src="docs/gifs/dash.gif" width="740" alt="Dashboard: accelerating through the gears, shift lights filling up and flashing at the limiter, then braking and downshifting"><br>
-  <sub><b>Dashboard:</b> shift lights fill as you rev through the gears and flash at the limiter; pedal trace, gear, speed and steering wheel update live.</sub>
+  <sub><b>Dashboard:</b> shift lights fill as you rev through the gears and strobe blue on the limiter; pedal trace, gear, speed and steering wheel update live.</sub>
 </p>
 
 <p align="center">
@@ -107,7 +107,7 @@ and show again when you drive.
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible" |
 | **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, and an info bar (position, SOF, incidents, time left) |
-| **Dashboard & Inputs** | Car-specific shift lights, gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping. Every part can be switched off |
+| **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping. Every part can be switched off |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind, showing whether you're gaining or losing per lap |
