@@ -66,6 +66,12 @@ function rnd(seed) { // deterministic PRNG
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
 }
 
+// Sector layout for the demo track; IRO_DEMO_SECTORS=10 mimics long tracks like the Nordschleife.
+function demoSectors() {
+  const n = Math.max(2, Math.min(20, +process.env.IRO_DEMO_SECTORS || 3));
+  return Array.from({ length: n }, (_, i) => ({ SectorNum: i, SectorStartPct: i === 0 ? 0 : +(i / n + (i % 2 ? 0.01 : -0.01)).toFixed(4) }));
+}
+
 class MockSource {
   constructor() {
     this.track = buildTrack();
@@ -126,7 +132,7 @@ class MockSource {
     });
     this.sessionInfo = {
       WeekendInfo: { TrackName: 'demo', TrackID: -1, TrackDisplayName: 'Demo Raceway', TrackConfigName: 'Grand Prix', TrackLength: (TRACK_LEN / 1000).toFixed(2) + ' km', TrackCity: 'Nowhere', TrackCountry: 'Demo', WeekendOptions: { IncidentLimit: 17 }, SubSessionID: 1 },
-      SplitTimeInfo: { Sectors: [{ SectorNum: 0, SectorStartPct: 0 }, { SectorNum: 1, SectorStartPct: 0.34 }, { SectorNum: 2, SectorStartPct: 0.68 }] },
+      SplitTimeInfo: { Sectors: demoSectors() },
       SessionInfo: { Sessions: [{ SessionNum: 0, SessionType: 'Race', SessionName: 'RACE', SessionLaps: this.raceLaps, SessionTime: 'unlimited', ResultsPositions: null }] },
       DriverInfo: {
         DriverCarIdx: this.playerIdx, DriverCarFuelMaxLtr: 100, DriverCarMaxFuelPct: 1, DriverCarSLFirstRPM: 6500, DriverCarSLShiftRPM: 7700, DriverCarSLLastRPM: 7950, DriverCarSLBlinkRPM: 8100,
@@ -164,13 +170,6 @@ class MockSource {
 
   step(dt) {
     this.sessionTime += dt;
-    // Demo overtake: every 30 s car #11 comes past on the player's left (radar demo).
-    if (!this.pinned) {
-      const cyc = this.sessionTime % 30;
-      const me = this.cars[this.playerIdx], c = this.cars[11];
-      if (cyc < 8 && !me.pit) { c.dist = me.dist + (-16 + cyc * 4) / TRACK_LEN; c.pit = null; c.passing = true; }
-      else if (c.passing) c.passing = false;
-    }
     // Showcase helpers: keep chosen cars at a fixed distance from the player.
     if (this.pinned) {
       const me = this.cars[this.playerIdx];

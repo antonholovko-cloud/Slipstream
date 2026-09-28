@@ -121,8 +121,9 @@ class TimingTracker {
         if (k === 0) {
           if (isPlayer && st.lapStart !== null && st.times.filter((x) => x > 0).length === n) {
             const time = tc - st.lapStart;
+            const prevLap = this.log.length ? this.log[this.log.length - 1].lap : 0;
             const entry = {
-              lap: v.LapCompleted, time, sectors: st.times.slice(0, n), off: st.off, pit: st.pit,
+              lap: Math.max(v.LapCompleted ?? 0, prevLap + 1), time, sectors: st.times.slice(0, n), off: st.off, pit: st.pit,
               fuel: st.fuelStart !== null && v.FuelLevel !== undefined ? st.fuelStart - v.FuelLevel : null, at: t, official: false,
             };
             this.log.push(entry);
@@ -161,6 +162,7 @@ class TimingTracker {
       if (last && !last.official && t - last.at < 5 && Math.abs(last.time - official) < 0.3) {
         last.time = official;
         last.official = true;
+        if (v.LapCompleted > 0) last.lap = v.LapCompleted; // by now iRacing has counted the lap
         if (!last.off && !last.pit) this.bestLap = Math.min(...this.log.filter((e) => !e.off && !e.pit).map((e) => e.time));
       }
     }

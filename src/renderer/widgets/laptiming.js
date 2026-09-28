@@ -7,7 +7,9 @@ Host.css(`
 .lt .cur { display:flex; gap:.3rem; flex:none; }
 .lt .box { flex:1; min-width:0; border-radius:5px; background:rgba(255,255,255,.05); padding:.18rem .4rem .22rem; display:flex; flex-direction:column; border-bottom:2px solid transparent; }
 .lt .box small { font-size:.62rem; letter-spacing:.07em; text-transform:uppercase; color:var(--dim); font-weight:700; }
-.lt .box b { font-size:1.05rem; font-weight:700; line-height:1.15; white-space:nowrap; }
+.lt .box b { font-size:1.05rem; font-weight:700; line-height:1.15; white-space:nowrap; overflow:hidden; }
+.lt .box { overflow:hidden; }
+.lt .cur.many .box { padding-left:.25rem; padding-right:.25rem; }
 .lt .box.lap { flex:1.25; }
 .lt .box.active { border-bottom-color:var(--accent); }
 .lt .box.active b { color:var(--dim); }
@@ -19,8 +21,8 @@ Host.css(`
 .lt .sum b { color:var(--text); font-weight:700; }
 .lt .logwrap { flex:1; min-height:0; overflow:hidden; }
 .lt table { width:100%; border-collapse:collapse; font-size:.85rem; font-weight:600; }
-.lt th { font-size:.6rem; letter-spacing:.07em; text-transform:uppercase; color:var(--dim); font-weight:700; text-align:right; padding:0 .3rem .1rem; }
-.lt td { text-align:right; padding:0 .3rem; height:1.35rem; white-space:nowrap; }
+.lt th { font-size:.7em; letter-spacing:.07em; text-transform:uppercase; color:var(--dim); font-weight:700; text-align:right; padding:0 .35em .1em; }
+.lt td { text-align:right; padding:0 .35em; height:1.6em; white-space:nowrap; }
 .lt th:first-child, .lt td:first-child { text-align:left; color:var(--dim); }
 .lt tr:nth-child(even) td { background:var(--bg-alt); }
 .lt td.purple { color:var(--purple); } .lt td.green { color:var(--green); } .lt td.yellow { color:var(--yellow); }
@@ -34,7 +36,28 @@ Host.register('laptiming', function (root) {
   root.innerHTML = '<div class="lt"><div class="cur"></div><div class="sum"></div><div class="logwrap"></div></div>';
   const q = (s) => root.querySelector(s);
   const cache = { cur: '', sum: '', log: '' };
-  const set = (sel, html) => { if (cache[sel] !== html) { q('.' + (sel === 'log' ? 'logwrap' : sel)).innerHTML = html; cache[sel] = html; } };
+  const set = (sel, html) => {
+    if (cache[sel] === html) return false;
+    q('.' + (sel === 'log' ? 'logwrap' : sel)).innerHTML = html;
+    cache[sel] = html;
+    return true;
+  };
+
+  // Shrink text so every sector fits, whatever the track's sector count (e.g. 10 at the Nordschleife).
+  function fitBoxes() {
+    const bs = [...root.querySelectorAll('.cur .box b')];
+    for (const b of bs) b.style.fontSize = '';
+    let k = 1;
+    for (const b of bs) if (b.scrollWidth > b.clientWidth + 0.5) k = Math.min(k, b.clientWidth / b.scrollWidth);
+    if (k < 1) for (const b of bs) b.style.fontSize = (1.05 * k * 0.97).toFixed(3) + 'rem';
+  }
+  function fitTable() {
+    const wrap = q('.logwrap'), tbl = wrap.querySelector('table');
+    if (!tbl) return;
+    tbl.style.fontSize = '';
+    if (tbl.scrollWidth > wrap.clientWidth + 0.5) tbl.style.fontSize = (0.85 * (wrap.clientWidth / tbl.scrollWidth) * 0.98).toFixed(3) + 'rem';
+  }
+  window.addEventListener('resize', () => { fitBoxes(); fitTable(); });
 
   return {
     update(state, ctx) {
@@ -62,7 +85,8 @@ Host.register('laptiming', function (root) {
           if (c && c.timed && c.sector === k) html += `<div class="box active"><small>S${k + 1}</small><b>${c.running !== null ? c.running.toFixed(1) : '–'}</b></div>`;
           else html += `<div class="box ${done ? cls(done, k) : ''}"><small>S${k + 1}</small><b>${done ? fmt(done) : '–'}</b></div>`;
         }
-        set('cur', html);
+        q('.cur').classList.toggle('many', n > 5);
+        if (set('cur', html)) fitBoxes();
       }
 
       // last / best / optimal
@@ -94,7 +118,7 @@ Host.register('laptiming', function (root) {
           body += r + '</tr>';
         }
         if (!rows.length) body = `<tr><td colspan="9" style="text-align:center;color:var(--dim);padding-top:.4rem">Complete a lap to start the log</td></tr>`;
-        set('log', `<table>${head}${body}</table>`);
+        if (set('log', `<table>${head}${body}</table>`)) fitTable();
       }
       ctx.setHeaderRight(tm.optimal ? `Optimal ${Fmt.lapTime(tm.optimal, dec)}` : '');
     },
