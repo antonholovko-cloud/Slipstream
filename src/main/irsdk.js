@@ -46,10 +46,15 @@ function kernel32() {
       UnmapViewOfFile: lib.func('int __stdcall UnmapViewOfFile(void* p)'),
       CloseHandle: lib.func('int __stdcall CloseHandle(void* h)'),
       VirtualQuery: lib.func('size_t __stdcall VirtualQuery(void* addr, void* info, size_t len)'),
+      // Copy from the mapped view into a regular Buffer. Electron's V8 memory cage forbids
+      // ArrayBuffers backed by foreign memory (koffi.view), so we copy instead.
+      RtlMoveMemory: lib.func('void __stdcall RtlMoveMemory(void* dst, uintptr_t src, size_t len)'),
     };
   }
   return k32;
 }
+
+const HEADER_SIZE = 112;
 
 const cp1252 = new TextDecoder('windows-1252');
 
@@ -79,7 +84,9 @@ class IRacingReader {
     this.name = opts.name || MEMMAP_NAME;
     this.handle = null;
     this.ptr = null;
-    this.view = null;
+    this.base = 0n; // address of the mapped view
+    this.size = 0;
+    this.hdr = null; // latest header snapshot
     this.vars = null; // [{name,type,offset,count}]
     this.lastSessionInfoUpdate = -1;
     this.sessionInfo = null;
@@ -88,56 +95,65 @@ class IRacingReader {
 
   // Try to (re)open the memory map. Returns true when a map is open.
   open() {
-    if (this.view) return true;
+    if (this.ptr) return true;
     if (process.platform !== 'win32') return false;
     const k = kernel32();
     const h = k.OpenFileMappingW(FILE_MAP_READ, 0, this.name);
     if (!h) return false;
     const p = k.MapViewOfFile(h, FILE_MAP_READ, 0, 0, 0);
     if (!p) { k.CloseHandle(h); return false; }
-    // Determine mapping size via VirtualQuery (MEMORY_BASIC_INFORMATION.RegionSize @ offset 24 on x64).
+    // Mapping size via VirtualQuery (MEMORY_BASIC_INFORMATION.RegionSize @ offset 24 on x64).
     const info = Buffer.alloc(48);
     k.VirtualQuery(p, info, 48);
-    const size = Number(info.readBigUInt64LE(24)) || 1164 * 1024;
+    this.size = Number(info.readBigUInt64LE(24)) || 1164 * 1024;
     this.handle = h;
     this.ptr = p;
-    this.view = new DataView(koffi.view(p, size));
-    this.size = size;
+    this.base = typeof p === 'bigint' ? p : BigInt(koffi.address(p));
     this.vars = null;
     this.lastSessionInfoUpdate = -1;
     return true;
   }
 
   close() {
-    if (!this.view) return;
+    if (!this.ptr) return;
     const k = kernel32();
     try { k.UnmapViewOfFile(this.ptr); k.CloseHandle(this.handle); } catch (_) { /* ignore */ }
-    this.view = this.ptr = this.handle = this.vars = null;
+    this.ptr = this.handle = this.vars = this.hdr = null;
     this.sessionInfo = null;
   }
 
-  i32(off) { return this.view.getInt32(off, true); }
+  // Copy `len` bytes at `off` out of the shared memory.
+  copy(off, len) {
+    if (!(off >= 0 && len >= 0 && off + len <= this.size)) throw new RangeError(`irsdk read out of range (${off}+${len})`);
+    const b = Buffer.allocUnsafe(len);
+    if (len) kernel32().RtlMoveMemory(b, this.base + BigInt(off), len);
+    return b;
+  }
 
-  str(off, len) {
-    const bytes = new Uint8Array(this.view.buffer, this.view.byteOffset + off, len);
+  refreshHeader() { this.hdr = this.copy(0, HEADER_SIZE); }
+
+  i32(off) { return this.hdr.readInt32LE(off); }
+
+  static str(buf, off, len) {
+    const bytes = buf.subarray(off, off + len);
     let end = bytes.indexOf(0);
     if (end < 0) end = len;
     return cp1252.decode(bytes.subarray(0, end));
   }
 
   get connected() {
-    return !!this.view && (this.i32(H.status) & STATUS_CONNECTED) !== 0;
+    return !!this.ptr && !!this.hdr && (this.i32(H.status) & STATUS_CONNECTED) !== 0;
   }
 
   readVarHeaders() {
     const n = this.i32(H.numVars);
-    const base = this.i32(H.varHeaderOffset);
+    const block = this.copy(this.i32(H.varHeaderOffset), n * VAR_HEADER_SIZE);
     const vars = [];
     for (let i = 0; i < n; i++) {
-      const o = base + i * VAR_HEADER_SIZE;
-      const name = this.str(o + 16, 32);
+      const o = i * VAR_HEADER_SIZE;
+      const name = IRacingReader.str(block, o + 16, 32);
       if (!WANTED.has(name)) continue;
-      vars.push({ name, type: this.i32(o), offset: this.i32(o + 4), count: this.i32(o + 8) });
+      vars.push({ name, type: block.readInt32LE(o), offset: block.readInt32LE(o + 4), count: block.readInt32LE(o + 8) });
     }
     this.vars = vars;
   }
@@ -164,6 +180,7 @@ class IRacingReader {
   // Returns a frame or null if nothing new / not connected.
   read() {
     if (!this.open()) return null;
+    this.refreshHeader();
     if (!this.connected) {
       this.vars = null;
       this.lastSessionInfoUpdate = -1;
@@ -174,7 +191,8 @@ class IRacingReader {
     // Session info (only re-parse when iRacing bumps the counter)
     const siu = this.i32(H.sessionInfoUpdate);
     if (siu !== this.lastSessionInfoUpdate) {
-      const text = this.str(this.i32(H.sessionInfoOffset), this.i32(H.sessionInfoLen));
+      const len = this.i32(H.sessionInfoLen);
+      const text = IRacingReader.str(this.copy(this.i32(H.sessionInfoOffset), len), 0, len);
       const parsed = parseSessionInfo(text);
       if (parsed) { this.sessionInfo = parsed; this.lastSessionInfoUpdate = siu; }
     }
@@ -189,12 +207,12 @@ class IRacingReader {
         if (t > bestTick) { bestTick = t; best = i; }
       }
       if (bestTick === this.lastTick) return null;
-      const off = this.i32(H.varBuf + best * 16 + 4);
-      const copy = Buffer.from(new Uint8Array(this.view.buffer, this.view.byteOffset + off, bufLen));
+      const data = this.copy(this.i32(H.varBuf + best * 16 + 4), bufLen);
+      this.refreshHeader();
       if (this.i32(H.varBuf + best * 16) !== bestTick) continue;
       this.lastTick = bestTick;
       const vars = {};
-      for (const v of this.vars) vars[v.name] = this.decode(copy, v);
+      for (const v of this.vars) vars[v.name] = this.decode(data, v);
       return { vars, sessionInfo: this.sessionInfo, sessionInfoUpdate: this.lastSessionInfoUpdate, tickRate: this.i32(H.tickRate) };
     }
     return null;

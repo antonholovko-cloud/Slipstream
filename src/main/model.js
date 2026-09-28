@@ -283,9 +283,9 @@ class RaceModel {
     const radar = { state: v.CarLeftRight ?? 0, cars: [] };
     if (me && me.inWorld) {
       for (const r of relative) {
-        if (Math.abs(r.meters) < 45) {
+        if (Math.abs(r.meters) < 100) {
           const c = cars.find((x) => x.idx === r.idx);
-          if (c && !c.onPitRoad) radar.cars.push({ idx: r.idx, meters: r.meters, classColor: c.classColor });
+          if (c && !c.onPitRoad) radar.cars.push({ idx: r.idx, meters: r.meters, classColor: c.classColor, number: c.number });
         }
       }
     }

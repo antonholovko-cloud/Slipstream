@@ -395,7 +395,7 @@ app.whenReady().then(() => {
   tray.on('click', openSettings);
   updateTray();
   syncOverlayWindows();
-  if (!config.data.global.startMinimized) openSettings();
+  if (!config.data.global.startMinimized && !process.argv.includes('--hidden')) openSettings();
   loopTimer = setInterval(tick, 1000 / 60);
   screen.on('display-removed', () => syncOverlayWindows());
   if (process.env.IRO_EDIT) setTimeout(() => setEditMode(true), 1500);
