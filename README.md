@@ -3,7 +3,7 @@
 <h1 align="center">Slipstream</h1>
 
 <p align="center">
-Customizable, open overlays for iRacing, in the spirit of RaceLab.<br>
+Free, customizable overlays for iRacing.<br>
 Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learned track map and more.
 </p>
 
@@ -12,8 +12,6 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 </p>
 
 ![Slipstream overlays in a race](docs/screenshots/hero.png)
-
-<sub>Screenshot generated from Slipstream's built-in demo race (`npm run screenshots`), drawn over a painted backdrop.</sub>
 
 ## Free forever, made for the community
 
@@ -31,53 +29,74 @@ anyone can read, build and improve it.
 - Your settings, profiles and learned track maps stay in a local file on your computer
   (`%APPDATA%\Slipstream`), and nowhere else.
 
-## Install
+## Getting started
 
-Download from the [latest release](https://github.com/antonholovko-cloud/Slipstream/releases/latest):
+### 1. Download and install
 
-- **`Slipstream-Setup-x.y.z.exe`**: installer with Start menu and desktop shortcuts.
-- **`Slipstream-Portable-x.y.z.exe`**: a single exe that needs no installation.
+Get the latest version from the [releases page](https://github.com/antonholovko-cloud/Slipstream/releases/latest).
+Pick one:
 
-The builds aren't code-signed yet, so Windows SmartScreen may warn on first launch. Click **More info → Run anyway**.
+- **`Slipstream-Setup-x.y.z.exe`**: installs Slipstream with Start menu and desktop shortcuts. Recommended.
+- **`Slipstream-Portable-x.y.z.exe`**: a single file that runs without installing. Keep it in any folder.
 
-Then:
+Slipstream isn't code-signed yet, so Windows may show a blue **"Windows protected your PC"** box the first time.
+Click **More info**, then **Run anyway**.
 
-1. Set iRacing's display mode to **Borderless** or **Windowed**. Windows can't draw overlays on top of exclusive fullscreen.
-2. Start Slipstream. It lives in the system tray; click the tray icon to open settings.
-3. Press **Ctrl+Shift+E** to enter edit mode and drag or resize the overlays. Press it again to lock them.
+### 2. Put iRacing in borderless windowed mode
 
-While iRacing isn't running, the overlays show a simulated race whenever the settings window is open, so you can
-set everything up without the sim.
+Windows can't draw overlays on top of a game running in **exclusive fullscreen**, so iRacing has to run in a
+window. Borderless windowed looks exactly like fullscreen, with no title bar, and performs the same on
+Windows 10 and 11.
 
-## Run from source
+1. **Close iRacing completely.** iRacing saves its settings when it exits, so changes made while it's running
+   are lost.
+2. Open File Explorer and go to **`Documents\iRacing`**.
+3. Open **`rendererDX11Monitor.ini`** with Notepad (right-click → *Open with* → *Notepad*).
+   If you also have **`rendererDX11.ini`**, make the same changes there too.
+4. Find these lines (press **Ctrl+F** to search) and change the numbers so they read:
 
-```powershell
-npm install
-npm start             # live iRacing data, demo preview while configuring
-npm run demo          # force demo data
-npm run check         # self-test: fake iRacing memory map → reader → model
-npm run dist          # build installer + portable exe into dist/
-npm run screenshots   # regenerate docs/screenshots
-```
+   ```ini
+   fullScreen=0
+   border=0
+   windowedMaximized=1
+   windowedXPos=0
+   windowedYPos=0
+   ```
 
-The app is built on Electron and reads iRacing's telemetry straight from shared memory. It needs no native build
-and no extra services.
+   Only change the number after the `=`. Leave the rest of each line as it is.
+5. Check that **`windowedWidth`** and **`windowedHeight`** match your screen resolution, for example
+   `1920` and `1080`, or `2560` and `1440`.
+6. Save the file (**Ctrl+S**) and start iRacing.
+
+iRacing should now fill the whole screen with no title bar or buttons at the top. If you see a title bar,
+`border` is still `1`. If the game only covers part of the screen, check `windowedWidth` and `windowedHeight`.
+
+> **Tip:** make a copy of the file before editing it. To go back to fullscreen later, set `fullScreen=1`.
+
+### 3. Start Slipstream and place your overlays
+
+1. Start **Slipstream**. It runs in the **system tray**, next to the clock. Click its icon to open the settings.
+2. While iRacing isn't running, the overlays show a **demo race**, so you can set everything up without the sim.
+3. Press **Ctrl+Shift+E** to enter **edit mode**. Drag overlays to move them and use the corner grip to resize them.
+   Press **Ctrl+Shift+E** again to lock them in place.
+4. Turn overlays on or off, and change what they show, in the settings window.
+
+Everything is saved automatically. By default, overlays hide while you're in the garage or out of the car,
+and show again when you drive.
 
 ## Overlays
 
-| Overlay | Highlights |
+| Overlay | What it shows |
 |---|---|
-| **Standings** | Multiclass grouping with class SOF, gap/interval, last/best (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit-stop count, and "keep my car visible" windowing |
-| **Relative** | Cars around you by live time gap, lapping/lapped coloring, pit tags, and an info bar (position, SOF, incidents, time left) |
-| **Dashboard & Inputs** | Car-specific shift lights (from iRacing's SL RPMs), gear, speed, RPM bar, a throttle/brake/clutch trace with ABS-colored brake, pedal bars, a rotating wheel, lap/last/best/delta, fuel, brake bias, engine warnings and pit limiter, plus a **wheelspin / lock-up light** that strobes while slipping. Every block can be switched off |
-| **Lap Timing** | Live sector times for the current lap (green = personal best, purple = best in your class this session), last/best/optimal lap, and a lap log with sectors, delta to best, fuel used, and off-track/pit flags |
-| **Fuel Calculator** | Rolling average, last and max per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
-| **Delta Bar** | Delta vs best, optimal, session best, session optimal or last lap, trend coloring, predicted lap |
-| **Track Map** | **Learned automatically** by dead-reckoning your first clean lap, then saved per track. Shows class colors, pit cars and the S/F line, with rotate/mirror |
-| **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, wetness, local and sim clock |
-| **Flags** | Checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. Off by default; enable it in settings |
-
-## Screenshots
+| **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible" |
+| **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, and an info bar (position, SOF, incidents, time left) |
+| **Dashboard & Inputs** | Car-specific shift lights, gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping. Every part can be switched off |
+| **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
+| **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
+| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind, showing whether you're gaining or losing per lap |
+| **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line |
+| **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time |
+| **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
 
 | | |
 |---|---|
@@ -86,72 +105,72 @@ and no extra services.
 | ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Session info](docs/screenshots/session.png) |
 | ![Lap timing](docs/screenshots/laptiming.png) | ![Delta bar](docs/screenshots/delta.png) |
 
-**Settings:** every overlay is configured live, with drag-and-drop columns, themes and profiles.
+## Customizing
+
+Every change you make is saved right away and kept after updates.
+
+- **Each overlay:** position, size, scale (50–250%), background opacity, header, accent color, refresh rate,
+  and which sessions it shows in (practice, qualifying, race).
+- **Columns:** drag to reorder and switch columns on or off in Standings, Relative and Session Info.
+- **Themes:** five built-in themes. You can change any color, the font and the corner rounding.
+- **Layouts & profiles:** save different layouts (for example road, oval, streaming) and switch between them
+  from the tray or with a hotkey. You can export a profile to share it or move it to another PC.
+- **Backups:** a backup of your settings is made every time Slipstream starts (the last 15 are kept). Restore
+  one from *Layouts & profiles*.
+- **Units** follow your iRacing setting, or can be set to metric or imperial.
+- **Replays and spectating:** the overlays follow the car the camera is on.
 
 ![Settings: standings columns](docs/screenshots/settings-standings.png)
-![Settings: appearance](docs/screenshots/settings-appearance.png)
 
-## Customization
+### Hotkeys
 
-- **Every overlay**: position, size, scale (50–250%), background opacity, header, accent color, refresh rate, and
-  per-session visibility (practice, qualifying, race, or hidden when you're not in the car).
-- **Columns**: drag-and-drop reorder plus per-column toggles for Standings, Relative and Session Info.
-- **Themes**: five built-in themes. Every color, the font and the corner radius can be overridden.
-- **Saved automatically**: every change (positions, sizes, options, theme) is written to disk immediately and restored
-  at the next start, including after updates. A backup is taken at every start (last 15 kept) and can be restored
-  from *Layouts & profiles*.
-- **Layouts & profiles**: save the current layout under a name, keep unlimited layouts (e.g. road, oval, streaming), and
-  switch from the tray or with a hotkey. Export/import single profiles or all settings (to move to another PC).
-- **Hotkeys** (global, rebindable): toggle edit mode `Ctrl+Shift+E`, show/hide `Ctrl+Shift+H`,
-  open settings `Ctrl+Shift+S`, next profile `Ctrl+Shift+P`.
-- **Edit layout**: drag an overlay anywhere, resize it from the corner grip, and use the arrow keys to nudge
-  (`Shift` = 10px, `Ctrl` = resize). Snap-to-grid is configurable.
-- **Units** follow iRacing's setting, or can be forced to metric or imperial.
-- In replays or when spectating, the overlays follow the camera car.
+Work anywhere, even while iRacing has focus. You can change them in *General & hotkeys*.
 
-Settings are stored in `%APPDATA%\Slipstream\overlay-config.json`.
+| Keys | Action |
+|---|---|
+| **Ctrl+Shift+E** | Edit mode on/off (move and resize overlays) |
+| **Ctrl+Shift+H** | Show/hide all overlays |
+| **Ctrl+Shift+S** | Open settings |
+| **Ctrl+Shift+P** | Switch to the next profile |
 
-## Architecture
+In edit mode you can also nudge the selected overlay with the **arrow keys** (**Shift** = 10 px steps,
+**Ctrl** = resize).
 
-```
-src/main/irsdk.js     shared-memory reader (koffi → kernel32), var decoding, tolerant session YAML parsing
-src/main/model.js     derived state: standings, classes/SOF, relative, fuel, timing, slip, track learning, iRating
-src/main/mock.js      physically plausible demo race (speed profile, pit stops, flags, duels)
-src/main/main.js      windows, 60 Hz loop, per-overlay fps throttling and data slicing, IPC, tray, hotkeys
-src/main/config.js    profiles + forward-compatible migration of saved configs
-src/shared/registry.js  overlay definitions and settings schemas (drives the settings UI)
-src/renderer/         overlay host + one self-contained widget per overlay, settings app
-```
+## Troubleshooting
 
-### Adding a new overlay
+**The overlays don't show up in iRacing.**
+iRacing is probably in exclusive fullscreen. Follow [step 2](#2-put-iracing-in-borderless-windowed-mode).
+Also check that overlays aren't hidden with **Ctrl+Shift+H**, and that the overlay is switched on in settings.
 
-1. Add an entry to `OVERLAYS` in `src/shared/registry.js`, with `id`, `bounds`, `needs` (the state slices it uses)
-   and a `schema`. The settings page is generated from the schema automatically.
-2. Create `src/renderer/widgets/<id>.js` with `Host.register('<id>', (root) => ({ update(state, ctx) {…} }))`.
-3. Add a `<script>` tag for it in `overlay.html`.
+**My iRacing changes keep going back.**
+iRacing was running while you edited the file and overwrote it when it closed. Close iRacing fully, then edit again.
 
-### Releasing
+**iRacing has a title bar with buttons at the top.**
+Set `border=0` in `Documents\iRacing\rendererDX11Monitor.ini` (and in `rendererDX11.ini` if you have it),
+with iRacing closed.
 
-Bump `version` in `package.json`, commit, then push a matching tag:
+**The overlays disappear when I stop in the pits.**
+That's on purpose, so they don't clutter the screen. You can change it in *General & hotkeys*.
 
-```powershell
-git tag v0.2.0; git push origin v0.2.0
-```
+**The track map is just a circle.**
+It learns the track from your first clean lap (no pit stop, no off-track). After that it's saved for that track.
 
-The **Release** workflow builds the installer and portable exe on GitHub Actions and publishes them as a GitHub Release.
+**I use VR.**
+Slipstream draws on your monitor, so the overlays won't appear inside a VR headset.
 
-### Dev flags
+## Updating and uninstalling
 
-`IRO_USERDATA=<dir>` isolates the config. `IRO_SCREENSHOT=<dir>` captures every window and quits.
-`IRO_EDIT=1` starts in edit mode. `IRO_DEMO_SKIP=<sec>` sets where the demo race starts. `IRO_PAGE=ov:standings`
-opens a specific settings page.
+- **Update:** download the new version from the [releases page](https://github.com/antonholovko-cloud/Slipstream/releases/latest)
+  and install it over the old one. Your settings and layouts are kept.
+- **Uninstall:** Windows **Settings → Apps → Installed apps → Slipstream → Uninstall**. To also remove your
+  settings, delete the `%APPDATA%\Slipstream` folder.
 
-## Notes
+## Good to know
 
-- The wheelspin / lock-up light is an estimate. iRacing's live telemetry has no wheel speeds, so Slipstream learns the
-  engine-RPM to road-speed ratio for each gear and lights up when RPM runs above it (spin) or is dragged below it
-  (driven wheels locking), or when ABS is working. Front lock-ups on rear-drive cars without ABS can't be detected.
-
+- The **wheelspin / lock-up light** is an estimate. iRacing doesn't share wheel speeds, so Slipstream learns how
+  engine RPM relates to road speed in each gear, and lights up when the RPM jumps above it (wheelspin) or drops
+  below it (lock-up), or when ABS is working. Front lock-ups on rear-drive cars without ABS can't be detected.
+- The **iRating change** in Standings is an estimate based on the community-derived iRacing formula.
 - Slipstream is an independent project and is not affiliated with or endorsed by iRacing.com Motorsport Simulations.
-- The iRating change is an estimate that uses the community-derived iRacing formula, per class.
-- The Track Map needs one clean lap per track/config to learn the shape. Until then it shows a ring layout.
+
+<sub>Want to build Slipstream yourself or contribute? See the [developer notes](docs/DEVELOPMENT.md).</sub>
