@@ -4,7 +4,7 @@
  * the remaining ones reflow.
  */
 Host.css(`
-.dash { position:absolute; inset:0; display:flex; flex-direction:row; align-items:stretch; padding:.15rem .6rem; gap:.6rem; }
+.dash { position:absolute; inset:0; display:flex; flex-direction:row; align-items:stretch; padding:.15rem .6rem; gap:.6rem; overflow:hidden; }
 .dash .col { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:.22rem; }
 .dash .sep.tall { height:auto; align-self:stretch; margin:.3rem 0; }
 .dash .lights { display:flex; gap:.2rem; flex:none; }
@@ -29,7 +29,7 @@ Host.css(`
 .dash .bar { width:.45rem; background:rgba(255,255,255,.08); border-radius:3px; position:relative; overflow:hidden; }
 .dash .bar i { position:absolute; left:0; right:0; bottom:0; border-radius:3px; }
 .dash .bar span { display:none; }
-.dash .wheel { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem; flex:none; height:100%; }
+.dash .wheel { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem; flex:none; height:100%; max-height:100%; overflow:visible; }
 .dash .wheel .rot { transform-box:view-box; transform-origin:50% 50%; }
 .dash .wheel.smooth .rot { transition:transform 70ms linear; }
 .dash .wheel.smooth .steerbar .fill, .dash .wheel.smooth .steerbar .knob { transition:all 70ms linear; }

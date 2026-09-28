@@ -60,6 +60,7 @@
     if (!payload) return;
     const s = payload.settings;
     let fs = 14;
+    let scale = (s.scale || 100) / 100;
     const fitFn = instance && instance.fit;
     if (fitFn && s.autoFit !== false) {
       // measure at a known size first (everything is in rem, so it scales linearly)
@@ -69,8 +70,9 @@
       const headerRem = s.showHeader && header ? header.getBoundingClientRect().height / 14 : 0;
       fs = Math.min(window.innerWidth / fit.w, window.innerHeight / (fit.h + headerRem)) * 0.98;
       fs = Math.max(8, Math.min(48, fs));
+      scale = Math.min(1, scale); // fitted contents may shrink but never overflow the box
     }
-    document.documentElement.style.setProperty('--fs', (fs * (s.scale || 100) / 100).toFixed(2) + 'px');
+    document.documentElement.style.setProperty('--fs', (fs * scale).toFixed(2) + 'px');
   }
   window.addEventListener('resize', () => { applyFontSize(); if (lastState) render(lastState); });
 

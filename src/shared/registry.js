@@ -97,7 +97,7 @@
       needs: ['player', 'session'],
       defaults: { fps: 60, showHeader: false },
       schema: [
-        { key: 'autoFit', label: 'Scale contents to fit the box', type: 'bool', default: true },
+        { key: 'autoFit', label: 'Scale contents to fit the box (resize the box to make it bigger)', type: 'bool', default: true },
         { key: 'shiftLights', label: 'Shift lights', type: 'bool', default: true },
         { key: 'lightCount', label: 'Number of lights', type: 'number', min: 5, max: 20, default: 12 },
         { key: 'flashOnShift', label: 'Flash at shift point', type: 'bool', default: true },
