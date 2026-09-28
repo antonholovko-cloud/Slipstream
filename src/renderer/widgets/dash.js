@@ -237,7 +237,8 @@ Host.register('dash', function (root) {
       const first = sh.slFirst || red * 0.75;
       const last = sh.slLast || sh.slShift || red * 0.95;
       const shiftAt = sh.slShift || last;
-      const blink = s.limiterAt === 'shift' ? shiftAt : s.limiterAt === 'last' ? last : sh.slBlink || red;
+      const blink = s.limiterAt === 'shift' ? shiftAt : s.limiterAt === 'last' ? last
+        : s.limiterAt === 'car' ? sh.slBlink || red : red - (s.limiterRpm ?? 300);
       if (s.showGear) {
         q('.gear').textContent = p.gear === -1 ? 'R' : p.gear === 0 ? 'N' : p.gear;
         q('.speed').firstChild.nodeValue = Math.round(Fmt.speed(p.speed, u));

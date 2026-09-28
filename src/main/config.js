@@ -61,6 +61,7 @@ function migrate(cfg) {
     radarRing(p.overlays.radar);
     deltaGaps(p.overlays.delta);
     flagsOff(p.overlays.flags);
+    limiterOffset(p.overlays.dash);
     for (const odef of Registry.OVERLAYS) {
       const base = Registry.defaultSettingsFor(odef);
       const cur = p.overlays[odef.id] || {};
@@ -131,6 +132,13 @@ function flagsOff(flags) {
   flags.enabled = false;
   delete flags.animate;
   flags.flagsV2 = true;
+}
+
+// v0.4.8 starts the blue over-rev strobe 300 rpm below the redline by default; move 0.4.7's saved default once.
+function limiterOffset(dash) {
+  if (!dash || dash.limiterV2) return;
+  if (!dash.limiterAt || dash.limiterAt === 'car') dash.limiterAt = 'offset';
+  dash.limiterV2 = true;
 }
 
 const MAX_BACKUPS = 15;
