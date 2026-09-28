@@ -168,9 +168,9 @@
     },
     {
       id: 'delta', name: 'Delta Bar', icon: 'Δ',
-      description: 'Live delta against best, session best or optimal lap.',
-      bounds: { x: 760, y: 200, width: 400, height: 70 },
-      needs: ['player'],
+      description: 'Live delta against best, session best or optimal lap, plus gaps to the cars ahead and behind.',
+      bounds: { x: 760, y: 200, width: 400, height: 110 },
+      needs: ['player', 'session', 'cars', 'relative'],
       defaults: { showHeader: false, fps: 30 },
       schema: [
         { key: 'reference', label: 'Reference lap', type: 'select', default: 'best',
@@ -179,6 +179,12 @@
         { key: 'showTrend', label: 'Color by trend (gaining/losing)', type: 'bool', default: true },
         { key: 'showLapTimes', label: 'Show current / predicted lap', type: 'bool', default: true },
         { key: 'decimals', label: 'Decimals', type: 'number', min: 1, max: 3, default: 2 },
+        { key: 'showGaps', label: 'Gap bars to car ahead / behind', type: 'bool', default: true },
+        { key: 'gapMode', label: 'Gaps measured to', type: 'select', default: 'auto',
+          options: [{ value: 'auto', label: 'Auto (class position in races, track otherwise)' }, { value: 'position', label: 'Car ahead / behind in class position' }, { value: 'track', label: 'Nearest car on track' }] },
+        { key: 'gapScale', label: 'Gap bar full at (s)', type: 'range', min: 0.5, max: 10, step: 0.5, default: 3 },
+        { key: 'gapTrend', label: 'Show gaining / losing per lap', type: 'bool', default: true },
+        { key: 'gapNames', label: 'Show driver name & number', type: 'bool', default: true },
       ],
     },
     {

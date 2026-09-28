@@ -29,11 +29,11 @@ Host.css(`
 .dash .bar { width:.45rem; background:rgba(255,255,255,.08); border-radius:3px; position:relative; overflow:hidden; }
 .dash .bar i { position:absolute; left:0; right:0; bottom:0; border-radius:3px; }
 .dash .bar span { display:none; }
-.dash .wheel { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem; flex:none; height:100%; max-height:100%; overflow:visible; }
+.dash .wheel { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.1rem; flex:none; align-self:center; overflow:visible; }
 .dash .wheel.smooth .steerbar .fill, .dash .wheel.smooth .steerbar .knob { transition:all 70ms linear; }
 .dash .wheel svg.steerbar { flex:none; width:6rem; height:1.4rem; aspect-ratio:auto; filter:none; }
 .dash .wheel .ang { font-size:.75rem; font-weight:700; color:var(--dim); white-space:nowrap; line-height:1; flex:none; }
-.dash .wheel svg { flex:1; min-height:0; height:100%; width:auto; aspect-ratio:1; overflow:visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+.dash .wheel svg { flex:none; height:var(--wheel, 3rem); width:var(--wheel, 3rem); overflow:visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
 .dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; line-height:1.15; flex:none; }
 .dash .foot span { white-space:nowrap; }
 .dash .foot b { font-weight:700; }
@@ -160,6 +160,21 @@ Host.register('dash', function (root) {
 
   const show = (el, on) => { el.style.display = on ? '' : 'none'; };
 
+  // Wheel size = height of the visible content in the left column.
+  function contentHeight() {
+    const col = q('.col');
+    const kids = [...col.children].filter((c) => c.offsetParent !== null);
+    let h = parseFloat(getComputedStyle(col).rowGap || 0) * Math.max(0, kids.length - 1);
+    for (const c of kids) h += c.getBoundingClientRect().height;
+    return h;
+  }
+  let wheelPx = 0;
+  function sizeWheel() {
+    const h = Math.round(contentHeight());
+    if (h > 0 && h !== wheelPx) { wheelPx = h; q('.wheel').style.setProperty('--wheel', h + 'px'); }
+  }
+  window.addEventListener('resize', () => requestAnimationFrame(sizeWheel));
+
   return {
     // Natural size in rem, measured from the visible blocks, so the contents can
     // scale to fill the window exactly (see Host.applyFontSize).
@@ -170,7 +185,7 @@ Host.register('dash', function (root) {
       const kids = [...el.children].filter((c) => c.offsetParent !== null);
       let h = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(getComputedStyle(el).rowGap || 0) * Math.max(0, kids.length - 1);
       for (const c of kids) h += c.getBoundingClientRect().height;
-      const wheelW = q('.wheel').offsetParent !== null ? h / fs + 0.8 : 0; // square wheel column + gap
+      const wheelW = q('.wheel').offsetParent !== null ? contentHeight() / fs + 1.4 : 0; // square wheel + divider + gaps
       return { w: 38 + wheelW, h: h / fs };
     },
     configure(ctx) {
@@ -195,6 +210,7 @@ Host.register('dash', function (root) {
       }
       q('.wheel').classList.toggle('smooth', s.smoothSteering !== false);
       show(q('.wheel .ang'), !!s.showSteerAngle);
+      requestAnimationFrame(sizeWheel);
       show(q('.s1'), s.showGear && (s.showTrace || s.showBars || s.showSteering));
       show(q('.s2'), s.showSteering);
       show(q('.foot'), s.showLapInfo || s.showFuel || s.showBias || s.showWarnings);
@@ -314,6 +330,7 @@ Host.register('dash', function (root) {
         el.style.justifyContent = 'space-between';
         el.style.gap = '.6rem';
         lastInfo = info;
+        requestAnimationFrame(sizeWheel);
       }
     },
   };

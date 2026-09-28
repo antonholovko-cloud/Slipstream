@@ -55,6 +55,7 @@ function migrate(cfg) {
     mergeInputsIntoDash(p.overlays);
     compactDash(p.overlays.dash);
     radarRing(p.overlays.radar);
+    deltaGaps(p.overlays.delta);
     for (const odef of Registry.OVERLAYS) {
       const base = Registry.defaultSettingsFor(odef);
       const cur = p.overlays[odef.id] || {};
@@ -110,6 +111,13 @@ function compactDash(dash) {
 function radarRing(radar) {
   if (!radar || radar.radarV3) return;
   Object.assign(radar, { fill: false, border: true, guides: false, radarV3: true });
+}
+
+// v0.3.8 added gap bars under the delta: make room once in existing layouts.
+function deltaGaps(delta) {
+  if (!delta || delta.deltaV2) return;
+  if (delta.bounds && delta.bounds.height < 100) delta.bounds = { ...delta.bounds, height: 110 };
+  delta.deltaV2 = true;
 }
 
 const MAX_BACKUPS = 15;
