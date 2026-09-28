@@ -8,6 +8,10 @@ Host.register('radar', function (root) {
   const canvas = root.querySelector('canvas');
   const g = canvas.getContext('2d');
   const CAR_L = 4.6, CAR_W = 1.9, LANE = 2.8; // meters
+  // Lane memory: iRacing only says "car left/right" while a car overlaps us, so we
+  // remember which side each car was on and keep it there as it moves ahead/behind.
+  const memo = new Map(); // idx -> { lane: target lane (-2..2), x: drawn lane (smoothed) }
+  let lastT = performance.now();
 
   function roundRect(x, y, w, h, r) {
     r = Math.min(r, w / 2, h / 2);
@@ -127,12 +131,35 @@ Host.register('radar', function (root) {
       sideBar(1, rightN);
 
       // ---------- cars ----------
-      const alongside = near.filter((c) => Math.abs(c.meters) < CAR_L * 1.3).sort((a, b) => Math.abs(a.meters) - Math.abs(b.meters));
-      const lane = new Map();
+      // cars iRacing is flagging right now: the closest ones (our distance estimate can be a
+      // few meters off, so look a little wider than one car length)
+      let alongside = near.filter((c) => Math.abs(c.meters) < CAR_L * 1.6);
+      if (alongside.length < leftN + rightN) alongside = near.filter((c) => Math.abs(c.meters) < 10);
+      alongside.sort((a, b) => Math.abs(a.meters) - Math.abs(b.meters));
+      const lane = new Map(); // flagged this frame
       let li = 0, ri = 0;
       for (const c of alongside) {
-        if (li < leftN && (ri >= rightN || li <= ri)) lane.set(c.idx, -(1 + li * 0.95)), li++;
+        if (li + ri >= leftN + rightN) break;
+        // keep a car on the side we already remembered it on, if that side is flagged
+        const prev = memo.has(c.idx) ? Math.sign(memo.get(c.idx).lane) : 0;
+        const wantLeft = li < leftN && (prev < 0 || ri >= rightN || (prev === 0 && li <= ri));
+        if (wantLeft) lane.set(c.idx, -(1 + li * 0.95)), li++;
         else if (ri < rightN) lane.set(c.idx, 1 + ri * 0.95), ri++;
+      }
+      const now = performance.now();
+      const dt = Math.min(0.2, (now - lastT) / 1000);
+      lastT = now;
+      const nearIds = new Set(near.map((c) => c.idx));
+      for (const id of memo.keys()) if (!nearIds.has(id)) memo.delete(id);
+      for (const c of near) {
+        let m = memo.get(c.idx);
+        if (!m) { m = { lane: 0, x: 0 }; memo.set(c.idx, m); }
+        if (lane.has(c.idx)) m.lane = lane.get(c.idx);
+        else if (Math.abs(c.meters) < CAR_L * 0.9 && !leftN && !rightN) m.lane = 0; // overlapping but not beside: same lane
+        else if (Math.abs(c.meters) < CAR_L * 0.9 && m.lane !== 0 && !(m.lane < 0 ? leftN : rightN)) m.lane = 0;
+        if (!m.init && m.lane !== 0) m.x = m.lane; // first sighting: no slide-in
+        m.init = true;
+        m.x += (m.lane - m.x) * Math.min(1, dt * 7); // glide between lanes
       }
       const drawCar = (x, y, color, opts = {}) => {
         const x0 = x - carW / 2, y0 = y - carL / 2;
@@ -163,15 +190,17 @@ Host.register('radar', function (root) {
       g.font = `600 ${Math.max(10, 11 * ((s.scale || 100) / 100))}px ${t.font}, sans-serif`;
       let closestAhead = Infinity, closestBehind = Infinity;
       for (const c of near) {
-        const l = lane.get(c.idx) || 0;
-        const x = cx + l * laneX;
+        const flagged = lane.has(c.idx);
+        const m = memo.get(c.idx);
+        const x = cx + m.x * laneX;
         const y = cy - c.meters * scale;
         const overlap = Math.abs(c.meters) < CAR_L;
-        if (!l) { if (c.meters > 0) closestAhead = Math.min(closestAhead, c.meters); else closestBehind = Math.min(closestBehind, -c.meters); }
+        const inOurLane = Math.abs(m.lane) < 0.5;
+        if (inOurLane) { if (c.meters > 0) closestAhead = Math.min(closestAhead, c.meters); else closestBehind = Math.min(closestBehind, -c.meters); }
         const closeness = Math.max(0, 1 - Math.abs(c.meters) / range);
-        const color = l && overlap ? s.dangerColor : l ? s.warnColor : s.carColor;
-        drawCar(x, y, color, { glow: !!l, alpha: l ? 1 : 0.45 + 0.55 * closeness, label: s.showNumbers ? c.number : '' });
-        if (s.showDistance && !l && Math.abs(c.meters) > CAR_L) {
+        const color = flagged && overlap ? s.dangerColor : flagged ? s.warnColor : s.carColor;
+        drawCar(x, y, color, { glow: flagged, alpha: flagged ? 1 : 0.45 + 0.55 * closeness, label: s.showNumbers ? c.number : '' });
+        if (s.showDistance && !flagged && Math.abs(c.meters) > CAR_L) {
           g.fillStyle = Fmt.rgba(t.text, 0.85);
           g.textAlign = 'left';
           g.textBaseline = 'middle';
