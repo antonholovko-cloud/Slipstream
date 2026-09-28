@@ -120,7 +120,7 @@
         { key: 'showClutch', label: 'Show clutch', type: 'bool', default: true },
         { key: 'showSteering', label: 'Steering wheel', type: 'bool', default: true },
         { key: 'wheelStyle', label: 'Wheel style', type: 'select', default: 'gt',
-          options: [{ value: 'gt', label: 'GT (grips + hub)' }, { value: 'rs50', label: 'Logitech RS50 style' }, { value: 'round', label: 'Round classic' }, { value: 'formula', label: 'Formula' }, { value: 'ring', label: 'Minimal ring' }, { value: 'bar', label: 'Steering bar' }] },
+          options: [{ value: 'gt', label: 'Simple' }, { value: 'rs50', label: 'Logitech RS50 style' }, { value: 'round', label: 'Round classic' }, { value: 'formula', label: 'Formula' }, { value: 'ring', label: 'Minimal ring' }, { value: 'bar', label: 'Steering bar' }] },
         { key: 'smoothSteering', label: 'Smooth wheel rotation', type: 'bool', default: true },
         { key: 'showSteerAngle', label: 'Show steering angle (°)', type: 'bool', default: false },
         { key: 'showSteerTrace', label: 'Trace steering', type: 'bool', default: false },

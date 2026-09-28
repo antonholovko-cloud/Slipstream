@@ -15,15 +15,12 @@
     </defs>`;
 
   const STYLES = {
-    // GT3-style, kept quiet: dark rim and grips, plain hub, only the top stripe in color
+    // Simple (default): thin rim, three slim spokes, small hub, only the top stripe in color
     gt: `
-      <path d="M-37 -14 C-37 -34 -20 -41 0 -41 C20 -41 37 -34 37 -14" fill="none" stroke="#4b5260" stroke-width="7" stroke-linecap="round"/>
-      <path d="M-33 20 C-28 31 -16 33 0 33 C16 33 28 31 33 20" fill="none" stroke="#4b5260" stroke-width="7" stroke-linecap="round"/>
-      <rect x="-47" y="-20" width="16" height="44" rx="8" fill="#2a2f38"/>
-      <rect x="31" y="-20" width="16" height="44" rx="8" fill="#2a2f38"/>
-      <path d="M-31 2 L-15 2 M31 2 L15 2" stroke="#2a2f38" stroke-width="7" stroke-linecap="round"/>
-      <rect x="-16" y="-13" width="32" height="28" rx="7" fill="#1c2028"/>
-      <rect x="-3.2" y="-45" width="6.4" height="8" rx="1.6" fill="var(--accent)"/>`,
+      <circle r="40" fill="none" stroke="#5b6270" stroke-width="5"/>
+      <path d="M-38.5 -3 C-28 -4 -18 -6 -10 -6 L-10 11 C-18 11 -28 10 -37.5 12 Z M38.5 -3 C28 -4 18 -6 10 -6 L10 11 C18 11 28 10 37.5 12 Z M-8 12 L8 12 L5.5 38 L-5.5 38 Z" fill="#434955" stroke-linejoin="round"/>
+      <rect x="-12" y="-7" width="24" height="20" rx="6" fill="#2a2f38"/>
+      <rect x="-2.6" y="-45" width="5.2" height="10" rx="1.3" fill="var(--accent)"/>`,
 
     // Classic round 3-spoke: leather rim with stitching, brushed spokes
     round: `
@@ -79,8 +76,4 @@
         <circle class="knob" cx="0" cy="0" r="5.5" fill="#fff" stroke="var(--accent)" stroke-width="2"/>
       </svg>`;
     }
-    return `<svg viewBox="-50 -50 100 100">${defs}<g class="rot">${STYLES[style] || STYLES.gt}</g></svg>`;
-  }
-
-  window.Wheels = { svg, styles: ['gt', 'rs50', 'round', 'formula', 'ring', 'bar'] };
-})();
+    return `<svg viewBox="-50 -50 100 100">${defs}<g class="rot">${STYLES[style
