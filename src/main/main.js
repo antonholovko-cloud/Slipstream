@@ -7,6 +7,9 @@ const { IRacingReader } = require('./irsdk');
 const { MockSource } = require('./mock');
 const { RaceModel } = require('./model');
 
+// Dev helper: IRO_USERDATA isolates config (must run before the single-instance lock, which is per user-data dir).
+if (process.env.IRO_USERDATA) app.setPath('userData', process.env.IRO_USERDATA);
+
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
 // Transparent always-on-top windows work best without GPU compositing quirks on some drivers.
@@ -393,8 +396,7 @@ function registerIpc() {
 
 // ---------------- App lifecycle ----------------
 
-// Dev helpers: IRO_USERDATA isolates config, IRO_SCREENSHOT=<dir> captures every window then quits.
-if (process.env.IRO_USERDATA) app.setPath('userData', process.env.IRO_USERDATA);
+// Dev helper: IRO_SCREENSHOT=<dir> captures every window then quits.
 
 async function captureAll(dir) {
   fs.mkdirSync(dir, { recursive: true });

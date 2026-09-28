@@ -181,6 +181,7 @@ Host.register('dash', function (root) {
   const show = (el, on) => { el.style.display = on ? '' : 'none'; };
 
   return {
+    fit: { w: 41.5, h: 8.3 }, // natural size in rem: contents scale to fill the window
     configure(ctx) {
       const s = ctx.settings;
       if (s.lightCount !== lightCount) buildLights(s.lightCount);

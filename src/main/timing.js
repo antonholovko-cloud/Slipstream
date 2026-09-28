@@ -7,6 +7,30 @@
 
 const MAX_STEP = 0.05; // max plausible lap fraction per frame; bigger = reset/tow/teleport
 const LOG_SIZE = 50;
+const TRACE_BINS = 1000; // lap trace resolution for our own delta
+
+// Fill unvisited bins of a lap trace by linear interpolation.
+function fillTrace(tr, lapTime) {
+  const n = tr.length;
+  const out = Float64Array.from(tr);
+  out[0] = out[0] >= 0 ? out[0] : 0;
+  let prev = 0;
+  for (let i = 1; i <= n; i++) {
+    const v = i === n ? lapTime : out[i];
+    if (v >= 0) {
+      for (let j = prev + 1; j < i; j++) out[j] = out[prev] + ((v - out[prev]) * (j - prev)) / (i - prev);
+      prev = i;
+    }
+  }
+  return out;
+}
+
+function traceAt(tr, lapTime, pct) {
+  const f = Math.max(0, Math.min(0.999999, pct)) * tr.length;
+  const i = Math.floor(f);
+  const a = tr[i], b = i + 1 < tr.length ? tr[i + 1] : lapTime;
+  return a + (b - a) * (f - i);
+}
 
 class TimingTracker {
   constructor() {
@@ -21,6 +45,10 @@ class TimingTracker {
     this.bestLap = null;
     this.log = [];
     this.lastOfficial = null;
+    this.trace = null; // player's current lap: elapsed time at each bin
+    this.bestTrace = null; // { tr, time }
+    this.lastTrace = null;
+    this.deltaHist = [];
   }
 
   setSectors(info) {
@@ -99,13 +127,18 @@ class TimingTracker {
             };
             this.log.push(entry);
             if (this.log.length > LOG_SIZE) this.log.shift();
+            if (this.trace) {
+              const tr = { tr: fillTrace(this.trace, time), time };
+              this.lastTrace = tr;
+              if (!entry.off && !entry.pit && !(this.bestLap <= time)) this.bestTrace = tr;
+            }
             if (!entry.off && !entry.pit && !(this.bestLap <= time)) this.bestLap = time;
           }
           st.times = [];
           st.lapStart = tc;
           st.off = false;
           st.pit = !!(v.CarIdxOnPitRoad && v.CarIdxOnPitRoad[i]);
-          if (isPlayer) st.fuelStart = v.FuelLevel ?? null;
+          if (isPlayer) { st.fuelStart = v.FuelLevel ?? null; this.trace = new Float64Array(TRACE_BINS).fill(-1); }
         }
         st.secStart = tc;
         st.sector = k;
@@ -113,6 +146,11 @@ class TimingTracker {
       }
       st.pct = pct;
       st.t = t;
+      if (isPlayer && this.trace && st.lapStart !== null) {
+        const bin = Math.min(TRACE_BINS - 1, Math.floor(pct * TRACE_BINS));
+        if (this.trace[bin] < 0) this.trace[bin] = t - st.lapStart;
+      }
+      if (isPlayer && st.lapStart === null) this.trace = null;
     }
 
     // Prefer iRacing's own lap time when it reports the lap we just logged.
@@ -127,6 +165,20 @@ class TimingTracker {
       }
     }
     return this.state(t, playerIdx, classOf(playerIdx));
+  }
+
+  // Our own live delta vs a recorded lap: [delta, rate, ok] like iRacing's LapDeltaTo* vars.
+  delta(which, t, playerIdx) {
+    const ref = which === 'last' ? this.lastTrace : this.bestTrace;
+    const st = this.cars.get(playerIdx);
+    if (!ref || !st || st.lapStart === null) return [0, 0, false];
+    const d = t - st.lapStart - traceAt(ref.tr, ref.time, st.pct);
+    const hist = this.deltaHist;
+    hist.push([t, d, which]);
+    while (hist.length && t - hist[0][0] > 0.5) hist.shift();
+    const old = hist.find((h) => h[2] === which);
+    const rate = old && t - old[0] > 0.1 ? (d - old[1]) / (t - old[0]) : 0;
+    return [d, rate, true];
   }
 
   state(t, playerIdx, playerClass) {

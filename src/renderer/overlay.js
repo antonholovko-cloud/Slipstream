@@ -27,7 +27,7 @@
     const s = p.settings, t = p.theme;
     const root = document.documentElement.style;
     const alpha = (s.bgOpacity ?? 85) / 100;
-    root.setProperty('--fs', (14 * (s.scale || 100) / 100).toFixed(2) + 'px');
+    applyFontSize();
     root.setProperty('--bg', t.bg);
     root.setProperty('--bg-a', Fmt.rgba(t.bg, alpha));
     root.setProperty('--bg-alt', Fmt.rgba(t.bgAlt, Math.min(1, alpha + 0.05)));
@@ -47,8 +47,25 @@
     const ctx = context();
     if (!instance && widgets[id]) instance = widgets[id](body, ctx);
     if (instance && instance.configure) instance.configure(ctx);
+    applyFontSize();
     if (lastState) render(lastState);
   }
+
+  // Base font size. Widgets that declare a natural size (in rem) can scale their
+  // contents to fill the window ("fit to size"); otherwise it's 14px x scale.
+  function applyFontSize() {
+    if (!payload) return;
+    const s = payload.settings;
+    let fs = 14;
+    const fit = instance && instance.fit;
+    if (fit && s.autoFit !== false) {
+      const headerRem = s.showHeader ? 1.6 : 0;
+      fs = Math.min(window.innerWidth / fit.w, window.innerHeight / (fit.h + headerRem));
+      fs = Math.max(8, Math.min(48, fs));
+    }
+    document.documentElement.style.setProperty('--fs', (fs * (s.scale || 100) / 100).toFixed(2) + 'px');
+  }
+  window.addEventListener('resize', () => { applyFontSize(); if (lastState) render(lastState); });
 
   function context() {
     return {

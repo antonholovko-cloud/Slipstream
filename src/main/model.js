@@ -383,6 +383,14 @@ class RaceModel {
       slip,
     };
 
+    // Fill in "vs best" / "vs last" from our own lap traces when iRacing has no valid delta
+    // (e.g. no best lap recorded by iRacing yet, or after an off-track).
+    const own = (which) => this.timing.delta(which, v.SessionTime, playerIdx);
+    if (!player.deltas.best[2]) player.deltas.best = own('best');
+    if (!player.deltas.sessionLast[2]) player.deltas.sessionLast = own('last');
+    if (!(player.bestLap > 0) && timing.bestLap) player.bestLap = timing.bestLap;
+    if (!(player.lastLap > 0) && timing.log.length) player.lastLap = timing.log[timing.log.length - 1].time;
+
     return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap, timing };
   }
 
