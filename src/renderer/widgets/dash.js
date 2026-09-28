@@ -25,7 +25,7 @@ Host.css(`
 .dash .bar i { position:absolute; left:0; right:0; bottom:0; border-radius:3px; }
 .dash .bar span { display:none; }
 .dash .wheel { display:flex; align-items:center; justify-content:center; flex:none; }
-.dash .wheel svg { width:2.5rem; height:2.5rem; }
+.dash .wheel svg { width:2.9rem; height:2.9rem; overflow:visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
 .dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; flex:none; }
 .dash .foot span { white-space:nowrap; }
 .dash .foot b { font-weight:700; }
@@ -55,12 +55,39 @@ Host.register('dash', function (root) {
       </div>
       <div class="sep s2"></div>
       <div class="wheel">
-        <svg viewBox="-50 -50 100 100"><g class="rot">
-          <circle r="40" fill="none" stroke="currentColor" stroke-width="9" opacity=".9"/>
-          <path d="M-38 4 L-12 10 L12 10 L38 4" fill="none" stroke="currentColor" stroke-width="9"/>
-          <path d="M0 10 L0 40" stroke="currentColor" stroke-width="9"/>
-          <rect x="-4" y="-49" width="8" height="12" fill="var(--accent)"/>
-        </g></svg>
+        <svg viewBox="-50 -50 100 100">
+          <defs>
+            <linearGradient id="wRim" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#94a3b8"/>
+            </linearGradient>
+            <linearGradient id="wGrip" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#3a4250"/><stop offset=".45" stop-color="#1c212b"/><stop offset="1" stop-color="#0e1117"/>
+            </linearGradient>
+            <linearGradient id="wHub" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2a303c"/><stop offset="1" stop-color="#12151c"/>
+            </linearGradient>
+          </defs>
+          <g class="rot">
+            <!-- rim: top arc and flat bottom -->
+            <path d="M-37 -14 C-37 -34 -20 -41 0 -41 C20 -41 37 -34 37 -14" fill="none" stroke="url(#wRim)" stroke-width="7" stroke-linecap="round"/>
+            <path d="M-33 20 C-28 31 -16 33 0 33 C16 33 28 31 33 20" fill="none" stroke="url(#wRim)" stroke-width="7" stroke-linecap="round"/>
+            <!-- grips -->
+            <rect x="-47" y="-20" width="16" height="44" rx="8" fill="url(#wGrip)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+            <rect x="31" y="-20" width="16" height="44" rx="8" fill="url(#wGrip)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+            <!-- spokes -->
+            <path d="M-31 2 L-15 2 M31 2 L15 2" stroke="#2a303c" stroke-width="7" stroke-linecap="round"/>
+            <!-- hub with display and buttons -->
+            <rect x="-16" y="-13" width="32" height="28" rx="7" fill="url(#wHub)" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+            <rect x="-9" y="-8" width="18" height="9" rx="2" fill="#07090c" stroke="rgba(255,255,255,.08)" stroke-width=".8"/>
+            <path d="M-6 -3.5 H6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="-10.5" cy="7.5" r="2.4" fill="#ef4444"/>
+            <circle cx="-3.5" cy="8.5" r="2.4" fill="#facc15"/>
+            <circle cx="3.5" cy="8.5" r="2.4" fill="#3b82f6"/>
+            <circle cx="10.5" cy="7.5" r="2.4" fill="#22c55e"/>
+            <!-- top center marker -->
+            <rect x="-3.2" y="-45" width="6.4" height="8" rx="1.6" fill="var(--accent)"/>
+          </g>
+        </svg>
       </div>
     </div>
     <div class="foot"><div class="warn"></div><span class="info"></span></div>
