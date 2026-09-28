@@ -1,8 +1,6 @@
 Host.css(`
 .flagw { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:.6rem; padding:.3rem; }
-.flagw .flag { flex:none; height:min(80%, 5rem); aspect-ratio: 3 / 2; border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,.5); transform-origin:left center; position:relative; overflow:hidden; }
-.flagw.animate .flag { animation: wave 1s ease-in-out infinite; }
-@keyframes wave { 0%,100% { transform: perspective(200px) rotateY(0deg) skewY(0deg); } 50% { transform: perspective(200px) rotateY(-14deg) skewY(-3deg); } }
+.flagw .flag { flex:none; height:min(80%, 5rem); aspect-ratio: 3 / 2; border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,.5); position:relative; overflow:hidden; }
 .flagw .label { font-weight:700; font-size:1.1rem; white-space:nowrap; line-height:1.1; letter-spacing:.05em; text-transform:uppercase; text-shadow:0 1px 4px #000; }
 .flag.checkered { background: repeating-conic-gradient(#111 0 25%, #f5f5f5 0 50%) 0 0 / 25% 33.4%; }
 .flag.yellow { background:#facc15; }
@@ -56,7 +54,6 @@ Host.register('flags', function (root) {
       prevGreen = green;
       if (!p && s.showGreen && green && now < greenUntil) p = ['green', 'Green'];
       if (!p && ctx.editMode) p = ['yellow', 'Preview'];
-      wrap.classList.toggle('animate', !!s.animate);
       const key = p ? p.join('|') + s.showText : '';
       if (key === lastKey) return;
       lastKey = key;

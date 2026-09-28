@@ -5,6 +5,7 @@
 
 const { TimingTracker } = require('./timing');
 const { SlipEstimator } = require('./slip');
+const { GapTracker } = require('./gaps');
 
 const TRACK_BINS = 500;
 
@@ -66,6 +67,7 @@ class RaceModel {
     this.classesCache = [];
     this.timing = new TimingTracker();
     this.slip = new SlipEstimator();
+    this.gaps = new GapTracker();
   }
 
   parseInfo(info) {
@@ -140,6 +142,7 @@ class RaceModel {
       this.fuelLaps = [];
       this.fuelLapStart = null;
       this.timing.reset();
+      this.gaps.reset();
     }
     const sdef = this.sessionDef(v.SessionNum);
     const kind = sessionKind(sdef.SessionType);
@@ -149,7 +152,14 @@ class RaceModel {
     const playerIdx = v.PlayerCarIdx ?? this.driverCarIdx;
     const focusIdx = settings.focusCamCar && v.IsReplayPlaying && v.CamCarIdx >= 0 ? v.CamCarIdx : playerIdx;
 
-    const lapDist = (i) => (v.CarIdxLapCompleted?.[i] ?? -1) + Math.max(0, v.CarIdxLapDistPct?.[i] ?? 0);
+    // Race progress per car (laps + fraction), with start/finish line glitches smoothed out.
+    const progress = new Map();
+    for (const d of this.drivers.values()) {
+      if (d.isPace || d.isSpectator) continue;
+      progress.set(d.idx, this.gaps.progress(d.idx, v.CarIdxLapCompleted?.[d.idx] ?? -1, v.CarIdxLapDistPct?.[d.idx] ?? -1));
+    }
+    this.gaps.update(v.SessionTime ?? 0, [...progress].map(([idx, p]) => ({ idx, p })));
+    const lapDist = (i) => progress.get(i) ?? ((v.CarIdxLapCompleted?.[i] ?? -1) + Math.max(0, v.CarIdxLapDistPct?.[i] ?? 0));
 
     // ---- Cars ----
     const cars = [];
@@ -235,9 +245,15 @@ class RaceModel {
         if (isRace) {
           const ahead = k.cars[n - 1];
           c.lapsDown = Math.max(0, Math.floor(leader.dist - c.dist + 0.0001));
-          c.gap = n === 0 ? 0 : c.f2 - leader.f2;
+          // Own timing loops first; CarIdxF2Time only updates at timing lines in races.
+          c.gap = n === 0 ? 0 : this.gaps.gap(leader.idx, c.idx);
+          if (c.gap === null) c.gap = c.f2 - leader.f2;
           if (!(c.gap >= 0) || c.gap > estLap * 3) c.gap = ((leader.dist - c.dist) * estLap);
-          c.interval = n === 0 ? null : c.gap - ahead.gap;
+          if (n === 0) c.interval = null;
+          else {
+            c.interval = this.gaps.gap(ahead.idx, c.idx);
+            if (c.interval === null) c.interval = Math.max(0, c.gap - ahead.gap);
+          }
           if (c.startPos) c.posGain = c.startPos - c.classPosition;
         } else if (c.bestLap > 0 && k.bestLap > 0) {
           c.gap = c.bestLap - k.bestLap;

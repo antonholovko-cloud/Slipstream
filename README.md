@@ -53,13 +53,13 @@ and no extra services.
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, gap/interval, last/best (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit-stop count, and "keep my car visible" windowing |
 | **Relative** | Cars around you by live time gap, lapping/lapped coloring, pit tags, and an info bar (position, SOF, incidents, time left) |
-| **Dashboard & Inputs** | Car-specific shift lights (from iRacing's SL RPMs), gear, speed, RPM bar, a throttle/brake/clutch trace with ABS-colored brake, pedal bars, a rotating wheel, lap/last/best/delta, fuel, brake bias, engine warnings and pit limiter, plus a **wheelspin / lock-up light**. Every block can be switched off |
+| **Dashboard & Inputs** | Car-specific shift lights (from iRacing's SL RPMs), gear, speed, RPM bar, a throttle/brake/clutch trace with ABS-colored brake, pedal bars, a rotating wheel, lap/last/best/delta, fuel, brake bias, engine warnings and pit limiter, plus a **wheelspin / lock-up light** that strobes while slipping. Every block can be switched off |
 | **Lap Timing** | Live sector times for the current lap (green = personal best, purple = best in your class this session), last/best/optimal lap, and a lap log with sectors, delta to best, fuel used, and off-track/pit flags |
 | **Fuel Calculator** | Rolling average, last and max per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Delta vs best, optimal, session best, session optimal or last lap, trend coloring, predicted lap |
 | **Track Map** | **Learned automatically** by dead-reckoning your first clean lap, then saved per track. Shows class colors, pit cars and the S/F line, with rotate/mirror |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, wetness, local and sim clock |
-| **Flags** | Checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green, with a waving animation |
+| **Flags** | Checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. Off by default; enable it in settings |
 
 ## Screenshots
 

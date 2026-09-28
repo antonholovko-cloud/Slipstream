@@ -47,10 +47,12 @@ Host.register('delta', function (root) {
       const same = cars.filter((c) => c.classId === me.classId && c.classPosition > 0);
       const a = same.find((c) => c.classPosition === me.classPosition - 1);
       const b = same.find((c) => c.classPosition === me.classPosition + 1);
-      const gapOf = (x, y) => (x && y && x.gap !== null && y.gap !== null ? Math.abs(y.gap - x.gap) : null); // seconds between two cars
+      // interval = seconds to the class car directly ahead; laps by actual distance between the two
+      const gapOf = (x, y) => (y.interval !== null && y.interval !== undefined ? y.interval : x.gap !== null && y.gap !== null ? Math.abs(y.gap - x.gap) : null);
+      const lapsOf = (x, y) => (state.session.isRace ? Math.max(0, Math.floor(x.dist - y.dist + 0.0001)) : 0);
       return {
-        ahead: a ? { car: a, gap: gapOf(a, me), laps: Math.max(0, me.lapsDown - a.lapsDown) } : null,
-        behind: b ? { car: b, gap: gapOf(me, b), laps: Math.max(0, b.lapsDown - me.lapsDown) } : null,
+        ahead: a ? { car: a, gap: gapOf(a, me), laps: lapsOf(a, me) } : null,
+        behind: b ? { car: b, gap: gapOf(me, b), laps: lapsOf(me, b) } : null,
       };
     }
     const rel = state.relative || [];

@@ -10,7 +10,9 @@ Host.css(`
 .dash .lights { display:flex; gap:.2rem; flex:none; }
 .dash .lights i { flex:1; height:.3rem; border-radius:2px; background:rgba(255,255,255,.08); }
 .dash .lights.flash i:not(.slip) { animation: dashflash .12s steps(2) infinite; }
-.dash .lights i.slip { transition: background .08s, box-shadow .08s; }
+.dash .lights i.slip.on { background:var(--slip); box-shadow:0 0 .5rem var(--slip); animation: slipstrobe 60ms steps(1) infinite; }
+/* fast strobe: ~35 ms lit, ~25 ms dark (a couple of display frames each), easy to catch in peripheral vision */
+@keyframes slipstrobe { 0% { opacity:1; } 58% { opacity:.1; } }
 .dash .lights i.slip.start { margin-right:.3rem; }
 .dash .lights i.slip.end { margin-left:.3rem; }
 @keyframes dashflash { 50% { opacity:.15 } }
@@ -272,8 +274,8 @@ Host.register('dash', function (root) {
         if (shown !== slipShown) {
           slipShown = shown;
           const col = shown === 'spin' ? s.spinColor : shown === 'lock' ? s.lockColor : '';
-          slipEl.style.background = col;
-          slipEl.style.boxShadow = col ? `0 0 .5rem ${col}` : '';
+          if (col) slipEl.style.setProperty('--slip', col);
+          slipEl.classList.toggle('on', !!col);
           slipEl.title = shown === 'spin' ? 'Wheelspin' : shown === 'lock' ? 'Lock-up' : '';
         }
       }

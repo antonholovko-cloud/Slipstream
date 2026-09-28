@@ -15,18 +15,14 @@
     </defs>`;
 
   const STYLES = {
-    // GT3-style: silver rim, rubber side grips, hub with display and buttons
+    // GT3-style, kept quiet: dark rim and grips, plain hub, only the top stripe in color
     gt: `
-      <path d="M-37 -14 C-37 -34 -20 -41 0 -41 C20 -41 37 -34 37 -14" fill="none" stroke="url(#wRim)" stroke-width="7" stroke-linecap="round"/>
-      <path d="M-33 20 C-28 31 -16 33 0 33 C16 33 28 31 33 20" fill="none" stroke="url(#wRim)" stroke-width="7" stroke-linecap="round"/>
-      <rect x="-47" y="-20" width="16" height="44" rx="8" fill="url(#wGrip)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
-      <rect x="31" y="-20" width="16" height="44" rx="8" fill="url(#wGrip)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
-      <path d="M-31 2 L-15 2 M31 2 L15 2" stroke="#2a303c" stroke-width="7" stroke-linecap="round"/>
-      <rect x="-16" y="-13" width="32" height="28" rx="7" fill="url(#wHub)" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-      <rect x="-9" y="-8" width="18" height="9" rx="2" fill="#07090c" stroke="rgba(255,255,255,.08)" stroke-width=".8"/>
-      <path d="M-6 -3.5 H6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="-10.5" cy="7.5" r="2.4" fill="#ef4444"/><circle cx="-3.5" cy="8.5" r="2.4" fill="#facc15"/>
-      <circle cx="3.5" cy="8.5" r="2.4" fill="#3b82f6"/><circle cx="10.5" cy="7.5" r="2.4" fill="#22c55e"/>
+      <path d="M-37 -14 C-37 -34 -20 -41 0 -41 C20 -41 37 -34 37 -14" fill="none" stroke="#4b5260" stroke-width="7" stroke-linecap="round"/>
+      <path d="M-33 20 C-28 31 -16 33 0 33 C16 33 28 31 33 20" fill="none" stroke="#4b5260" stroke-width="7" stroke-linecap="round"/>
+      <rect x="-47" y="-20" width="16" height="44" rx="8" fill="#2a2f38"/>
+      <rect x="31" y="-20" width="16" height="44" rx="8" fill="#2a2f38"/>
+      <path d="M-31 2 L-15 2 M31 2 L15 2" stroke="#2a2f38" stroke-width="7" stroke-linecap="round"/>
+      <rect x="-16" y="-13" width="32" height="28" rx="7" fill="#1c2028"/>
       <rect x="-3.2" y="-45" width="6.4" height="8" rx="1.6" fill="var(--accent)"/>`,
 
     // Classic round 3-spoke: leather rim with stitching, brushed spokes
