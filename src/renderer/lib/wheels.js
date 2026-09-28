@@ -54,6 +54,24 @@
       <circle cx="-15" cy="16" r="2.4" fill="#facc15"/><circle cx="15" cy="16" r="2.4" fill="#22c55e"/>
       <rect x="-3" y="-35" width="6" height="7" rx="1.5" fill="var(--accent)"/>`,
 
+    // Logitech RS50-style track wheel: D-shaped rim (round top, flat bottom), black grips,
+    // brushed spokes, hub with rev LEDs, D-pad and buttons. Artwork only, no branding.
+    rs50: `
+      <path d="M-39 16 A42 42 0 1 1 39 16 L30 33 C18 37 -18 37 -30 33 Z" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M-39 16 A42 42 0 1 1 39 16 L30 33 C18 37 -18 37 -30 33 Z" fill="none" stroke="#2c323c" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M-41.5 -14 A42 42 0 0 0 -39 16 M41.5 -14 A42 42 0 0 1 39 16" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="13.5" stroke-linecap="round"/>
+      <path d="M-41.5 -14 A42 42 0 0 0 -39 16 M41.5 -14 A42 42 0 0 1 39 16" fill="none" stroke="#3a414d" stroke-width="12" stroke-linecap="round"/>
+      <path d="M-38 -2 L-20 -5 L-20 8 L-36 10 Z M38 -2 L20 -5 L20 8 L36 10 Z M-7 14 L7 14 L9 32 L-9 32 Z" fill="url(#wMetal)" stroke="rgba(0,0,0,.35)" stroke-width=".8"/>
+      <rect x="-22" y="-14" width="44" height="30" rx="8" fill="url(#wHub)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+      <rect x="-14" y="-11.5" width="4" height="2.2" rx="1" fill="#22c55e"/><rect x="-8.5" y="-11.5" width="4" height="2.2" rx="1" fill="#22c55e"/>
+      <rect x="-3" y="-11.5" width="4" height="2.2" rx="1" fill="#facc15"/><rect x="2.5" y="-11.5" width="4" height="2.2" rx="1" fill="#facc15"/>
+      <rect x="8" y="-11.5" width="4" height="2.2" rx="1" fill="#ef4444"/>
+      <path d="M-14 -2 V8 M-19 3 H-9" stroke="#9aa3b2" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="13" cy="-1" r="2.2" fill="#cbd5e1"/><circle cx="17.5" cy="3.5" r="2.2" fill="#cbd5e1"/>
+      <circle cx="13" cy="8" r="2.2" fill="#cbd5e1"/><circle cx="8.5" cy="3.5" r="2.2" fill="#cbd5e1"/>
+      <circle cx="0" cy="5" r="4.2" fill="#0b0d11" stroke="var(--accent)" stroke-width="1.6"/>
+      <rect x="-3" y="-47" width="6" height="9" rx="1.5" fill="var(--accent)"/>`,
+
     // Minimal ring with a center-top marker
     ring: `
       <circle r="40" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="4.5"/>
@@ -74,5 +92,5 @@
     return `<svg viewBox="-50 -50 100 100">${defs}<g class="rot">${STYLES[style] || STYLES.gt}</g></svg>`;
   }
 
-  window.Wheels = { svg, styles: ['gt', 'round', 'formula', 'ring', 'bar'] };
+  window.Wheels = { svg, styles: ['gt', 'rs50', 'round', 'formula', 'ring', 'bar'] };
 })();

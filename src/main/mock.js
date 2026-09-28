@@ -164,6 +164,13 @@ class MockSource {
 
   step(dt) {
     this.sessionTime += dt;
+    // Demo overtake: every 30 s car #11 comes past on the player's left (radar demo).
+    if (!this.pinned) {
+      const cyc = this.sessionTime % 30;
+      const me = this.cars[this.playerIdx], c = this.cars[11];
+      if (cyc < 8 && !me.pit) { c.dist = me.dist + (-16 + cyc * 4) / TRACK_LEN; c.pit = null; c.passing = true; }
+      else if (c.passing) c.passing = false;
+    }
     // Showcase helpers: keep chosen cars at a fixed distance from the player.
     if (this.pinned) {
       const me = this.cars[this.playerIdx];
