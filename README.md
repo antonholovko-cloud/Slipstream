@@ -4,7 +4,7 @@
 
 <p align="center">
 Customizable, open overlays for iRacing, in the spirit of RaceLab.<br>
-Standings, relative, inputs, fuel, delta, radar, an auto-learned track map and more.
+Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learned track map and more.
 </p>
 
 <p align="center">
@@ -57,7 +57,6 @@ and no extra services.
 | **Lap Timing** | Live sector times for the current lap (green = personal best, purple = best in your class this session), last/best/optimal lap, and a lap log with sectors, delta to best, fuel used, and off-track/pit flags |
 | **Fuel Calculator** | Rolling average, last and max per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Delta vs best, optimal, session best, session optimal or last lap, trend coloring, predicted lap |
-| **Radar** | A box for every car around you, with glowing side bars when someone is alongside and proximity bars ahead/behind. Adjustable view radius (5–100 m), circle or lane shape, car size and numbers, and auto-hide when clear |
 | **Track Map** | **Learned automatically** by dead-reckoning your first clean lap, then saved per track. Shows class colors, pit cars and the S/F line, with rotate/mirror |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, wetness, local and sim clock |
 | **Flags** | Checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green, with a waving animation |
@@ -68,7 +67,7 @@ and no extra services.
 |---|---|
 | ![Standings](docs/screenshots/standings.png) | ![Relative](docs/screenshots/relative.png) |
 | ![Track map](docs/screenshots/trackmap.png) | ![Fuel calculator](docs/screenshots/fuel.png) |
-| ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Radar](docs/screenshots/radar.png) |
+| ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Session info](docs/screenshots/session.png) |
 | ![Lap timing](docs/screenshots/laptiming.png) | ![Delta bar](docs/screenshots/delta.png) |
 
 **Settings:** every overlay is configured live, with drag-and-drop columns, themes and profiles.
@@ -100,7 +99,7 @@ Settings are stored in `%APPDATA%\Slipstream\overlay-config.json`.
 
 ```
 src/main/irsdk.js     shared-memory reader (koffi → kernel32), var decoding, tolerant session YAML parsing
-src/main/model.js     derived state: standings, classes/SOF, relative, radar, fuel, track learning, iRating
+src/main/model.js     derived state: standings, classes/SOF, relative, fuel, timing, slip, track learning, iRating
 src/main/mock.js      physically plausible demo race (speed profile, pit stops, flags, duels)
 src/main/main.js      windows, 60 Hz loop, per-overlay fps throttling and data slicing, IPC, tray, hotkeys
 src/main/config.js    profiles + forward-compatible migration of saved configs
