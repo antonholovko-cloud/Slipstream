@@ -3,6 +3,9 @@
  * standings, relative gaps, fuel stats, radar, learned track map, iRating deltas.
  */
 
+const { TimingTracker } = require('./timing');
+const { SlipEstimator } = require('./slip');
+
 const TRACK_BINS = 500;
 
 function num(v, d = 0) {
@@ -61,6 +64,8 @@ class RaceModel {
     this.trackMapVersion = 0;
     this.lastTrackMapSent = -1;
     this.classesCache = [];
+    this.timing = new TimingTracker();
+    this.slip = new SlipEstimator();
   }
 
   parseInfo(info) {
@@ -105,6 +110,7 @@ class RaceModel {
       redline: num(di.DriverCarRedLine), estLap: num(di.DriverCarEstLapTime),
     };
     this.driverCarIdx = di.DriverCarIdx;
+    this.timing.setSectors(info);
   }
 
   sessionDef(num_) {
@@ -133,6 +139,7 @@ class RaceModel {
       this.perCar.clear();
       this.fuelLaps = [];
       this.fuelLapStart = null;
+      this.timing.reset();
     }
     const sdef = this.sessionDef(v.SessionNum);
     const kind = sessionKind(sdef.SessionType);
@@ -323,6 +330,10 @@ class RaceModel {
       laps: this.fuelLaps.slice(-20), lapsToGo, pitFuel: v.PitSvFuel,
     };
 
+    // ---- Sector timing & slip ----
+    const timing = this.timing.update(v, playerIdx, (i) => (this.drivers.get(i) || {}).classId);
+    const slip = this.slip.update(v);
+
     // ---- Track map learning ----
     this.learnTrack(v, me);
     const pts = this.trackMaps[this.track.id];
@@ -369,9 +380,10 @@ class RaceModel {
       waterTemp: v.WaterTemp, oilTemp: v.OilTemp, oilPress: v.OilPress, voltage: v.Voltage, engineWarnings: v.EngineWarnings ?? 0,
       brakeBias: v.dcBrakeBias, repairLeft: v.PitRepairLeft, optRepairLeft: v.PitOptRepairLeft,
       estLap: this.classEst(me) || this.car.estLap,
+      slip,
     };
 
-    return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap };
+    return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap, timing };
   }
 
   classEst(car) {

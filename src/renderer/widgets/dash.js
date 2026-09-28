@@ -7,7 +7,10 @@ Host.css(`
 .dash { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:.35rem .6rem .3rem; gap:.35rem; }
 .dash .lights { display:flex; gap:.2rem; flex:none; }
 .dash .lights i { flex:1; height:.3rem; border-radius:2px; background:rgba(255,255,255,.08); }
-.dash .lights.flash i { animation: dashflash .12s steps(2) infinite; }
+.dash .lights.flash i:not(.slip) { animation: dashflash .12s steps(2) infinite; }
+.dash .lights i.slip { transition: background .08s, box-shadow .08s; }
+.dash .lights i.slip.start { margin-right:.3rem; }
+.dash .lights i.slip.end { margin-left:.3rem; }
 @keyframes dashflash { 50% { opacity:.15 } }
 .dash .main { display:flex; align-items:center; gap:.7rem; height:3rem; flex:none; }
 .dash .gearbox { display:flex; align-items:center; gap:.55rem; flex:none; }
@@ -105,10 +108,23 @@ Host.register('dash', function (root) {
 
   const WARN = [[0x01, 'WATER'], [0x02, 'FUEL P'], [0x04, 'OIL P'], [0x08, 'STALL'], [0x40, 'OIL T']];
 
+  const slipEl = document.createElement('i');
+  slipEl.className = 'slip';
+  let slipKind = null, slipUntil = 0, slipShown = '';
+
   function buildLights(n) {
     lightCount = n;
     lightsEl.innerHTML = '<i></i>'.repeat(n);
     lights = [...lightsEl.children];
+  }
+
+  function placeSlip(s) {
+    slipEl.remove();
+    if (!s.slipLight) return;
+    slipEl.className = 'slip ' + (s.slipSide === 'start' ? 'start' : 'end');
+    if (s.slipSide === 'start') lightsEl.prepend(slipEl); else lightsEl.append(slipEl);
+    // without shift lights, keep the slip light the size of one shift light
+    slipEl.style.flex = s.shiftLights ? '' : `0 0 calc(100% / ${lightCount + 1})`;
   }
 
   function drawTrace(s) {
@@ -168,7 +184,9 @@ Host.register('dash', function (root) {
     configure(ctx) {
       const s = ctx.settings;
       if (s.lightCount !== lightCount) buildLights(s.lightCount);
-      show(lightsEl, s.shiftLights);
+      for (const el of lights) show(el, s.shiftLights);
+      placeSlip(s);
+      show(lightsEl, s.shiftLights || s.slipLight);
       show(q('.gearbox'), s.showGear);
       show(q('.rpmbar'), s.showRpmBar);
       show(canvas, s.showTrace);
@@ -215,6 +233,27 @@ Host.register('dash', function (root) {
           el.style.boxShadow = lit ? `0 0 .5rem ${col}` : '';
         });
         lightsEl.classList.toggle('flash', s.flashOnShift && p.rpm >= shiftAt);
+      }
+
+      // ---- wheelspin / lock-up light ----
+      if (s.slipLight) {
+        const sl = p.slip;
+        let kind = null;
+        if (sl && sl.learned) {
+          if (p.throttle > 0.1 && sl.dev > s.spinSensitivity / 100) kind = 'spin';
+          else if (p.brake > 0.1 && sl.dev < -s.lockSensitivity / 100) kind = 'lock';
+        }
+        if (!kind && s.lockOnAbs && sl && sl.abs && p.brake > 0.05) kind = 'lock';
+        const now = performance.now();
+        if (kind) { slipKind = kind; slipUntil = now + 180; }
+        const shown = now < slipUntil ? slipKind : '';
+        if (shown !== slipShown) {
+          slipShown = shown;
+          const col = shown === 'spin' ? s.spinColor : shown === 'lock' ? s.lockColor : '';
+          slipEl.style.background = col;
+          slipEl.style.boxShadow = col ? `0 0 .5rem ${col}` : '';
+          slipEl.title = shown === 'spin' ? 'Wheelspin' : shown === 'lock' ? 'Lock-up' : '';
+        }
       }
 
       // ---- inputs ----

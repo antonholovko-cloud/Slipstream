@@ -53,7 +53,8 @@ and no extra services.
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, gap/interval, last/best (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit-stop count, and "keep my car visible" windowing |
 | **Relative** | Cars around you by live time gap, lapping/lapped coloring, pit tags, and an info bar (position, SOF, incidents, time left) |
-| **Dashboard & Inputs** | Car-specific shift lights (from iRacing's SL RPMs), gear, speed, RPM bar, a throttle/brake/clutch trace with ABS-colored brake, pedal bars, a rotating wheel, lap/last/best/delta, fuel, brake bias, engine warnings and pit limiter. Every block can be switched off |
+| **Dashboard & Inputs** | Car-specific shift lights (from iRacing's SL RPMs), gear, speed, RPM bar, a throttle/brake/clutch trace with ABS-colored brake, pedal bars, a rotating wheel, lap/last/best/delta, fuel, brake bias, engine warnings and pit limiter, plus a **wheelspin / lock-up light**. Every block can be switched off |
+| **Lap Timing** | Live sector times for the current lap (green = personal best, purple = best in your class this session), last/best/optimal lap, and a lap log with sectors, delta to best, fuel used, and off-track/pit flags |
 | **Fuel Calculator** | Rolling average, last and max per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Delta vs best, optimal, session best, session optimal or last lap, trend coloring, predicted lap |
 | **Radar** | A box for every car around you, with glowing side bars when someone is alongside and proximity bars ahead/behind. Adjustable view radius (5–100 m), circle or lane shape, car size and numbers, and auto-hide when clear |
@@ -68,7 +69,7 @@ and no extra services.
 | ![Standings](docs/screenshots/standings.png) | ![Relative](docs/screenshots/relative.png) |
 | ![Track map](docs/screenshots/trackmap.png) | ![Fuel calculator](docs/screenshots/fuel.png) |
 | ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Radar](docs/screenshots/radar.png) |
-| ![Delta bar](docs/screenshots/delta.png) | ![Session info](docs/screenshots/session.png) |
+| ![Lap timing](docs/screenshots/laptiming.png) | ![Delta bar](docs/screenshots/delta.png) |
 
 **Settings:** every overlay is configured live, with drag-and-drop columns, themes and profiles.
 
@@ -131,6 +132,10 @@ The **Release** workflow builds the installer and portable exe on GitHub Actions
 opens a specific settings page.
 
 ## Notes
+
+- The wheelspin / lock-up light is an estimate. iRacing's live telemetry has no wheel speeds, so Slipstream learns the
+  engine-RPM to road-speed ratio for each gear and lights up when RPM runs above it (spin) or is dragged below it
+  (driven wheels locking), or when ABS is working. Front lock-ups on rear-drive cars without ABS can't be detected.
 
 - Slipstream is an independent project and is not affiliated with or endorsed by iRacing.com Motorsport Simulations.
 - The iRating change is an estimate that uses the community-derived iRacing formula, per class.

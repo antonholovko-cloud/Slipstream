@@ -126,6 +126,7 @@ class MockSource {
     });
     this.sessionInfo = {
       WeekendInfo: { TrackName: 'demo', TrackID: -1, TrackDisplayName: 'Demo Raceway', TrackConfigName: 'Grand Prix', TrackLength: (TRACK_LEN / 1000).toFixed(2) + ' km', TrackCity: 'Nowhere', TrackCountry: 'Demo', WeekendOptions: { IncidentLimit: 17 }, SubSessionID: 1 },
+      SplitTimeInfo: { Sectors: [{ SectorNum: 0, SectorStartPct: 0 }, { SectorNum: 1, SectorStartPct: 0.34 }, { SectorNum: 2, SectorStartPct: 0.68 }] },
       SessionInfo: { Sessions: [{ SessionNum: 0, SessionType: 'Race', SessionName: 'RACE', SessionLaps: this.raceLaps, SessionTime: 'unlimited', ResultsPositions: null }] },
       DriverInfo: {
         DriverCarIdx: this.playerIdx, DriverCarFuelMaxLtr: 100, DriverCarMaxFuelPct: 1, DriverCarSLFirstRPM: 6500, DriverCarSLShiftRPM: 7700, DriverCarSLLastRPM: 7950, DriverCarSLBlinkRPM: 8100,
@@ -241,11 +242,14 @@ class MockSource {
     let throttle = accel > 0.3 ? 1 : accel > -0.5 ? 0.55 + 0.3 * Math.sin(this.sessionTime * 3) : 0;
     let brake = accel < -1.5 ? Math.min(1, -accel / 10) : 0;
     if (me.pit) { throttle = me.pit.stage === 'stop' ? 0 : 0.3; brake = me.pit.stage === 'stop' ? 0.2 : 0; }
-    const gears = [0, 18, 30, 42, 54, 66, 99];
+    // gearbox: rpm proportional to road speed within a gear, like a real car
+    const tops = [0, 20, 32, 44, 56, 68, 92]; // m/s at 8200 rpm per gear
     let gear = 1;
-    while (gear < 6 && vNow > gears[gear]) gear++;
-    const lo = gears[gear - 1], hi = gears[gear];
-    const rpm = vNow < 0.5 ? 900 : 3500 + ((vNow - lo) / (hi - lo)) * 4800;
+    while (gear < 6 && vNow > tops[gear] * 0.96) gear++;
+    let rpm = Math.max(900, (vNow / tops[gear]) * 8200);
+    // demo: brief wheelspin when flooring it out of slow corners, and a rear lock-up under hard braking
+    if (gear <= 3 && throttle >= 1 && accel > 2 && Math.sin(this.sessionTime * 1.7) > 0.8) rpm *= 1.12;
+    if (brake > 0.7 && gear >= 3 && Math.sin(this.sessionTime * 2.3) > 0.9) rpm *= 0.8;
     const steer = Math.max(-4, Math.min(4, Math.atan(T.curv[i] * 2.7) * 14));
 
     this.fuel = Math.max(0, this.fuel - (0.0000285 * throttle * vNow + 0.00001) * dt * 60);
