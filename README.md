@@ -18,7 +18,7 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 
 <p align="center">
   <img src="docs/gifs/delta.gif" width="520" alt="Delta bar swinging between gaining and losing time, with gap bars to the cars ahead and behind"><br>
-  <sub><b>Delta bar:</b> green when you're up on your best lap, red when you're down. Below: gaps to the cars ahead and behind, and how much you gain or lose per lap.</sub>
+  <sub><b>Delta bar:</b> green when you're up on your best lap, red when you're down. Below: gaps to the cars ahead and behind, turning green while you gain on them and red while you lose time.</sub>
 </p>
 
 <p align="center">
@@ -110,7 +110,7 @@ and show again when you drive.
 | **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping. Every part can be switched off |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
-| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind, showing whether you're gaining or losing per lap |
+| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose |
 | **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
@@ -167,7 +167,9 @@ Set `border=0` in `Documents\iRacing\rendererDX11Monitor.ini` (and in `rendererD
 with iRacing closed.
 
 **The overlays disappear when I stop in the pits.**
-That's on purpose, so they don't clutter the screen. You can change it in *General & hotkeys*.
+That's on purpose, so they don't clutter the screen. The Fuel Calculator stays visible, since that's when you
+need it. Turn it off for all overlays in *General & hotkeys*, or choose per overlay: open the overlay's page and
+set **When stopped in the pits** to *Keep showing* or *Hide*.
 
 **The track map is just a circle.**
 It learns the track from your first clean lap (no pit stop, no off-track). After that it's saved for that track.

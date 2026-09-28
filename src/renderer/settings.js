@@ -403,7 +403,7 @@
       field({ label: 'Data source', type: 'select', options: [{ value: 'auto', label: 'Auto (iRacing, demo while editing)' }, { value: 'iracing', label: 'iRacing only' }, { value: 'demo', label: 'Demo data always' }] }, g.dataSource, (v) => setGlobal({ dataSource: v })),
       field({ label: 'Units', type: 'select', options: [{ value: 'auto', label: 'Follow iRacing setting' }, { value: 'metric', label: 'Metric' }, { value: 'imperial', label: 'Imperial' }] }, g.units, (v) => setGlobal({ units: v })),
       field({ label: 'Hide overlays when not driving (garage, setup screen, menus)', type: 'bool' }, g.hideWhenNotDriving, (v) => setGlobal({ hideWhenNotDriving: v })),
-      field({ label: 'Hide overlays when stopped in the pits', type: 'bool' }, g.hideWhenStoppedInPits, (v) => setGlobal({ hideWhenStoppedInPits: v })),
+      field({ label: 'Hide overlays when stopped in the pits (each overlay can override this on its own page)', type: 'bool' }, g.hideWhenStoppedInPits, (v) => setGlobal({ hideWhenStoppedInPits: v })),
       field({ label: 'Show overlays while watching replays / spectating', type: 'bool' }, g.showInReplays, (v) => setGlobal({ showInReplays: v })),
       field({ label: 'Follow camera car in replays / spectating', type: 'bool' }, g.focusCamCar, (v) => setGlobal({ focusCamCar: v })),
       field({ label: 'Snap to grid while dragging (px, 0 = off)', type: 'number', min: 0, max: 50 }, g.snapToGrid, (v) => setGlobal({ snapToGrid: v })),

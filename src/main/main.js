@@ -134,21 +134,30 @@ function sessionAllowed(s, st) {
 
 // Auto-hide while not driving (garage, setup, menus) or while stopped in the pits.
 // Stopping has a short delay so a slow pit-lane crawl doesn't flicker; driving off shows at once.
+// Returns { notDriving, inPits }; each overlay decides what to do in the pits (overlayAutoHidden).
 let stoppedSince = null;
 function autoHidden(st) {
-  if (source !== 'iracing' || !st || !st.player) return false;
+  const none = { notDriving: false, inPits: false };
+  if (source !== 'iracing' || !st || !st.player) return none;
   const g = config.data.global, p = st.player;
   // out of the car iRacing reports a replay (spectator view), so replays hide too unless enabled
-  if (st.session && st.session.replay && g.showInReplays) return false;
-  if (g.hideWhenNotDriving && (!p.onTrack || p.inGarage)) return true;
-  if (g.hideWhenStoppedInPits) {
-    const stopped = p.inPitStall || (p.onPitRoad && p.speed < 1);
-    if (stopped && p.speed < 2) {
-      if (stoppedSince === null) stoppedSince = Date.now();
-      if (Date.now() - stoppedSince > 800) return true;
-    } else stoppedSince = null;
-  }
-  return false;
+  if (st.session && st.session.replay && g.showInReplays) return none;
+  const notDriving = g.hideWhenNotDriving && (!p.onTrack || p.inGarage);
+  const stopped = p.inPitStall || (p.onPitRoad && p.speed < 1);
+  let inPits = false;
+  if (stopped && p.speed < 2) {
+    if (stoppedSince === null) stoppedSince = Date.now();
+    inPits = Date.now() - stoppedSince > 800;
+  } else stoppedSince = null;
+  return { notDriving, inPits };
+}
+
+// Per overlay "In the pits": follow the General setting, keep showing, or hide.
+function overlayAutoHidden(s, auto) {
+  if (auto.notDriving) return true;
+  if (!auto.inPits) return false;
+  const rule = s.inPits || 'global';
+  return rule === 'hide' || (rule === 'global' && config.data.global.hideWhenStoppedInPits);
 }
 
 function pickState(st, needs) {
@@ -226,12 +235,12 @@ function setSource(s) {
 
 function pushToOverlays() {
   const now = Date.now();
-  const hideAuto = !editMode && autoHidden(latestState);
+  const auto = editMode ? { notDriving: false, inPits: false } : autoHidden(latestState);
   for (const [id, o] of overlayWins) {
     if (!o.ready) continue;
     const s = config.overlay(id);
     const def = Registry.byId(id);
-    const shouldShow = !hiddenByUser && (editMode || (source !== 'none' && !hideAuto && sessionAllowed(s, latestState)));
+    const shouldShow = !hiddenByUser && (editMode || (source !== 'none' && !overlayAutoHidden(s, auto) && sessionAllowed(s, latestState)));
     if (shouldShow !== o.visible) {
       o.visible = shouldShow;
       if (shouldShow) o.win.showInactive(); else o.win.hide();

@@ -1,6 +1,6 @@
 /*
  * Delta bar, plus two small gap bars: seconds to the car ahead and behind, with
- * a fill that grows as the gap closes and a trend (per lap) showing who is gaining.
+ * a fill that grows as the gap closes, colored green while we gain on that car and red while we lose.
  */
 Host.css(`
 .delta { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; padding:.3rem .5rem; gap:.25rem; }
@@ -16,7 +16,6 @@ Host.css(`
 .delta .gap .lbl { color:var(--dim); font-weight:700; letter-spacing:.04em; }
 .delta .gap .who { color:var(--dim); overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0; }
 .delta .gap .sec { font-size:.95rem; font-weight:700; }
-.delta .gap .tr { font-weight:700; font-size:.7rem; }
 .delta .gap .gbar { height:.3rem; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; position:relative; }
 .delta .gap .gbar i { position:absolute; top:0; bottom:0; border-radius:2px; transition: width .25s, background .25s; }
 .delta .gap.ahead .gbar i { right:0; }
@@ -28,8 +27,8 @@ Host.register('delta', function (root) {
     <div class="row"><small class="l"></small><span class="val">–</span><small class="r"></small></div>
     <div class="bar"><i></i></div>
     <div class="gaps">
-      <div class="gap ahead"><div class="top"><span class="lbl">▲ AHEAD</span><span class="who"></span><span class="tr"></span><span class="sec">–</span></div><div class="gbar"><i></i></div></div>
-      <div class="gap behind"><div class="top"><span class="lbl">▼ BEHIND</span><span class="who"></span><span class="tr"></span><span class="sec">–</span></div><div class="gbar"><i></i></div></div>
+      <div class="gap ahead"><div class="top"><span class="lbl">▲ AHEAD</span><span class="who"></span><span class="sec">–</span></div><div class="gbar"><i></i></div></div>
+      <div class="gap behind"><div class="top"><span class="lbl">▼ BEHIND</span><span class="who"></span><span class="sec">–</span></div><div class="gbar"><i></i></div></div>
     </div>
   </div>`;
   const q = (s) => root.querySelector(s);
@@ -81,14 +80,14 @@ Host.register('delta', function (root) {
 
   function renderGap(side, n, s, t, lapTime) {
     const el = q('.gap.' + side);
-    const secEl = el.querySelector('.sec'), whoEl = el.querySelector('.who'), trEl = el.querySelector('.tr'), bar = el.querySelector('.gbar i');
+    const secEl = el.querySelector('.sec'), whoEl = el.querySelector('.who'), bar = el.querySelector('.gbar i');
     if (!n || !n.car) {
-      secEl.textContent = '–'; whoEl.textContent = ''; trEl.textContent = ''; bar.style.width = '0';
+      secEl.textContent = '–'; whoEl.textContent = ''; bar.style.width = '0';
       hist[side].length = 0;
       return;
     }
     whoEl.textContent = s.gapNames ? `#${n.car.number} ${Fmt.driverName(n.car, 'last')}` : '';
-    if (n.laps >= 1) { secEl.textContent = `${n.laps}L`; bar.style.width = '0'; trEl.textContent = ''; return; }
+    if (n.laps >= 1) { secEl.textContent = `${n.laps}L`; bar.style.width = '0'; return; }
     if (n.gap === null) { secEl.textContent = '–'; bar.style.width = '0'; return; }
     secEl.textContent = n.gap.toFixed(n.gap < 10 ? 2 : 1) + 's';
     const close = Math.max(0, 1 - n.gap / s.gapScale);
@@ -97,8 +96,6 @@ Host.register('delta', function (root) {
     const color = good ? t.green : bad ? t.red : side === 'ahead' ? t.accent : t.yellow;
     bar.style.width = (close * 100).toFixed(1) + '%';
     bar.style.background = color;
-    trEl.textContent = s.gapTrend && tr !== null && (good || bad) ? `${tr > 0 ? '+' : '−'}${Math.abs(tr).toFixed(2)}/lap` : '';
-    trEl.style.color = good ? t.green : t.red;
   }
 
   return {

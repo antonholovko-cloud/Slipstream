@@ -20,6 +20,8 @@
     { key: 'showInQualify', label: 'Show in qualifying', type: 'bool', default: true },
     { key: 'showInRace', label: 'Show in race', type: 'bool', default: true },
     { key: 'onlyOnTrack', label: 'Hide when not in car', type: 'bool', default: false },
+    { key: 'inPits', label: 'When stopped in the pits', type: 'select', default: 'global',
+      options: [{ value: 'global', label: 'Follow the General setting' }, { value: 'show', label: 'Keep showing' }, { value: 'hide', label: 'Hide' }] },
   ];
 
   const STANDINGS_COLUMNS = [
@@ -162,6 +164,7 @@
       description: 'Consumption per lap, laps remaining, fuel to finish and to add at next stop.',
       bounds: { x: 1260, y: 380, width: 300, height: 220 },
       needs: ['player', 'fuel', 'session'],
+      defaults: { inPits: 'show' }, // fuel to add matters most in the pit box
       schema: [
         { key: 'avgLaps', label: 'Laps used for average', type: 'number', min: 1, max: 20, default: 5 },
         { key: 'safetyMargin', label: 'Safety margin (laps)', type: 'range', min: 0, max: 3, step: 0.1, default: 0.5 },
@@ -189,7 +192,6 @@
         { key: 'gapMode', label: 'Gaps measured to', type: 'select', default: 'auto',
           options: [{ value: 'auto', label: 'Auto (class position in races, track otherwise)' }, { value: 'position', label: 'Car ahead / behind in class position' }, { value: 'track', label: 'Nearest car on track' }] },
         { key: 'gapScale', label: 'Gap bar full at (s)', type: 'range', min: 0.5, max: 10, step: 0.5, default: 3 },
-        { key: 'gapTrend', label: 'Show gaining / losing per lap', type: 'bool', default: true },
         { key: 'gapNames', label: 'Show driver name & number', type: 'bool', default: true },
       ],
     },
