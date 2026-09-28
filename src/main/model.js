@@ -357,7 +357,7 @@ class RaceModel {
     };
 
     const player = {
-      carIdx: playerIdx, focusIdx, onTrack: !!v.IsOnTrack, inGarage: !!v.IsInGarage,
+      carIdx: playerIdx, focusIdx, onTrack: !!v.IsOnTrack, inGarage: !!v.IsInGarage, inPitStall: !!v.PlayerCarInPitStall,
       speed: v.Speed ?? 0, rpm: v.RPM ?? 0, gear: v.Gear ?? 0,
       throttle: v.Throttle ?? 0, brake: v.Brake ?? 0, clutch: 1 - (v.Clutch ?? 1), clutchRaw: v.Clutch ?? 0,
       steer: v.SteeringWheelAngle ?? 0, steerMax: v.SteeringWheelAngleMax || 7.85, abs: !!v.BrakeABSactive,

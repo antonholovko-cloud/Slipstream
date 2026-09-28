@@ -129,6 +129,25 @@ function sessionAllowed(s, st) {
   return true;
 }
 
+// Auto-hide while not driving (garage, setup, menus) or while stopped in the pits.
+// Stopping has a short delay so a slow pit-lane crawl doesn't flicker; driving off shows at once.
+let stoppedSince = null;
+function autoHidden(st) {
+  if (source !== 'iracing' || !st || !st.player) return false;
+  const g = config.data.global, p = st.player;
+  // out of the car iRacing reports a replay (spectator view), so replays hide too unless enabled
+  if (st.session && st.session.replay && g.showInReplays) return false;
+  if (g.hideWhenNotDriving && (!p.onTrack || p.inGarage)) return true;
+  if (g.hideWhenStoppedInPits) {
+    const stopped = p.inPitStall || (p.onPitRoad && p.speed < 1);
+    if (stopped && p.speed < 2) {
+      if (stoppedSince === null) stoppedSince = Date.now();
+      if (Date.now() - stoppedSince > 800) return true;
+    } else stoppedSince = null;
+  }
+  return false;
+}
+
 function pickState(st, needs) {
   const out = { connected: st.connected, source };
   for (const k of needs) out[k] = st[k];
@@ -204,11 +223,12 @@ function setSource(s) {
 
 function pushToOverlays() {
   const now = Date.now();
+  const hideAuto = !editMode && autoHidden(latestState);
   for (const [id, o] of overlayWins) {
     if (!o.ready) continue;
     const s = config.overlay(id);
     const def = Registry.byId(id);
-    const shouldShow = !hiddenByUser && (editMode || (source !== 'none' && sessionAllowed(s, latestState)));
+    const shouldShow = !hiddenByUser && (editMode || (source !== 'none' && !hideAuto && sessionAllowed(s, latestState)));
     if (shouldShow !== o.visible) {
       o.visible = shouldShow;
       if (shouldShow) o.win.showInactive(); else o.win.hide();

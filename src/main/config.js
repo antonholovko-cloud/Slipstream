@@ -19,6 +19,9 @@ function defaultGlobal() {
       nextProfile: 'CommandOrControl+Shift+P',
     },
     focusCamCar: true, // follow the camera car when spectating / replay
+    hideWhenNotDriving: true, // garage / setup screen / menus / not in the car
+    hideWhenStoppedInPits: true, // in the pit box or standing still on pit road
+    showInReplays: false, // keep overlays while watching replays / spectating
     startMinimized: false,
     snapToGrid: 10,
     masterOpacity: 100, // multiplies every overlay's own opacity
