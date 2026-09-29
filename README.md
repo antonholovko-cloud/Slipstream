@@ -12,6 +12,13 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 </p>
 
 <p align="center">
+  <a href="https://youtu.be/c6TtdptDriM" title="Watch on YouTube">
+    <img src="https://img.youtube.com/vi/c6TtdptDriM/maxresdefault.jpg" width="640" alt="Video: I Built My Own iRacing Overlays (Free for all)">
+  </a><br>
+  <sub>▶ <a href="https://youtu.be/c6TtdptDriM"><b>Watch Slipstream in a real race on YouTube</b></a></sub>
+</p>
+
+<p align="center">
   <img src="docs/gifs/dash.gif" width="740" alt="Dashboard: revving through the gears into the blue over-rev strobe, a lock-up under hard braking, then wheelspin on corner exit"><br>
   <sub><b>Dashboard &amp; Inputs:</b> shift lights fill as you rev and strobe blue only on over-rev; the brake line turns yellow where a wheel locked; wheelspin / lock-up light, gear, speed and steering wheel update live.</sub>
 </p>
