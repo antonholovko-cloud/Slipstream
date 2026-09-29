@@ -401,7 +401,8 @@
     el.append(updatesCard());
     el.append(card('Data', [
       field({ label: 'Data source', type: 'select', options: [{ value: 'auto', label: 'Auto (iRacing, demo while editing)' }, { value: 'iracing', label: 'iRacing only' }, { value: 'demo', label: 'Demo data always' }] }, g.dataSource, (v) => setGlobal({ dataSource: v })),
-      field({ label: 'Units', type: 'select', options: [{ value: 'auto', label: 'Follow iRacing setting' }, { value: 'metric', label: 'Metric' }, { value: 'imperial', label: 'Imperial' }] }, g.units, (v) => setGlobal({ units: v })),
+      field({ label: 'Units (fuel, temperatures)', type: 'select', options: [{ value: 'auto', label: 'Follow iRacing setting' }, { value: 'metric', label: 'Metric' }, { value: 'imperial', label: 'Imperial' }] }, g.units, (v) => setGlobal({ units: v })),
+      field({ label: 'Speed unit (all overlays)', type: 'select', options: [{ value: 'auto', label: 'Same as units above' }, { value: 'kmh', label: 'km/h' }, { value: 'mph', label: 'mph' }] }, g.speedUnit || 'auto', (v) => setGlobal({ speedUnit: v })),
       field({ label: 'Hide overlays when not driving (garage, setup screen, menus)', type: 'bool' }, g.hideWhenNotDriving, (v) => setGlobal({ hideWhenNotDriving: v })),
       field({ label: 'Hide overlays when stopped in the pits (each overlay can override this on its own page)', type: 'bool' }, g.hideWhenStoppedInPits, (v) => setGlobal({ hideWhenStoppedInPits: v })),
       field({ label: 'Show overlays while watching replays / spectating', type: 'bool' }, g.showInReplays, (v) => setGlobal({ showInReplays: v })),
@@ -414,6 +415,7 @@
       hotkeyField('Show / hide all overlays', 'toggleVisible'),
       hotkeyField('Open settings', 'openSettings'),
       hotkeyField('Next profile', 'nextProfile'),
+      hotkeyField('Switch km/h / mph', 'toggleSpeedUnit'),
     ]);
     if (hotkeyErrors.length) hk.append(h(`<div class="warnbox">⚠ ${hotkeyErrors.map(esc).join('<br>')}</div>`));
     el.append(hk);

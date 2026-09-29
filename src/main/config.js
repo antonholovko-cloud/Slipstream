@@ -11,12 +11,14 @@ function defaultGlobal() {
     themeOverrides: {},
     font: '',
     units: 'auto', // auto | metric | imperial
+    speedUnit: 'auto', // auto (follow units) | kmh | mph
     dataSource: 'auto', // auto | iracing | demo
     hotkeys: {
       toggleEdit: 'CommandOrControl+Shift+E',
       toggleVisible: 'CommandOrControl+Shift+H',
       openSettings: 'CommandOrControl+Shift+S',
       nextProfile: 'CommandOrControl+Shift+P',
+      toggleSpeedUnit: 'CommandOrControl+Shift+U',
     },
     focusCamCar: true, // follow the camera car when spectating / replay
     hideWhenNotDriving: true, // garage / setup screen / menus / not in the car

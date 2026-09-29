@@ -149,6 +149,8 @@ class RaceModel {
     const isRace = kind === 'race';
 
     const units = settings.units === 'auto' ? (v.DisplayUnits === 0 ? 'imperial' : 'metric') : settings.units;
+    // speed can be switched on its own (km/h <-> mph) without changing fuel / temperature units
+    const speedUnits = settings.speedUnit === 'mph' ? 'imperial' : settings.speedUnit === 'kmh' ? 'metric' : units;
     const playerIdx = v.PlayerCarIdx ?? this.driverCarIdx;
     const focusIdx = settings.focusCamCar && v.IsReplayPlaying && v.CamCarIdx >= 0 ? v.CamCarIdx : playerIdx;
 
@@ -363,7 +365,7 @@ class RaceModel {
       timeRemain, timeTotal: v.SessionTimeTotal < 604800 ? v.SessionTimeTotal : null,
       lapsRemain, lapsTotal: sessionLaps || null, lapsToGo,
       time: v.SessionTime, timeOfDay: v.SessionTimeOfDay,
-      track: this.track, units,
+      track: this.track, units, speedUnits,
       airTemp: v.AirTemp, trackTemp: v.TrackTempCrew, wetness: v.TrackWetness, skies: v.Skies,
       windVel: v.WindVel, windDir: v.WindDir, humidity: v.RelativeHumidity,
       incidentLimit: this.incidentLimit,

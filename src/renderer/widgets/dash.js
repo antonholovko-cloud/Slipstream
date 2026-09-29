@@ -230,6 +230,7 @@ Host.register('dash', function (root) {
       const s = ctx.settings, p = state.player, t = ctx.theme;
       if (!p) return;
       const u = state.session ? state.session.units : 'metric';
+      const su = state.session ? state.session.speedUnits || u : u; // speed unit
 
       // ---- gear / speed / rpm / shift lights ----
       const sh = p.shift || {};
@@ -241,8 +242,8 @@ Host.register('dash', function (root) {
         : s.limiterAt === 'car' ? sh.slBlink || red : red - (s.limiterRpm ?? 300);
       if (s.showGear) {
         q('.gear').textContent = p.gear === -1 ? 'R' : p.gear === 0 ? 'N' : p.gear;
-        q('.speed').firstChild.nodeValue = Math.round(Fmt.speed(p.speed, u));
-        q('.speed small').textContent = Fmt.speedUnit(u);
+        q('.speed').firstChild.nodeValue = Math.round(Fmt.speed(p.speed, su));
+        q('.speed small').textContent = Fmt.speedUnit(su);
         q('.rpm').firstChild.nodeValue = Math.round(p.rpm);
         if (s.showRpmBar) {
           const bar = q('.rpmbar i');

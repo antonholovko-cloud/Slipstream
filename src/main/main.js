@@ -303,6 +303,19 @@ function openSettings() {
 
 // ---------------- Hotkeys ----------------
 
+// km/h <-> mph for every overlay at once (tray menu and hotkey)
+function currentSpeedUnit() {
+  const g = config.data.global;
+  if (g.speedUnit === 'kmh' || g.speedUnit === 'mph') return g.speedUnit;
+  const u = latestState && latestState.session ? latestState.session.units : g.units;
+  return u === 'imperial' ? 'mph' : 'kmh';
+}
+function toggleSpeedUnit() {
+  config.setGlobal({ speedUnit: currentSpeedUnit() === 'mph' ? 'kmh' : 'mph' });
+  broadcastConfig();
+  updateTray();
+}
+
 function registerHotkeys() {
   globalShortcut.unregisterAll();
   hotkeyErrors = [];
@@ -311,6 +324,7 @@ function registerHotkeys() {
     toggleEdit: () => setEditMode(!editMode),
     toggleVisible: () => { hiddenByUser = !hiddenByUser; updateTray(); sendSettings('settings:status', statusPayload()); },
     openSettings: () => openSettings(),
+    toggleSpeedUnit: () => toggleSpeedUnit(),
     nextProfile: () => {
       const keys = Object.keys(config.data.profiles);
       const i = keys.indexOf(config.data.activeProfile);
@@ -351,6 +365,11 @@ function updateTray() {
     { label: 'Settings…', click: openSettings },
     { label: 'Edit layout', type: 'checkbox', checked: editMode, click: () => setEditMode(!editMode), accelerator: config.data.global.hotkeys.toggleEdit },
     { label: 'Hide overlays', type: 'checkbox', checked: hiddenByUser, click: () => { hiddenByUser = !hiddenByUser; updateTray(); } },
+    { label: 'Speed unit', submenu: [
+      { label: 'km/h', type: 'radio', checked: currentSpeedUnit() === 'kmh', click: () => { config.setGlobal({ speedUnit: 'kmh' }); broadcastConfig(); updateTray(); } },
+      { label: 'mph', type: 'radio', checked: currentSpeedUnit() === 'mph', click: () => { config.setGlobal({ speedUnit: 'mph' }); broadcastConfig(); updateTray(); } },
+      { label: 'Follow iRacing', type: 'radio', checked: !['kmh', 'mph'].includes(config.data.global.speedUnit), click: () => { config.setGlobal({ speedUnit: 'auto' }); broadcastConfig(); updateTray(); } },
+    ] },
     { label: 'Profile', submenu: profiles },
     ...updateMenu(),
     { type: 'separator' },

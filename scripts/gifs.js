@@ -11,8 +11,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const OUT = path.join(__dirname, '..', 'docs', 'gifs');
-process.env.IRO_USERDATA = fs.mkdtempSync(path.join(os.tmpdir(), 'slipstream-gifs-'));
+const OUT = process.env.IRO_GIF_OUT || path.join(__dirname, '..', 'docs', 'gifs');
+process.env.IRO_USERDATA = process.env.IRO_USERDATA || fs.mkdtempSync(path.join(os.tmpdir(), 'slipstream-gifs-'));
 process.env.IRO_DEMO_SKIP = process.env.IRO_DEMO_SKIP || '300';
 process.env.IRO_OFFSCREEN = '1';
 for (const a of ['--demo', '--hidden']) if (!process.argv.includes(a)) process.argv.push(a);

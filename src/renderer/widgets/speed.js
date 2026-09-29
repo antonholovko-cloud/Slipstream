@@ -5,9 +5,9 @@
 Host.css(`
 .spd { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:.6rem; padding:0 .6rem; overflow:hidden; }
 .spd .gearwrap { position:relative; border-radius:.45rem; padding:.15rem .5rem; overflow:hidden; flex:none; }
-.spd .gearwrap .rev { position:absolute; left:0; right:0; bottom:0; height:0; border-radius:.45rem; opacity:.6; transition: height .05s linear, background .1s; }
-.spd .gearwrap.blip .rev { height:100% !important; animation: spdblip .14s steps(2) infinite; }
-@keyframes spdblip { 50% { opacity:.08; } }
+.spd .gearwrap .rev { position:absolute; left:0; right:0; bottom:0; height:0; border-radius:.45rem; opacity:.6; transition: height .05s linear; }
+.spd .gearwrap.blip .rev { height:100% !important; opacity:.9; animation: spdstrobe 90ms steps(1) infinite; }
+@keyframes spdstrobe { 0% { opacity:.9; } 55% { opacity:.05; } }
 .spd .gear { position:relative; font-size:2.4rem; font-weight:700; line-height:1; min-width:1.6rem; text-align:center; }
 .spd .sep { width:1px; height:2.2rem; background:rgba(255,255,255,.12); flex:none; }
 .spd .val { display:flex; align-items:baseline; gap:.25rem; }
@@ -49,6 +49,7 @@ Host.register('speed', function (root) {
       const s = ctx.settings, p = state.player;
       if (!p) return;
       const u = state.session ? state.session.units : 'metric';
+      const su = state.session ? state.session.speedUnits || u : u; // speed unit
       if (s.showGear) {
         q('.gear').textContent = p.gear === -1 ? 'R' : p.gear === 0 ? 'N' : p.gear;
         // rev indicator behind the gear: rises with rpm, blinks at the car's shift point
@@ -56,20 +57,24 @@ Host.register('speed', function (root) {
         const sh = p.shift || {};
         const red = sh.redline || 8000;
         const first = sh.slFirst || red * 0.7;
-        const shiftAt = sh.slShift || sh.slLast || red * 0.95;
+        const last = sh.slLast || sh.slShift || red * 0.95;
+        const shiftAt = sh.slShift || last;
+        // same over-rev point and blue as the Dashboard's shift-light strobe
+        const blueAt = s.limiterAt === 'shift' ? shiftAt : s.limiterAt === 'last' ? last
+          : s.limiterAt === 'car' ? sh.slBlink || red : red - (s.limiterRpm ?? 300);
         const style = s.revIndicator || 'fill';
-        const atShift = style !== 'off' && p.rpm >= shiftAt && p.gear > 0;
-        wrap.classList.toggle('blip', atShift);
+        const strobe = style !== 'off' && p.rpm >= blueAt && p.gear > 0;
+        wrap.classList.toggle('blip', strobe);
         if (style === 'off') { rev.style.height = '0'; }
-        else if (atShift) rev.style.background = s.revShiftColor || t.red;
+        else if (strobe) rev.style.background = s.limiterColor || t.blue;
         else if (style === 'fill') {
-          const f = Math.max(0, Math.min(1, (p.rpm - first) / Math.max(1, shiftAt - first)));
+          const f = Math.max(0, Math.min(1, (p.rpm - first) / Math.max(1, blueAt - first)));
           rev.style.height = (f * 100).toFixed(1) + '%';
           rev.style.background = f < 0.6 ? t.green : f < 0.9 ? t.yellow : t.red;
         } else rev.style.height = '0';
       }
-      q('.val b').textContent = Math.round(Fmt.speed(p.speed, u));
-      if (s.showUnit) q('.val small').textContent = Fmt.speedUnit(u);
+      q('.val b').textContent = Math.round(Fmt.speed(p.speed, su));
+      if (s.showUnit) q('.val small').textContent = Fmt.speedUnit(su);
 
       if (s.showSlip) {
         const sl = p.slip;
