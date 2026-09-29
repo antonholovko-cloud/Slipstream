@@ -24,7 +24,7 @@ Host.register('flags', function (root) {
   const label = wrap.querySelector('.label');
   let greenUntil = 0;
   let prevGreen = false;
-  let lastKey = '';
+  let lastKey = null; // not '' (that is the no-flag key), so the first update always applies
 
   // Priority order: most important flag wins.
   function pick(f, s) {

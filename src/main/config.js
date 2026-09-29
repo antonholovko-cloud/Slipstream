@@ -263,15 +263,17 @@ class ConfigStore {
 
   setOverlay(id, patch) {
     const cur = this.profile.overlays[id];
+    const bounds = patch.bounds && Object.assign({}, cur.bounds, patch.bounds); // merge before assign replaces it
     Object.assign(cur, patch);
-    if (patch.bounds) cur.bounds = Object.assign({}, cur.bounds, patch.bounds);
+    if (bounds) cur.bounds = bounds;
     this.save();
     return cur;
   }
 
   setGlobal(patch) {
+    const hotkeys = patch.hotkeys && Object.assign({}, this.data.global.hotkeys, patch.hotkeys);
     Object.assign(this.data.global, patch);
-    if (patch.hotkeys) this.data.global.hotkeys = Object.assign({}, this.data.global.hotkeys, patch.hotkeys);
+    if (hotkeys) this.data.global.hotkeys = hotkeys;
     this.save();
   }
 

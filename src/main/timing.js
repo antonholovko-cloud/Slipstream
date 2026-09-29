@@ -131,9 +131,9 @@ class TimingTracker {
             if (this.trace) {
               const tr = { tr: fillTrace(this.trace, time), time };
               this.lastTrace = tr;
-              if (!entry.off && !entry.pit && !(this.bestLap <= time)) this.bestTrace = tr;
+              if (!entry.off && !entry.pit && (this.bestLap === null || time < this.bestLap)) this.bestTrace = tr;
             }
-            if (!entry.off && !entry.pit && !(this.bestLap <= time)) this.bestLap = time;
+            if (!entry.off && !entry.pit && (this.bestLap === null || time < this.bestLap)) this.bestLap = time;
           }
           st.times = [];
           st.lapStart = tc;
