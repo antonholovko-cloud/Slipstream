@@ -16,6 +16,21 @@ if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 // Transparent always-on-top windows work best without GPU compositing quirks on some drivers.
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 
+// Memory tuning. Measured with scripts/perf.ps1 on a 7-overlay layout:
+//   pps     all overlay windows share one renderer process: ~436 MB -> ~218 MB,
+//           same CPU, same 60 fps / frame gaps / update rate (scripts/smooth test)
+//   nospare no spare renderer kept warm for new tabs (Slipstream never opens any)
+// IRO_TUNE overrides the list for experiments ('' = none; also 'heap', 'nogpu').
+const TUNE = new Set((process.env.IRO_TUNE !== undefined ? process.env.IRO_TUNE : 'nospare,pps').split(',').filter(Boolean));
+const disabledFeatures = [];
+if (TUNE.has('nospare')) disabledFeatures.push('SpareRendererForSitePerProcess');
+// test runs render off-screen: keep Chromium from treating those windows as hidden
+if (process.env.IRO_OFFSCREEN || process.env.IRO_SCREENSHOT) disabledFeatures.push('CalculateNativeWinOcclusion');
+if (disabledFeatures.length) app.commandLine.appendSwitch('disable-features', disabledFeatures.join(','));
+if (TUNE.has('pps')) app.commandLine.appendSwitch('process-per-site');
+if (TUNE.has('heap')) app.commandLine.appendSwitch('js-flags', '--max-semi-space-size=1 --max-old-space-size=96');
+if (TUNE.has('nogpu')) app.disableHardwareAcceleration();
+
 let config;
 let tray = null;
 let settingsWin = null;
@@ -78,6 +93,13 @@ function createOverlay(id) {
   win.webContents.on('did-finish-load', () => {
     const o = overlayWins.get(id);
     if (o) o.ready = true;
+  });
+  // Overlays share one renderer process; if it ever dies, bring every overlay back.
+  win.webContents.on('render-process-gone', (_e, details) => {
+    console.error(`[${id}] renderer gone (${details.reason}), reloading`);
+    const o = overlayWins.get(id);
+    if (o) o.ready = false;
+    setTimeout(() => { if (!win.isDestroyed()) win.reload(); }, 500);
   });
 }
 
