@@ -95,12 +95,12 @@
     {
       id: 'dash', name: 'Dashboard & Inputs', icon: '⏱',
       description: 'Shift lights, gear, speed and RPM together with the pedal trace, pedal bars and steering wheel.',
-      bounds: { x: 680, y: 920, width: 580, height: 116 },
+      bounds: { x: 680, y: 920, width: 580, height: 100 },
       needs: ['player', 'session'],
       defaults: { fps: 60, showHeader: false, limiterV2: true },
       schema: [
         { key: 'autoFit', label: 'Scale contents to fit the box (resize the box to make it bigger)', type: 'bool', default: true },
-        { key: 'fitHeight', label: 'Shrink box height to fit the contents (no empty space)', type: 'bool', default: true },
+        { key: 'fitHeight', label: 'Shrink box height to fit the contents (no empty space)', type: 'bool', default: false },
         { key: 'padV', label: 'Vertical padding (px)', type: 'range', min: 0, max: 30, step: 1, default: 4 },
         { key: 'shiftLights', label: 'Shift lights', type: 'bool', default: true },
         { key: 'lightCount', label: 'Number of lights', type: 'number', min: 5, max: 20, default: 12 },
