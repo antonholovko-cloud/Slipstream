@@ -19,6 +19,11 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 </p>
 
 <p align="center">
+  💬 <a href="https://github.com/antonholovko-cloud/Slipstream/discussions"><b>Discussions</b></a> for ideas, questions and your layouts ·
+  🐞 <a href="https://github.com/antonholovko-cloud/Slipstream/issues/new/choose"><b>Report a bug</b></a>
+</p>
+
+<p align="center">
   <img src="docs/gifs/dash.gif" width="740" alt="Dashboard: revving through the gears into the blue over-rev strobe, a lock-up under hard braking, then wheelspin on corner exit"><br>
   <sub><b>Dashboard &amp; Inputs:</b> shift lights fill as you rev and strobe blue only on over-rev; the brake line turns yellow where a wheel locked; wheelspin / lock-up light, gear, speed and steering wheel update live.</sub>
 </p>

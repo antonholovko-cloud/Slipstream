@@ -1,0 +1,42 @@
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! A few details help a lot when deciding what to build next.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part is this about?
+      options:
+        - A new overlay
+        - Standings / Relative
+        - Dashboard & Inputs
+        - Speed
+        - Delta bar
+        - Lap timing
+        - Fuel calculator
+        - Track map
+        - Settings / layout / themes
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: Describe it the way you'd use it in a race.
+      placeholder: "When I'm battling for position I'd like to see..."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does it matter to you?
+      description: The situation where you miss it (series, car, oval/road, endurance...).
+  - type: textarea
+    id: example
+    attributes:
+      label: Example (optional)
+      description: A screenshot, sketch, or an overlay from another app that does it well.

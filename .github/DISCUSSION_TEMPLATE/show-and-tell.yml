@@ -1,0 +1,19 @@
+title: "My layout: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Show your setup! A screenshot of your layout in a race is perfect.
+        Tip: *Layouts & profiles → Export profile* lets others import your exact layout. Attach the .json file here.
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot or video
+      description: Drag images in here, or paste a YouTube link.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details (optional)
+      description: Monitor / resolution, car, series, anything you tweaked.

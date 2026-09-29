@@ -1,0 +1,26 @@
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask anything about installing, setting up or using Slipstream.
+        Common fix first: run iRacing in **Borderless** or **Windowed** mode, since overlays can't draw over exclusive fullscreen.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Slipstream version
+      description: Shown under the name in the settings window, e.g. v0.5.4
+  - type: dropdown
+    id: build
+    attributes:
+      label: Installer or portable?
+      options:
+        - Installer (Slipstream-Setup)
+        - Portable (Slipstream-Portable)
+        - Running from source

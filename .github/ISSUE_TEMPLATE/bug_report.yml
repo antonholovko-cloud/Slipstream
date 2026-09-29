@@ -1,0 +1,58 @@
+name: Bug report
+description: Something is broken or shows wrong numbers
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing! Ideas and questions go to [Discussions](https://github.com/antonholovko-cloud/Slipstream/discussions); this form is for bugs.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw vs what you expected. Screenshots or a phone photo of the screen help a lot.
+    validations:
+      required: true
+  - type: dropdown
+    id: overlay
+    attributes:
+      label: Which overlay?
+      multiple: true
+      options:
+        - Standings
+        - Relative
+        - Dashboard & Inputs
+        - Speed
+        - Delta bar
+        - Lap timing
+        - Fuel calculator
+        - Track map
+        - Session info
+        - Flags
+        - Settings window / tray
+        - Not sure
+  - type: input
+    id: version
+    attributes:
+      label: Slipstream version
+      description: Shown under the name in the settings window, e.g. v0.5.4
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Installer or portable?
+      options:
+        - Installer (Slipstream-Setup)
+        - Portable (Slipstream-Portable)
+        - Running from source
+  - type: input
+    id: session
+    attributes:
+      label: Car, track and session type
+      placeholder: "BMW M2, Oschersleben, race"
+  - type: textarea
+    id: setup
+    attributes:
+      label: Your setup (optional)
+      description: Monitor resolution / number of monitors, Windows display scaling, iRacing window mode.

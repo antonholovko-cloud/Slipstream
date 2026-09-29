@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💡 Idea or feature request
+    url: https://github.com/antonholovko-cloud/Slipstream/discussions/categories/ideas
+    about: Suggest a new overlay or an improvement
+  - name: ❓ Question / help
+    url: https://github.com/antonholovko-cloud/Slipstream/discussions/categories/q-a
+    about: Installing, setting up or using Slipstream
+  - name: 🏁 Show your layout
+    url: https://github.com/antonholovko-cloud/Slipstream/discussions/categories/show-and-tell
+    about: Share a screenshot of your overlay setup
