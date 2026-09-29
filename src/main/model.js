@@ -307,7 +307,10 @@ class RaceModel {
         if (dPct > 0.5) dPct -= 1;
         if (dPct < -0.5) dPct += 1;
         let gap;
-        const eo = c.estTime, em = me.estTime;
+        // CarIdxEstTime runs on each car's own class lap estimate, so bring other classes onto ours
+        // (otherwise a faster-class car just ahead reads as behind)
+        const theirEst = this.classEst(c);
+        const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime, em = me.estTime;
         if (eo > 0 && em > 0) {
           gap = eo - em;
           if (gap > lapT / 2) gap -= lapT;

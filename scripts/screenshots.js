@@ -103,11 +103,8 @@ async function compose(W, H, items, scene = {}) {
 app.whenReady().then(async () => {
   const S = global.__slipstream;
   await sleep(2500);
-  // stage: one car alongside on the left, one close ahead, one behind, a few LMP2s about to lap us; blue flag out
-  S.mock.pinned = [{ idx: 11, meters: -1.8 }, { idx: 13, meters: 11 }, { idx: 15, meters: -8 },
-    { idx: 2, meters: 24 }, { idx: 4, meters: -22 }, { idx: 6, meters: 48 }, { idx: 8, meters: -40 }];
-  // spread the rest of the field out so the Relative shows a mix of both classes
-  [10, 12, 14, 16, 17, 18, 19, 20, 21, 22].forEach((idx, n) => S.mock.pinned.push({ idx, meters: (n % 2 ? -1 : 1) * (150 + n * 120) }));
+  // stage: one car alongside on the left, one close ahead, one behind; blue flag out
+  S.mock.pinned = [{ idx: 11, meters: -1.8 }, { idx: 13, meters: 11 }, { idx: 15, meters: -8 }];
   S.mock.flagOverride = 0x4 | 0x20;
   await sleep(4500);
 
@@ -131,15 +128,22 @@ app.whenReady().then(async () => {
     fs.writeFileSync(path.join(OUT, id + '.png'), buf);
   }
 
-  // the same Relative in a one-class race, to compare with the class-grouped multiclass one
+  // Relative comparison: a mixed GT3 / LMP2 pack (grouped by class), then the same pack as a one-class race
+  const relShot = async (name) => {
+    await sleep(2500);
+    const img = await capture(S.overlayWins.get('relative').win);
+    const rb = cfg.overlay('relative').bounds;
+    fs.writeFileSync(path.join(OUT, name), await compose(rb.width + pad * 2, rb.height + pad * 2, [{ url: img.url, x: pad, y: pad, w: rb.width, h: rb.height }], { crop: true }));
+  };
+  S.mock.pinned = [{ idx: 13, meters: 11 }, { idx: 15, meters: -8 }, { idx: 12, meters: 35 },
+    { idx: 2, meters: 25 }, { idx: 6, meters: 55 }, { idx: 4, meters: -25 }, { idx: 8, meters: -45 }, { idx: 3, meters: -70 }];
+  [10, 11, 14, 16, 17, 18, 19, 20, 21, 22].forEach((idx, n) => S.mock.pinned.push({ idx, meters: (n % 2 ? -1 : 1) * (150 + n * 120) }));
+  await relShot('relative.png');
   const gt3 = S.mock.cars.find((c) => !c.pace && c.cls.short === 'GT3').cls;
   for (const c of S.mock.cars) if (!c.pace) c.cls = gt3;
   S.mock.buildSessionInfo();
   S.mock.sessionInfoUpdate++;
-  await sleep(2500);
-  const rel = await capture(S.overlayWins.get('relative').win);
-  const rb = cfg.overlay('relative').bounds;
-  fs.writeFileSync(path.join(OUT, 'relative-single.png'), await compose(rb.width + pad * 2, rb.height + pad * 2, [{ url: rel.url, x: pad, y: pad, w: rb.width, h: rb.height }], { crop: true }));
+  await relShot('relative-single.png');
 
   // settings pages
   S.openSettings();

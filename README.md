@@ -128,13 +128,13 @@ and show again when you drive.
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
 
-| | |
+| Relative, one class | Relative, multiclass: grouped by class, your class first, ▲ / ▼ = ahead / behind |
 |---|---|
-| ![Standings](docs/screenshots/standings.png) | ![Relative](docs/screenshots/relative.png) |
-| ![Track map](docs/screenshots/trackmap.png) | ![Fuel calculator](docs/screenshots/fuel.png) |
-| ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Session info](docs/screenshots/session.png) |
-| ![Lap timing](docs/screenshots/laptiming.png) | ![Delta bar](docs/screenshots/delta.png) |
-| ![Speed](docs/screenshots/speed.png) | |
+| ![Relative in a one-class race](docs/screenshots/relative-single.png) | ![Relative in a multiclass race, grouped by class](docs/screenshots/relative.png) |
+| ![Standings](docs/screenshots/standings.png) | ![Track map](docs/screenshots/trackmap.png) |
+| ![Fuel calculator](docs/screenshots/fuel.png) | ![Dashboard & Inputs](docs/screenshots/dash.png) |
+| ![Session info](docs/screenshots/session.png) | ![Lap timing](docs/screenshots/laptiming.png) |
+| ![Delta bar](docs/screenshots/delta.png) | ![Speed](docs/screenshots/speed.png) |
 
 ## Customizing
 
