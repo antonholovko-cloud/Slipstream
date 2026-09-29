@@ -256,7 +256,7 @@ function pushToOverlays() {
 // ---------------- Settings window ----------------
 
 function settingsPayload() {
-  return { config: config.data, theme: theme(), hotkeyErrors, userData: config.dir, file: config.file, lastSaved: config.lastSaved, backups: config.listBackups().slice(0, 10) };
+  return { config: config.data, theme: theme(), hotkeyErrors, userData: config.dir, file: config.file, lastSaved: config.lastSaved, backups: config.listBackups().slice(0, 10), version: app.getVersion() };
 }
 
 function statusPayload() {
@@ -360,6 +360,7 @@ function updateTray() {
     click: () => { config.setActiveProfile(key); broadcastConfig(); updateTray(); },
   }));
   const menu = Menu.buildFromTemplate([
+    { label: `Slipstream v${app.getVersion()}`, enabled: false },
     { label: `Source: ${source === 'iracing' ? 'iRacing (live)' : source === 'demo' ? 'Demo data' : 'Waiting for iRacing…'}`, enabled: false },
     { type: 'separator' },
     { label: 'Settings…', click: openSettings },
@@ -376,7 +377,7 @@ function updateTray() {
     { label: 'Quit', click: () => app.quit() },
   ]);
   tray.setContextMenu(menu);
-  tray.setToolTip('Slipstream — ' + (source === 'iracing' ? 'connected' : source));
+  tray.setToolTip(`Slipstream v${app.getVersion()} — ` + (source === 'iracing' ? 'connected' : source));
 }
 
 function updateMenu() {

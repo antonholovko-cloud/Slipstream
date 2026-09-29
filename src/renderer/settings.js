@@ -21,7 +21,7 @@
 
   // ---------------- nav ----------------
   function renderNav() {
-    $('#profile-name').textContent = 'Profile: ' + profile().name;
+    $('#profile-name').textContent = (appVersion ? `v${appVersion} · ` : '') + 'Profile: ' + profile().name;
     const main = [['home', '▦', 'Overview'], ['appearance', '🎨', 'Appearance'], ['general', '⚙', 'General & hotkeys'], ['profiles', '💾', 'Layouts & profiles']];
     $('#nav-main').innerHTML = main.map(([id, ico, label]) => `<a data-page="${id}" class="${page === id ? 'active' : ''}"><span class="ico">${ico}</span><span class="grow">${label}</span></a>`).join('');
     $('#nav-overlays').innerHTML = R.OVERLAYS.map((d) => {
@@ -45,7 +45,19 @@
     if (a) { page = a.dataset.page; renderNav(); renderPage(); }
   });
 
+  // Demo preview on = data source "auto" (simulated race while iRacing isn't running);
+  // off = "iracing" only, so overlays never show fake data.
+  function renderDemoToggle() {
+    const el = $('#demo-toggle');
+    if (el && cfg) el.checked = cfg.global.dataSource !== 'iracing';
+  }
+  $('#demo-toggle').onchange = (e) => {
+    setGlobal({ dataSource: e.target.checked ? 'auto' : 'iracing' });
+    if (page === 'general') renderPage();
+  };
+
   function renderStatus() {
+    renderDemoToggle();
     const s = status;
     const el = $('#status');
     el.className = 'pill ' + (s.source === 'iracing' ? 'live' : s.source === 'demo' ? 'demo' : '');
@@ -211,7 +223,7 @@
     el.append(h(`<div><h1>Overview</h1><p class="lead">Turn overlays on, then press <b>Edit layout</b> (or <kbd>${esc(keyLabel(cfg.global.hotkeys.toggleEdit))}</kbd>) to drag and resize them on screen. Arrow keys nudge the focused overlay, <kbd>Shift</kbd> for 10px, <kbd>Ctrl</kbd> to resize.</p></div>`));
     const ub = updateBanner();
     if (ub) el.append(ub);
-    el.append(h(`<div class="tip">💡 Run iRacing in <b>Borderless / Windowed</b> mode — overlays can't be drawn over exclusive fullscreen. While iRacing isn't running, overlays show demo data whenever this window is open or edit mode is on.</div>`));
+    el.append(h(`<div class="tip">💡 Run iRacing in <b>Borderless / Windowed</b> mode — overlays can't be drawn over exclusive fullscreen. While iRacing isn't running, overlays show a demo race whenever this window is open or edit mode is on. Turn off <b>Demo preview</b> at the top to never see demo data.</div>`));
     el.append(screenMap());
     const grid = h('<div class="overview"></div>');
     for (const d of R.OVERLAYS) {
@@ -491,6 +503,7 @@
   // ---------------- data ----------------
   let cfgPath = '';
   let cfgFile = '';
+  let appVersion = '';
   let lastSaved = null;
   let backups = [];
   async function reload() {
@@ -498,6 +511,7 @@
     update = d.update;
     cfg = d.config;
     cfgFile = d.file;
+    appVersion = d.version || '';
     lastSaved = d.lastSaved;
     backups = d.backups || [];
     status = d.status;
@@ -513,6 +527,7 @@
   api.on('settings:saved', (d) => { lastSaved = d.lastSaved; renderSaved(); });
   api.on('settings:config', (d) => {
     cfg = d.config;
+    renderDemoToggle();
     backups = d.backups || backups;
     hotkeyErrors = d.hotkeyErrors;
     if (localEchoes > 0) { localEchoes--; renderNav(); return; }
