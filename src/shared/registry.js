@@ -104,7 +104,7 @@
         { key: 'padV', label: 'Vertical padding (px)', type: 'range', min: 0, max: 30, step: 1, default: 4 },
         { key: 'shiftLights', label: 'Shift lights', type: 'bool', default: true },
         { key: 'lightCount', label: 'Number of lights', type: 'number', min: 5, max: 20, default: 12 },
-        { key: 'flashOnShift', label: 'Flash at shift point', type: 'bool', default: true },
+        { key: 'flashOnShift', label: 'Also flash at the shift point, before the blue stage', type: 'bool', default: false },
         { key: 'limiterAt', label: 'Blue strobe (over-rev warning) starts', type: 'select', default: 'offset',
           options: [{ value: 'offset', label: 'A set number of rpm below the redline' }, { value: 'car', label: "At the car's limiter warning (from iRacing)" }, { value: 'last', label: 'When all lights are lit' }, { value: 'shift', label: 'At the shift point' }] },
         { key: 'limiterRpm', label: 'Blue strobe: rpm below the redline', type: 'number', min: 0, max: 3000, default: 300 },
@@ -152,6 +152,9 @@
       schema: [
         { key: 'autoFit', label: 'Scale contents to fit the box', type: 'bool', default: true },
         { key: 'showGear', label: 'Show gear', type: 'bool', default: true },
+        { key: 'revIndicator', label: 'Rev indicator behind the gear', type: 'select', default: 'fill',
+          options: [{ value: 'fill', label: 'Fill rising with RPM + blink at shift point' }, { value: 'blip', label: 'Blip only at the shift point' }, { value: 'off', label: 'Off' }] },
+        { key: 'revShiftColor', label: 'Shift point blink color', type: 'color', default: '#ef4444' },
         { key: 'showUnit', label: 'Show unit (km/h / mph)', type: 'bool', default: true },
         { key: 'showSlip', label: 'Wheelspin / lock-up lamp', type: 'bool', default: true },
         { key: 'slipLabel', label: 'Show SPIN / LOCK text under the lamp', type: 'bool', default: true },

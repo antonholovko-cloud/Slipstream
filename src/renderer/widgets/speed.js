@@ -4,7 +4,11 @@
  */
 Host.css(`
 .spd { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:.6rem; padding:0 .6rem; overflow:hidden; }
-.spd .gear { font-size:2.4rem; font-weight:700; line-height:1; min-width:1.6rem; text-align:center; }
+.spd .gearwrap { position:relative; border-radius:.45rem; padding:.15rem .5rem; overflow:hidden; flex:none; }
+.spd .gearwrap .rev { position:absolute; left:0; right:0; bottom:0; height:0; border-radius:.45rem; opacity:.6; transition: height .05s linear, background .1s; }
+.spd .gearwrap.blip .rev { height:100% !important; animation: spdblip .14s steps(2) infinite; }
+@keyframes spdblip { 50% { opacity:.08; } }
+.spd .gear { position:relative; font-size:2.4rem; font-weight:700; line-height:1; min-width:1.6rem; text-align:center; }
 .spd .sep { width:1px; height:2.2rem; background:rgba(255,255,255,.12); flex:none; }
 .spd .val { display:flex; align-items:baseline; gap:.25rem; }
 .spd .val b { font-size:2.4rem; font-weight:700; line-height:1; min-width:3.6ch; text-align:right; }
@@ -18,7 +22,7 @@ Host.css(`
 
 Host.register('speed', function (root) {
   root.innerHTML = `<div class="spd">
-    <div class="gear">N</div><div class="sep s1"></div>
+    <div class="gearwrap"><div class="rev"></div><div class="gear">N</div></div><div class="sep s1"></div>
     <div class="val"><b>0</b><small></small></div>
     <div class="lampbox"><div class="lamp"></div><small></small></div>
   </div>`;
@@ -36,7 +40,7 @@ Host.register('speed', function (root) {
     },
     configure(ctx) {
       const s = ctx.settings;
-      show(q('.gear'), s.showGear);
+      show(q('.gearwrap'), s.showGear);
       show(q('.s1'), s.showGear);
       show(q('.lampbox'), s.showSlip);
       show(q('.val small'), s.showUnit);
@@ -45,7 +49,25 @@ Host.register('speed', function (root) {
       const s = ctx.settings, p = state.player;
       if (!p) return;
       const u = state.session ? state.session.units : 'metric';
-      if (s.showGear) q('.gear').textContent = p.gear === -1 ? 'R' : p.gear === 0 ? 'N' : p.gear;
+      if (s.showGear) {
+        q('.gear').textContent = p.gear === -1 ? 'R' : p.gear === 0 ? 'N' : p.gear;
+        // rev indicator behind the gear: rises with rpm, blinks at the car's shift point
+        const wrap = q('.gearwrap'), rev = q('.rev'), t = ctx.theme;
+        const sh = p.shift || {};
+        const red = sh.redline || 8000;
+        const first = sh.slFirst || red * 0.7;
+        const shiftAt = sh.slShift || sh.slLast || red * 0.95;
+        const style = s.revIndicator || 'fill';
+        const atShift = style !== 'off' && p.rpm >= shiftAt && p.gear > 0;
+        wrap.classList.toggle('blip', atShift);
+        if (style === 'off') { rev.style.height = '0'; }
+        else if (atShift) rev.style.background = s.revShiftColor || t.red;
+        else if (style === 'fill') {
+          const f = Math.max(0, Math.min(1, (p.rpm - first) / Math.max(1, shiftAt - first)));
+          rev.style.height = (f * 100).toFixed(1) + '%';
+          rev.style.background = f < 0.6 ? t.green : f < 0.9 ? t.yellow : t.red;
+        } else rev.style.height = '0';
+      }
       q('.val b').textContent = Math.round(Fmt.speed(p.speed, u));
       if (s.showUnit) q('.val small').textContent = Fmt.speedUnit(u);
 

@@ -58,6 +58,7 @@ function migrate(cfg) {
     p.overlays = p.overlays || {};
     mergeInputsIntoDash(p.overlays);
     compactDash(p.overlays.dash);
+    if (p.overlays.dash && !p.overlays.dash.flashV2) Object.assign(p.overlays.dash, { flashOnShift: false, flashV2: true }); // only the blue stage strobes
     radarRing(p.overlays.radar);
     deltaGaps(p.overlays.delta);
     flagsOff(p.overlays.flags);
