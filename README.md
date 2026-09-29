@@ -153,6 +153,20 @@ Every change you make is saved right away and kept after updates.
 
 ![Settings: standings columns](docs/screenshots/settings-standings.png)
 
+### League class splits (Pro / Am)
+
+Many leagues split one iRacing class into their own classes, for example GT3 into **GT3 Pro** and **GT3 Am**.
+iRacing only knows the car class, so on the *Class splits* page you tell Slipstream who belongs where: by car
+number range, by a list of drivers (names or customer IDs), by iRating range, or "all other cars". A rule can be
+limited to one league ID, so each league's split only applies in its own sessions. The Relative, Standings,
+Delta and Track Map then show positions, gaps, SOF and colors per sub-class.
+
+| Relative | Standings |
+|---|---|
+| ![Relative with Pro / Am tags](docs/screenshots/class-splits-relative.png) | ![Standings grouped by sub-class](docs/screenshots/class-splits-standings.png) |
+
+![Class splits settings](docs/screenshots/class-splits-settings.png)
+
 ### Hotkeys
 
 Work anywhere, even while iRacing has focus. You can change them in *General & hotkeys*.

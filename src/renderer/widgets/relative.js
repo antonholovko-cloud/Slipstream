@@ -4,6 +4,7 @@ Host.register('relative', function (root) {
   const footer = root.querySelector('.footer');
   let last = '';
   let lastFooter = '';
+  let multiClass = false;
 
   function row(c, r, s, cols, isRace) {
     const E = Fmt.esc;
@@ -17,6 +18,7 @@ Host.register('relative', function (root) {
       switch (col) {
         case 'pos': return `<td class="c-pos ${nameCls}">${c.classPosition || ''}</td>`;
         case 'number': return `<td class="c-number"><span class="classbar" style="background:${c.classColor}"></span><span class="num">#${E(c.number)}</span></td>`;
+        case 'class': return `<td class="c-class">${multiClass ? `<span class="tag cls" style="background:${c.classColor};color:${Fmt.contrast(c.classColor)}">${E(c.className)}</span>` : ''}</td>`;
         case 'name': return `<td class="c-name ${nameCls}">${E(Fmt.driverName(c, s.nameFormat))}</td>`;
         case 'license': return `<td class="c-license">${Fmt.license(c)}</td>`;
         case 'irating': return `<td class="c-irating">${Fmt.irating(c.irating)}</td>`;
@@ -36,6 +38,7 @@ Host.register('relative', function (root) {
       const cars = new Map((state.cars || []).map((c) => [c.idx, c]));
       const me = (state.cars || []).find((c) => c.isPlayer);
       const isRace = state.session && state.session.isRace;
+      multiClass = new Set((state.cars || []).map((c) => c.classId)).size > 1;
       let rel = state.relative || [];
       if (s.hidePitCars) rel = rel.filter((r) => !cars.get(r.idx).onPitRoad);
       const ahead = rel.filter((r) => r.gap >= 0).slice(-s.ahead);

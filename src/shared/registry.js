@@ -29,6 +29,7 @@
     { id: 'classPos', label: 'Class position', default: false },
     { id: 'posGain', label: 'Positions gained', default: true },
     { id: 'number', label: 'Car number', default: true },
+    { id: 'class', label: 'Class tag', default: false },
     { id: 'name', label: 'Driver', default: true },
     { id: 'team', label: 'Team', default: false },
     { id: 'car', label: 'Car model', default: false },
@@ -47,6 +48,7 @@
   const RELATIVE_COLUMNS = [
     { id: 'pos', label: 'Position', default: true },
     { id: 'number', label: 'Car number', default: true },
+    { id: 'class', label: 'Class tag (multiclass / league splits)', default: true },
     { id: 'name', label: 'Driver', default: true },
     { id: 'license', label: 'License / SR', default: true },
     { id: 'irating', label: 'iRating', default: true },

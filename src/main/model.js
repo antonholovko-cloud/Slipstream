@@ -6,6 +6,7 @@
 const { TimingTracker } = require('./timing');
 const { SlipEstimator } = require('./slip');
 const { GapTracker } = require('./gaps');
+const { assignSplits } = require('./classes');
 
 const TRACK_BINS = 500;
 
@@ -86,6 +87,7 @@ class RaceModel {
         className: String(d.CarClassShortName || d.CarScreenNameShort || ''),
         classColor: hexColor(d.CarClassColor),
         classEst: num(d.CarClassEstLapTime),
+        classOrder: 0, renumber: false,
         car: String(d.CarScreenNameShort || d.CarScreenName || ''),
         irating: num(d.IRating),
         license: String(d.LicString || ''),
@@ -95,7 +97,10 @@ class RaceModel {
         userId: d.UserID,
       });
     }
+    for (const d of this.drivers.values()) d.base = { classId: d.classId, className: d.className, classColor: d.classColor };
+    this.splitRules = undefined; // re-apply league class splits to the new driver list
     const wk = info.WeekendInfo || {};
+    this.leagueId = wk.LeagueID || 0;
     const lenStr = String(wk.TrackLength || '0');
     let len = num(lenStr) * (lenStr.includes('mi') ? 1609.34 : 1000);
     this.track = {
@@ -133,6 +138,7 @@ class RaceModel {
       this.siu = frame.sessionInfoUpdate;
     }
     if (!this.info) return null;
+    if (settings.classSplits !== this.splitRules) this.applySplits(settings.classSplits);
     if (frame.demoTrack && !this.trackMaps[frame.demoTrack.id]) this.trackMaps[frame.demoTrack.id] = frame.demoTrack.points;
     if (frame.demoTrack) this.track.id = frame.demoTrack.id;
 
@@ -176,11 +182,12 @@ class RaceModel {
       if (isRace && v.SessionState >= 4) {
         if (onPit && !st.wasPit && lapC > 0) { st.pitStops++; st.lastPitLap = lapC; }
         if (!st.startPos && (v.CarIdxClassPosition?.[i] || 0) > 0) st.startPos = v.CarIdxClassPosition[i];
+        if (!st.startOverall && (v.CarIdxPosition?.[i] || 0) > 0) st.startOverall = v.CarIdxPosition[i];
       }
       st.wasPit = onPit;
       cars.push({
         idx: i, name: d.name, abbrev: d.abbrev, initials: d.initials, team: d.team, number: d.number, car: d.car,
-        classId: d.classId, className: d.className, classColor: d.classColor,
+        classId: d.classId, className: d.className, classColor: d.classColor, baseClass: d.base.className,
         irating: d.irating, license: d.license, licColor: d.licColor,
         position: v.CarIdxPosition?.[i] || 0,
         classPosition: v.CarIdxClassPosition?.[i] || 0,
@@ -215,7 +222,12 @@ class RaceModel {
     const classMap = new Map();
     for (const c of cars) {
       let k = classMap.get(c.classId);
-      if (!k) { k = { id: c.classId, name: c.className, color: c.classColor, count: 0, irSum: 0, sof: 0, bestLap: -1, cars: [] }; classMap.set(c.classId, k); }
+      if (!k) {
+        const d = this.drivers.get(c.idx);
+        // renumber: a league split moved cars in or out, so iRacing's class positions don't apply as-is
+        k = { id: c.classId, name: c.className, color: c.classColor, count: 0, irSum: 0, sof: 0, bestLap: -1, cars: [], order: d.classOrder, renumber: d.renumber };
+        classMap.set(c.classId, k);
+      }
       k.count++;
       k.cars.push(c);
       if (c.bestLap > 0 && (k.bestLap < 0 || c.bestLap < k.bestLap)) k.bestLap = c.bestLap;
@@ -238,7 +250,12 @@ class RaceModel {
         if (b.bestLap > 0) return 1;
         return a.idx - b.idx;
       });
-      k.cars.forEach((c, n) => { if (!c.classPosition) c.classPosition = n + 1; });
+      k.cars.forEach((c, n) => { if (!c.classPosition || k.renumber) c.classPosition = n + 1; });
+      if (k.renumber && isRace) {
+        // start position within the sub-class, from the overall grid order
+        const grid = k.cars.filter((c) => this.carState(c.idx).startOverall).sort((a, b) => this.carState(a.idx).startOverall - this.carState(b.idx).startOverall);
+        k.cars.forEach((c) => { const r = grid.indexOf(c); c.startPos = r >= 0 ? r + 1 : 0; });
+      }
 
       const leader = k.cars[0];
       const estLap = leader ? (this.classEst(leader) || 90) : 90;
@@ -270,11 +287,12 @@ class RaceModel {
       }
       delete k.cars; // not sent, cars carry their own class info
       k.irSum = undefined;
+      k.renumber = undefined;
     }
     classes.sort((a, b) => {
       // faster class first, by estimated lap time
       const ea = this.classEstById(a.id), eb = this.classEstById(b.id);
-      return (ea || 1e9) - (eb || 1e9) || String(a.name).localeCompare(String(b.name));
+      return (ea || 1e9) - (eb || 1e9) || a.order - b.order || String(a.name).localeCompare(String(b.name));
     });
 
     const me = cars.find((c) => c.isPlayer);
@@ -410,6 +428,35 @@ class RaceModel {
     if (!(player.lastLap > 0) && timing.log.length) player.lastLap = timing.log[timing.log.length - 1].time;
 
     return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap, timing };
+  }
+
+  // League class splits (settings.classSplits): move cars into custom sub-classes.
+  applySplits(rules) {
+    this.splitRules = rules;
+    const drivers = [...this.drivers.values()].filter((d) => !d.isPace && !d.isSpectator);
+    for (const d of drivers) Object.assign(d, d.base, { classOrder: 0, renumber: false });
+    const splits = assignSplits(drivers.map((d) => ({ ...d, ...d.base })), rules, this.leagueId);
+    const affected = new Set();
+    for (const d of drivers) {
+      const sp = splits.get(d.idx);
+      if (!sp) continue;
+      affected.add(d.base.classId);
+      Object.assign(d, { classId: sp.id, className: sp.name, classColor: sp.color, classOrder: sp.order });
+    }
+    for (const d of drivers) if (affected.has(d.base.classId)) d.renumber = true;
+  }
+
+  // Everyone in the session with their iRacing class and the sub-class they are split into (settings preview).
+  classPreview(rules) {
+    const drivers = [...this.drivers.values()].filter((d) => !d.isPace && !d.isSpectator).map((d) => ({ ...d, ...d.base }));
+    const splits = assignSplits(drivers, rules, this.leagueId);
+    return {
+      leagueId: this.leagueId,
+      drivers: drivers.map((d) => {
+        const sp = splits.get(d.idx);
+        return { name: d.name, number: d.number, userId: d.userId, irating: d.irating, baseClass: d.className, baseColor: d.classColor, split: sp ? sp.name : '', splitColor: sp ? sp.color : '' };
+      }),
+    };
   }
 
   classEst(car) {

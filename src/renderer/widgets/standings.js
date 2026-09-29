@@ -15,6 +15,7 @@ Host.register('standings', function (root) {
         if (!g) return `<td class="c-posGain dim">${g === 0 ? '–' : ''}</td>`;
         return `<td class="c-posGain ${g > 0 ? 'green' : 'red'}">${g > 0 ? '▲' : '▼'}${Math.abs(g)}</td>`;
       }
+      case 'class': return `<td class="c-class"><span class="tag cls" style="background:${c.classColor};color:${Fmt.contrast(c.classColor)}">${E(c.className)}</span></td>`;
       case 'number': return `<td class="c-number"><span class="classbar" style="background:${c.classColor}"></span><span class="num">#${E(c.number)}</span></td>`;
       case 'name': {
         const tag = c.onPitRoad ? ' <span class="tag pit">PIT</span>' : !c.inWorld && s.isRace ? ' <span class="tag out">OUT</span>' : '';

@@ -22,7 +22,7 @@
   // ---------------- nav ----------------
   function renderNav() {
     $('#profile-name').textContent = (appVersion ? `v${appVersion} · ` : '') + 'Profile: ' + profile().name;
-    const main = [['home', '▦', 'Overview'], ['appearance', '🎨', 'Appearance'], ['general', '⚙', 'General & hotkeys'], ['profiles', '💾', 'Layouts & profiles']];
+    const main = [['home', '▦', 'Overview'], ['appearance', '🎨', 'Appearance'], ['general', '⚙', 'General & hotkeys'], ['classes', '🏷', 'Class splits'], ['profiles', '💾', 'Layouts & profiles']];
     $('#nav-main').innerHTML = main.map(([id, ico, label]) => `<a data-page="${id}" class="${page === id ? 'active' : ''}"><span class="ico">${ico}</span><span class="grow">${label}</span></a>`).join('');
     $('#nav-overlays').innerHTML = R.OVERLAYS.map((d) => {
       const on = ov(d.id).enabled;
@@ -198,6 +198,7 @@
     else if (page === 'appearance') pageAppearance(el);
     else if (page === 'general') pageGeneral(el);
     else if (page === 'profiles') pageProfiles(el);
+    else if (page === 'classes') pageClasses(el);
     else if (page.startsWith('ov:')) pageOverlay(el, page.slice(3));
     el.scrollTop = scroll;
   }
@@ -437,6 +438,114 @@
     tm.append(forget);
     el.append(tm);
     el.append(h(`<p style="color:var(--dim);font-size:12px">Settings file: ${esc(cfgPath)}</p>`));
+  }
+
+  // League class splits, e.g. GT3 -> GT3 Pro / GT3 Am (rules are applied in src/main/classes.js).
+  const MATCH_OPTS = [
+    { value: 'numbers', label: 'Car number range' },
+    { value: 'drivers', label: 'Driver list' },
+    { value: 'irating', label: 'iRating range' },
+    { value: 'rest', label: 'All other cars' },
+  ];
+  const SPLIT_COLORS = ['#f97316', '#a855f7', '#22c55e', '#ec4899', '#38bdf8', '#eab308'];
+  const newRule = (patch) => ({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), on: true, name: '', color: SPLIT_COLORS[(cfg.global.classSplits || []).length % SPLIT_COLORS.length], from: '', league: '', match: 'numbers', numbers: '', drivers: '', irMin: '', irMax: '', ...patch });
+
+  function pageClasses(el) {
+    const rules = () => cfg.global.classSplits || [];
+    const save = (list) => setGlobal({ classSplits: list.map((r) => ({ ...r })) }).then(refreshPreview);
+    const saveRule = (i, patch) => save(rules().map((r, n) => (n === i ? { ...r, ...patch } : r)));
+    const redraw = (p) => p.then(renderPage);
+
+    el.append(h(`<div><h1>Class splits</h1><p class="lead">For leagues that run sub-classes inside one iRacing class, e.g. <b>GT3 Pro</b> and <b>GT3 Am</b>.
+      iRacing only knows the car class, so tell Slipstream who belongs where. The Relative, Standings, Delta and Track Map then show positions, gaps, SOF and colors per sub-class.
+      Rules are checked from top to bottom and the first match wins; cars that match nothing keep their iRacing class.</p></div>`));
+
+    const list = rules();
+    list.forEach((r, i) => {
+      const c = h(`<div class="card split ${r.on === false ? 'off' : ''}"><div class="split-head">
+        <label class="sw" title="Use this rule"><input type="checkbox" ${r.on !== false ? 'checked' : ''}><span></span></label>
+        <input type="color" class="sc" value="${esc(r.color || '#f97316')}" title="Sub-class color">
+        <input type="text" class="sn" value="${esc(r.name)}" placeholder="Sub-class name, e.g. GT3 Am">
+        <span class="grow"></span>
+        <button class="btn small ghost up" title="Check earlier">▲</button><button class="btn small ghost down" title="Check later">▼</button>
+        <button class="btn small danger del">Delete</button></div><div class="grid2"></div></div>`);
+      $('.split-head input[type=checkbox]', c).onchange = (e) => redraw(saveRule(i, { on: e.target.checked }));
+      $('.sc', c).oninput = (e) => saveRule(i, { color: e.target.value });
+      $('.sn', c).oninput = (e) => saveRule(i, { name: e.target.value });
+      $('.up', c).onclick = () => { if (i > 0) { const l = rules().slice(); [l[i - 1], l[i]] = [l[i], l[i - 1]]; redraw(save(l)); } };
+      $('.down', c).onclick = () => { if (i < rules().length - 1) { const l = rules().slice(); [l[i + 1], l[i]] = [l[i], l[i + 1]]; redraw(save(l)); } };
+      $('.del', c).onclick = () => { if (confirm(`Delete the sub-class "${r.name || 'unnamed'}"?`)) redraw(save(rules().filter((_, n) => n !== i))); };
+      const grid = $('.grid2', c);
+      const from = field({ label: 'Split from iRacing class (empty = any class)', type: 'text' }, r.from, (v) => saveRule(i, { from: v }));
+      $('input', from).setAttribute('list', 'class-names');
+      $('input', from).placeholder = 'e.g. GT3';
+      grid.append(from);
+      const lg = field({ label: 'Only in league ID (empty = every session)', type: 'text' }, r.league, (v) => saveRule(i, { league: v.trim() }));
+      $('input', lg).placeholder = 'any';
+      grid.append(lg);
+      grid.append(field({ label: 'Car goes in when', type: 'select', options: MATCH_OPTS }, r.match, (v) => redraw(saveRule(i, { match: v }))));
+      if (r.match === 'numbers') {
+        const f = field({ label: 'Car numbers', type: 'text' }, r.numbers, (v) => saveRule(i, { numbers: v }));
+        $('input', f).placeholder = 'e.g. 100-199, 7';
+        $('input', f).style.width = '190px';
+        grid.append(f);
+      } else if (r.match === 'irating') {
+        grid.append(field({ label: 'iRating from (empty = no minimum)', type: 'text' }, r.irMin, (v) => saveRule(i, { irMin: v.trim() })));
+        grid.append(field({ label: 'iRating below (empty = no maximum)', type: 'text' }, r.irMax, (v) => saveRule(i, { irMax: v.trim() })));
+      }
+      if (r.match === 'drivers') {
+        const f = h(`<div class="field" style="flex-direction:column;align-items:stretch"><label>Drivers: names exactly as in iRacing, customer IDs or team names, one per line</label>
+          <textarea rows="5" placeholder="Max Verstappen&#10;123456"></textarea></div>`);
+        const ta = $('textarea', f);
+        ta.value = r.drivers || '';
+        ta.oninput = () => saveRule(i, { drivers: ta.value });
+        c.append(f);
+      }
+      el.append(c);
+    });
+    if (!list.length) el.append(h('<div class="card"><div style="padding:14px 0;color:var(--dim)">No sub-classes yet. Add one, or start from the Pro / Am preset.</div></div>'));
+
+    const actions = h('<div class="row" style="margin-bottom:18px"></div>');
+    const add = h('<button class="btn primary">+ Add sub-class</button>');
+    add.onclick = () => redraw(save(rules().concat([newRule()])));
+    const preset = h('<button class="btn">Preset: GT3 Pro / Am by car number</button>');
+    preset.onclick = () => redraw(save(rules().concat([
+      newRule({ name: 'GT3 Pro', color: '#f97316', from: 'GT3', match: 'numbers', numbers: '1-99' }),
+      newRule({ name: 'GT3 Am', color: '#a855f7', from: 'GT3', match: 'rest' }),
+    ])));
+    actions.append(add, preset);
+    el.append(actions);
+
+    const pv = h('<div class="card"><h2>Who goes where (current session)</h2><div class="preview"></div></div>');
+    el.append(pv);
+    el.append(h('<datalist id="class-names"></datalist>'));
+    refreshPreview();
+  }
+
+  let previewTimer = null;
+  function refreshPreview() {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(async () => {
+      const box = $('.preview');
+      if (!box || page !== 'classes') return;
+      const d = await api.invoke('settings:classes', cfg.global.classSplits || []);
+      if (!d || !d.drivers.length) {
+        box.innerHTML = '<div style="padding:10px 0 14px;color:var(--dim)">Join a session in iRacing (or turn on Demo preview) to see which sub-class every driver lands in.</div>';
+        return;
+      }
+      const names = [...new Set(d.drivers.map((x) => x.baseClass))];
+      const dl = $('#class-names');
+      if (dl) dl.innerHTML = names.map((n) => `<option value="${esc(n)}">`).join('');
+      const sw = (color, name) => `<span class="tagc" style="background:${esc(color)}"></span>${esc(name)}`;
+      const rows = d.drivers.slice().sort((a, b) => (parseInt(a.number, 10) || 0) - (parseInt(b.number, 10) || 0)).map((x) => `<tr>
+        <td>#${esc(x.number)}</td><td>${esc(x.name)}</td><td class="dim">${esc(x.userId)}</td><td class="dim">${x.irating}</td>
+        <td>${sw(x.baseColor, x.baseClass)}</td><td>${x.split ? sw(x.splitColor, x.split) : '<span class="dim">stays</span>'}</td></tr>`).join('');
+      const counts = {};
+      for (const x of d.drivers) { const k = x.split || x.baseClass; counts[k] = (counts[k] || 0) + 1; }
+      box.innerHTML = `<p style="color:var(--dim);font-size:13px;margin:2px 0 8px">League ID of this session: <b>${d.leagueId || 'none (not a league session)'}</b> ·
+        ${Object.entries(counts).map(([k, n]) => `${esc(k)}: <b>${n}</b>`).join(' · ')}</p>
+        <table class="ptable"><tr><th>No.</th><th>Driver</th><th>Customer ID</th><th>iR</th><th>iRacing class</th><th>Sub-class</th></tr>${rows}</table>`;
+    }, 250);
   }
 
   function pageProfiles(el) {

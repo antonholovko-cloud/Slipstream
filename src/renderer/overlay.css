@@ -62,6 +62,7 @@ body.edit.empty #frame { background: var(--bg-a); }
 .tag { display: inline-block; padding: 0 .3rem; border-radius: 3px; font-size: .7rem; font-weight: 700; line-height: 1.1rem; }
 .tag.pit { background: var(--yellow); color: #000; }
 .tag.out { background: var(--dim); color: #000; }
+.tag.cls { max-width: 5rem; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
 
 /* ---------- tables (standings / relative) ---------- */
 table.board { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 1rem; font-weight: 600; }
@@ -78,7 +79,7 @@ td.c-name { width: 100%; overflow: hidden; text-overflow: ellipsis; max-width: 0
 td.c-team, td.c-car { color: var(--dim); max-width: 8rem; overflow: hidden; text-overflow: ellipsis; }
 td.c-gap, td.c-interval, td.c-last, td.c-best, td.c-irating, td.c-irDelta, td.c-lap, td.c-pit { text-align: right; }
 td.c-irating, td.c-lap, td.c-pit { color: var(--dim); }
-td.c-posGain, td.c-tire { text-align: center; font-size: .8rem; }
+td.c-posGain, td.c-tire, td.c-class { text-align: center; font-size: .8rem; }
 td.c-number { padding-left: 0 !important; }
 .classbar { display: inline-block; width: .3rem; height: 1.3rem; vertical-align: middle; margin-right: .3rem; border-radius: 1px; }
 .footer { display: flex; justify-content: space-between; gap: .8rem; padding: .2rem .6rem; font-size: .8rem; color: var(--dim); background: var(--header); font-weight: 600; }

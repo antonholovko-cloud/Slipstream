@@ -85,6 +85,16 @@ h1 { margin: 0 0 4px; font: 700 26px Rajdhani, sans-serif; letter-spacing: .02em
 
 .hk { font-family: 'Roboto Mono', monospace; min-width: 220px; text-align: center; }
 .hk.rec { border-color: var(--accent) !important; color: var(--accent2); }
+.card.split.off { opacity: .55; }
+.split-head { display: flex; align-items: center; gap: 10px; padding: 12px 0 6px; }
+.split-head input[type=text] { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; width: 260px; font-weight: 600; }
+.split-head input[type=color] { width: 36px; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel2); padding: 2px; cursor: pointer; }
+.card.split textarea { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; color: inherit; font: inherit; resize: vertical; margin: 6px 0 10px; }
+.ptable { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 14px; }
+.ptable th { text-align: left; color: var(--dim); font-weight: 600; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.ptable td { padding: 4px 8px; border-top: 1px solid rgba(255,255,255,.04); }
+.ptable .dim, .preview .dim { color: var(--dim); }
+.tagc { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
 .warnbox { background: rgba(245, 158, 11, .1); border: 1px solid rgba(245, 158, 11, .35); color: #fcd34d; padding: 10px 14px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
 .tip.update .row, .updinfo .row { display: flex; gap: 8px; margin-top: 10px; }
 .updinfo { padding: 4px 0 14px; font-size: 13px; }
