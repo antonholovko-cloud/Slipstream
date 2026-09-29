@@ -133,11 +133,11 @@ Host.register('dash', function (root) {
     g.lineWidth = s.traceWidth;
     g.lineJoin = 'round';
     g.lineCap = 'round';
-    const line = (key, color, absColor) => {
+    const line = (key, color, absColor, lockColor) => {
       let cur = null;
       for (let i = 0; i < samples.length; i++) {
         const p = samples[i];
-        const col = absColor && p.abs ? absColor : color;
+        const col = lockColor && p.lock ? lockColor : absColor && p.abs ? absColor : color;
         if (col !== cur) {
           if (cur) g.stroke();
           g.beginPath();
@@ -152,7 +152,7 @@ Host.register('dash', function (root) {
     };
     if (s.showSteerTrace) line('st', s.steerColor);
     if (s.showClutch) line('cl', s.clutchColor);
-    line('br', s.brakeColor, s.absColor);
+    line('br', s.brakeColor, s.absColor, s.traceLock !== false ? (s.lockTraceColor || '#facc15') : null);
     line('th', s.throttleColor);
   }
 
@@ -264,18 +264,19 @@ Host.register('dash', function (root) {
         lightsEl.classList.toggle('flash', s.flashOnShift && p.rpm >= shiftAt && !blinkAll);
       }
 
-      // ---- wheelspin / lock-up light ----
+      // ---- wheelspin / lock-up detection (used by the light and the brake trace) ----
+      const sl = p.slip;
+      let kind = null;
+      if (sl && sl.learned) {
+        if (p.throttle > 0.1 && sl.dev > s.spinSensitivity / 100) kind = 'spin';
+        else if (p.brake > 0.1 && sl.dev < -s.lockSensitivity / 100) kind = 'lock';
+      }
+      if (!kind && s.lockOnAbs && sl && sl.abs && p.brake > 0.05) kind = 'lock';
+      const nowMs = performance.now();
+      if (kind) { slipKind = kind; slipUntil = nowMs + 180; }
+      const slipNow = nowMs < slipUntil ? slipKind : '';
       if (s.slipLight) {
-        const sl = p.slip;
-        let kind = null;
-        if (sl && sl.learned) {
-          if (p.throttle > 0.1 && sl.dev > s.spinSensitivity / 100) kind = 'spin';
-          else if (p.brake > 0.1 && sl.dev < -s.lockSensitivity / 100) kind = 'lock';
-        }
-        if (!kind && s.lockOnAbs && sl && sl.abs && p.brake > 0.05) kind = 'lock';
-        const now = performance.now();
-        if (kind) { slipKind = kind; slipUntil = now + 180; }
-        const shown = now < slipUntil ? slipKind : '';
+        const shown = slipNow;
         if (shown !== slipShown) {
           slipShown = shown;
           const col = shown === 'spin' ? s.spinColor : shown === 'lock' ? s.lockColor : '';
@@ -288,7 +289,7 @@ Host.register('dash', function (root) {
       // ---- inputs ----
       const time = performance.now() / 1000;
       const half = p.steerMax / 2 || 4;
-      samples.push({ time, th: p.throttle, br: p.brake, cl: p.clutch, st: 0.5 - Math.max(-1, Math.min(1, p.steer / half)) * 0.5, abs: p.abs });
+      samples.push({ time, th: p.throttle, br: p.brake, cl: p.clutch, st: 0.5 - Math.max(-1, Math.min(1, p.steer / half)) * 0.5, abs: p.abs, lock: slipNow === 'lock' });
       while (samples.length && time - samples[0].time > s.traceSeconds + 0.5) samples.shift();
       if (s.showTrace) drawTrace(s);
       if (s.showBars) {

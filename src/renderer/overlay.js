@@ -85,8 +85,9 @@
   window.addEventListener('resize', () => { applyFontSize(); if (lastState) render(lastState); });
 
   let fitTimer = null;
+  let resizing = false; // user is dragging the resize grip: don't fight them
   function requestFitHeight(h) {
-    if (!(h > 20) || Math.abs(window.innerHeight - h) <= 2) return;
+    if (resizing || !(h > 20) || Math.abs(window.innerHeight - h) <= 2) return;
     clearTimeout(fitTimer);
     fitTimer = setTimeout(async () => {
       const b = await window.api.invoke('overlay:getBounds');
@@ -123,6 +124,7 @@
       e.stopPropagation();
       const b = await window.api.invoke('overlay:getBounds');
       drag = { mode, sx: e.screenX, sy: e.screenY, b, target: e.currentTarget, pid: e.pointerId };
+      if (mode === 'resize') resizing = true;
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
     };
     const move = (e) => {
@@ -133,6 +135,12 @@
     const end = (e) => {
       if (!drag) return;
       const dx = e.screenX - drag.sx, dy = e.screenY - drag.sy;
+      // Dragging the height by hand means "I want this height": stop fitting the height to the contents.
+      if (drag.mode === 'resize' && Math.abs(dy) > 6 && payload.settings.fitHeight !== false && instance && instance.fit) {
+        payload.settings.fitHeight = false;
+        window.api.invoke('settings:setOverlay', id, { fitHeight: false });
+      }
+      resizing = false;
       window.api.send('overlay:setBounds', id, next(drag, dx, dy), true);
       try { drag.target.releasePointerCapture(drag.pid); } catch (_) {}
       drag = null;
