@@ -164,7 +164,7 @@ groups cars by class (your class first), with ▲ / ▼ showing whether each car
 
 | Relative | Standings |
 |---|---|
-| ![Relative with Pro / Am tags](docs/screenshots/class-splits-relative.png) | ![Standings grouped by sub-class](docs/screenshots/class-splits-standings.png) |
+| ![Relative grouped by Pro / Am class](docs/screenshots/class-splits-relative.png) | ![Standings grouped by sub-class](docs/screenshots/class-splits-standings.png) |
 
 ![Class splits settings](docs/screenshots/class-splits-settings.png)
 
