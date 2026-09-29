@@ -1,6 +1,6 @@
 {
   "name": "slipstream",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Slipstream — fully customizable overlays for iRacing: standings, relative, inputs, fuel, delta, radar, track map and more.",
   "main": "src/main/main.js",
   "scripts": {
@@ -11,7 +11,8 @@
     "release": "electron-builder --win --publish never",
     "icon": "electron scripts/render-icon.js",
     "screenshots": "electron scripts/screenshots.js",
-    "gifs": "electron scripts/gifs.js"
+    "gifs": "electron scripts/gifs.js",
+    "splash": "electron scripts/render-splash.js"
   },
   "author": {
     "name": "Anton Holovko",
@@ -83,7 +84,8 @@
       "artifactName": "Slipstream-Setup-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "Slipstream-Portable-${version}.${ext}"
+      "artifactName": "Slipstream-Portable-${version}.${ext}",
+      "splashImage": "build/portable-splash.bmp"
     },
     "publish": [
       {

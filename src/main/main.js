@@ -32,6 +32,7 @@ let loopTimer = null;
 let updater = null;
 let updateNotified = '';
 let hotkeyErrors = [];
+let quitting = false;
 const forceDemo = process.argv.includes('--demo'); // runtime only, never saved
 // Dev/test runs (screenshots) render far off-screen: nothing pops up on the user's
 // desktop, and no tray icon or global hotkeys that would clash with a real instance.
@@ -297,8 +298,24 @@ function openSettings() {
     webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false, offscreen: OFFSCREEN },
   });
   settingsWin.loadFile(path.join(RENDERER, 'settings.html'), { query: { page: process.env.IRO_PAGE || 'home' } });
-  settingsWin.on('closed', () => { settingsWin = null; });
+  settingsWin.on('closed', () => { settingsWin = null; trayHint(); });
   settingsWin.once('ready-to-show', () => bringToFront(settingsWin));
+}
+
+// Closing the window doesn't quit (the overlays keep running), so tell people where it went.
+// Shown the first few times only.
+function trayHint() {
+  if (!tray || OFFSCREEN || quitting) return;
+  const n = config.data.global.trayHintsShown || 0;
+  if (n >= 3) return;
+  config.setGlobal({ trayHintsShown: n + 1 });
+  try {
+    tray.displayBalloon({
+      iconType: 'info',
+      title: 'Slipstream is still running',
+      content: 'Your overlays stay on. Find Slipstream in the system tray (click ^ next to the clock) to open settings or quit.',
+    });
+  } catch (_) { /* balloons unsupported */ }
 }
 
 // ---------------- Hotkeys ----------------
@@ -542,7 +559,8 @@ app.whenReady().then(() => {
   }
   updateTray();
   syncOverlayWindows();
-  if (!config.data.global.startMinimized && !process.argv.includes('--hidden')) openSettings();
+  // Launching the app always shows the window; only an explicit --hidden start stays in the tray.
+  if (!process.argv.includes('--hidden')) openSettings();
   loopTimer = setInterval(tick, 1000 / 60);
   screen.on('display-removed', () => syncOverlayWindows());
   if (process.env.IRO_EDIT) setTimeout(() => setEditMode(true), 1500);
@@ -559,7 +577,7 @@ global.__slipstream = {
 
 app.on('second-instance', () => openSettings());
 app.on('window-all-closed', (e) => { /* keep running in tray */ });
-app.on('before-quit', () => clearInterval(loopTimer));
+app.on('before-quit', () => { quitting = true; clearInterval(loopTimer); });
 app.on('will-quit', () => {
   clearInterval(loopTimer);
   globalShortcut.unregisterAll();

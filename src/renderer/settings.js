@@ -420,7 +420,6 @@
       field({ label: 'Show overlays while watching replays / spectating', type: 'bool' }, g.showInReplays, (v) => setGlobal({ showInReplays: v })),
       field({ label: 'Follow camera car in replays / spectating', type: 'bool' }, g.focusCamCar, (v) => setGlobal({ focusCamCar: v })),
       field({ label: 'Snap to grid while dragging (px, 0 = off)', type: 'number', min: 0, max: 50 }, g.snapToGrid, (v) => setGlobal({ snapToGrid: v })),
-      field({ label: 'Start minimized to tray', type: 'bool' }, g.startMinimized, (v) => setGlobal({ startMinimized: v })),
     ]));
     const hk = card('Hotkeys (global)', [
       hotkeyField('Toggle edit layout', 'toggleEdit'),
