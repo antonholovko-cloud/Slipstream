@@ -11,6 +11,7 @@ npm run demo          # force demo data
 npm run check         # self-test: fake iRacing memory map → reader → model
 npm run dist          # build installer + portable exe into dist/
 npm run screenshots   # regenerate docs/screenshots
+npm run gifs          # regenerate docs/gifs (scripted demo drive, captured off-screen)
 ```
 
 The app is built on Electron and reads iRacing's telemetry straight from shared memory. It needs no native build

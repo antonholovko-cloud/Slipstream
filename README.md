@@ -12,18 +12,18 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 </p>
 
 <p align="center">
-  <img src="docs/gifs/dash.gif" width="740" alt="Dashboard: accelerating through the gears, shift lights filling up and flashing at the limiter, then braking and downshifting"><br>
-  <sub><b>Dashboard:</b> shift lights fill as you rev through the gears and strobe blue on the limiter; pedal trace, gear, speed and steering wheel update live.</sub>
+  <img src="docs/gifs/dash.gif" width="740" alt="Dashboard: revving through the gears into the blue over-rev strobe, a lock-up under hard braking, then wheelspin on corner exit"><br>
+  <sub><b>Dashboard &amp; Inputs:</b> shift lights fill as you rev and strobe blue only on over-rev; the brake line turns yellow where a wheel locked; wheelspin / lock-up light, gear, speed and steering wheel update live.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/gifs/speed.gif" width="300" alt="Speed overlay: gear with a rev indicator rising behind it, speed, and the wheelspin / lock-up lamp"><br>
+  <sub><b>Speed:</b> just speed and gear. The background behind the gear rises with RPM and blinks at the shift point; the lamp shows SPIN / LOCK.</sub>
 </p>
 
 <p align="center">
   <img src="docs/gifs/delta.gif" width="520" alt="Delta bar swinging between gaining and losing time, with gap bars to the cars ahead and behind"><br>
   <sub><b>Delta bar:</b> green when you're up on your best lap, red when you're down. Below: gaps to the cars ahead and behind, turning green while you gain on them and red while you lose time.</sub>
-</p>
-
-<p align="center">
-  <img src="docs/gifs/slip.gif" width="740" alt="Wheelspin light strobing orange under throttle, then lock-up light strobing red under braking"><br>
-  <sub><b>Wheelspin / lock-up light</b> (top right): strobes orange when the wheels spin under throttle, red when they lock under braking.</sub>
 </p>
 
 ![Slipstream overlays in a race](docs/screenshots/hero.png)
@@ -107,7 +107,8 @@ and show again when you drive.
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible" |
 | **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, and an info bar (position, SOF, incidents, time left) |
-| **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping. Every part can be switched off |
+| **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Every part can be switched off |
+| **Speed** | Just speed and gear, with a rev indicator behind the gear (rises with RPM, blinks at the shift point) and a wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose |
@@ -121,6 +122,7 @@ and show again when you drive.
 | ![Track map](docs/screenshots/trackmap.png) | ![Fuel calculator](docs/screenshots/fuel.png) |
 | ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Session info](docs/screenshots/session.png) |
 | ![Lap timing](docs/screenshots/laptiming.png) | ![Delta bar](docs/screenshots/delta.png) |
+| ![Speed](docs/screenshots/speed.png) | |
 
 ## Customizing
 

@@ -314,6 +314,9 @@ class MockSource {
       WaterTemp: 88 + Math.sin(this.sessionTime / 30) * 3, OilTemp: 102, OilPress: 5.1, Voltage: 13.8, EngineWarnings: 0, dcBrakeBias: 54.5,
     });
 
+    // Scripted demo (scripts/gifs.js): a timeline may overwrite the player's inputs.
+    if (this.script) this.script(vars, this);
+
     return {
       vars,
       sessionInfo: this.sessionInfo,

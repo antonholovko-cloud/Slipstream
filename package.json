@@ -10,7 +10,8 @@
     "dist": "electron-builder --win --publish never",
     "release": "electron-builder --win --publish never",
     "icon": "electron scripts/render-icon.js",
-    "screenshots": "electron scripts/screenshots.js"
+    "screenshots": "electron scripts/screenshots.js",
+    "gifs": "electron scripts/gifs.js"
   },
   "author": {
     "name": "Anton Holovko",
@@ -25,7 +26,8 @@
   },
   "devDependencies": {
     "electron": "^44.4.5",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "gifenc": "^1.0.3"
   },
   "allowScripts": {
     "electron@44.4.5": true,
