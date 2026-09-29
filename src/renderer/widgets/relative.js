@@ -5,6 +5,7 @@ Host.register('relative', function (root) {
   let last = '';
   let lastFooter = '';
   let multiClass = false;
+  let grouped = false; // class blocks: rows no longer run top-to-bottom in track order, so gaps get an ahead/behind arrow
 
   function row(c, r, s, cols, isRace) {
     const E = Fmt.esc;
@@ -24,7 +25,7 @@ Host.register('relative', function (root) {
         case 'irating': return `<td class="c-irating">${Fmt.irating(c.irating)}</td>`;
         case 'pit': return `<td class="c-pit">${c.onPitRoad ? '<span class="tag pit">PIT</span>' : ''}</td>`;
         case 'last': return `<td class="c-last">${c.lastLap > 0 ? Fmt.lapTime(c.lastLap) : ''}</td>`;
-        case 'gap': return `<td class="c-gap ${nameCls}">${r ? Math.abs(r.gap).toFixed(s.gapDecimals) : ''}</td>`;
+        case 'gap': return `<td class="c-gap ${nameCls}">${r ? (grouped && r.gap ? `<span class="dir">${r.gap > 0 ? '▲' : '▼'}</span>` : '') + Math.abs(r.gap).toFixed(s.gapDecimals) : ''}</td>`;
         default: return '<td></td>';
       }
     });
@@ -34,7 +35,7 @@ Host.register('relative', function (root) {
   return {
     update(state, ctx) {
       const s = ctx.settings;
-      const cols = s.columns.filter((c) => c.on).map((c) => c.id);
+      let cols = s.columns.filter((c) => c.on).map((c) => c.id);
       const cars = new Map((state.cars || []).map((c) => [c.idx, c]));
       const me = (state.cars || []).find((c) => c.isPlayer);
       const isRace = state.session && state.session.isRace;
@@ -44,11 +45,27 @@ Host.register('relative', function (root) {
       const ahead = rel.filter((r) => r.gap >= 0).slice(-s.ahead);
       const behind = rel.filter((r) => r.gap < 0).slice(0, s.behind);
       let html = '<table class="board">';
-      for (let i = 0; i < s.ahead - ahead.length; i++) html += row(null, null, s, cols);
-      for (const r of ahead) html += row(cars.get(r.idx), r, s, cols, isRace);
-      if (me) html += row(me, { gap: 0, lapDiff: 0 }, s, cols, isRace);
-      for (const r of behind) html += row(cars.get(r.idx), r, s, cols, isRace);
-      for (let i = 0; i < s.behind - behind.length; i++) html += row(null, null, s, cols);
+      grouped = !!(me && s.groupByClass && multiClass);
+      if (grouped) {
+        // same cars, but each class in its own block (my class first), still in track order inside a block
+        cols = cols.filter((c) => c !== 'class'); // the block header names the class
+        const list = ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind);
+        const order = [me.classId, ...(state.classes || []).map((k) => k.id)];
+        for (const r of list) order.push(cars.get(r.idx).classId);
+        for (const id of new Set(order)) {
+          const rows = list.filter((r) => cars.get(r.idx).classId === id);
+          if (!rows.length) continue;
+          const c0 = cars.get(rows[0].idx);
+          html += `<tr class="class-head"><td colspan="${cols.length}"><span class="bar" style="background:${c0.classColor}"></span>${Fmt.esc(c0.className)}</td></tr>`;
+          for (const r of rows) html += row(cars.get(r.idx), r, s, cols, isRace);
+        }
+      } else {
+        for (let i = 0; i < s.ahead - ahead.length; i++) html += row(null, null, s, cols);
+        for (const r of ahead) html += row(cars.get(r.idx), r, s, cols, isRace);
+        if (me) html += row(me, { gap: 0, lapDiff: 0 }, s, cols, isRace);
+        for (const r of behind) html += row(cars.get(r.idx), r, s, cols, isRace);
+        for (let i = 0; i < s.behind - behind.length; i++) html += row(null, null, s, cols);
+      }
       html += '</table>';
       if (!me) html = '<div class="center-msg">Not on track</div>';
       if (html !== last) { rowsEl.innerHTML = html; last = html; }

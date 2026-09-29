@@ -81,9 +81,10 @@
       id: 'relative', name: 'Relative', icon: '↕',
       description: 'Cars around you on track with live time gaps, lapping/lapped coloring.',
       bounds: { x: 1260, y: 620, width: 480, height: 300 },
-      needs: ['session', 'player', 'cars', 'relative'],
+      needs: ['session', 'player', 'cars', 'relative', 'classes'],
       schema: [
         { key: 'columns', label: 'Columns', type: 'columns', columns: RELATIVE_COLUMNS },
+        { key: 'groupByClass', label: 'Group cars by class (multiclass only; my class first)', type: 'bool', default: true },
         { key: 'ahead', label: 'Cars ahead', type: 'number', min: 0, max: 10, default: 4 },
         { key: 'behind', label: 'Cars behind', type: 'number', min: 0, max: 10, default: 4 },
         { key: 'colorLapping', label: 'Color lapping / lapped cars', type: 'bool', default: true },
