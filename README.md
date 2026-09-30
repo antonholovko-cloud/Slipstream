@@ -23,6 +23,31 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
   🐞 <a href="https://github.com/antonholovko-cloud/Slipstream/issues/new/choose"><b>Report a bug</b></a>
 </p>
 
+<div align="center">
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/relative-single.png" width="400" alt="Relative in a one-class race"><br><sub><b>Relative</b>, one class</sub></td>
+    <td align="center"><img src="docs/screenshots/relative.png" width="400" alt="Relative in a multiclass race, grouped by class"><br><sub><b>Relative</b>, multiclass: grouped by class, ▲ / ▼ = ahead / behind</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/standings.png" width="400" alt="Standings"><br><sub><b>Standings</b></sub></td>
+    <td align="center"><img src="docs/screenshots/trackmap.png" width="400" alt="Track map"><br><sub><b>Track map</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/fuel.png" width="400" alt="Fuel calculator"><br><sub><b>Fuel calculator</b></sub></td>
+    <td align="center"><img src="docs/screenshots/dash.png" width="400" alt="Dashboard & Inputs"><br><sub><b>Dashboard &amp; Inputs</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/session.png" width="400" alt="Session info"><br><sub><b>Session info</b></sub></td>
+    <td align="center"><img src="docs/screenshots/laptiming.png" width="400" alt="Lap timing"><br><sub><b>Lap timing</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/delta.png" width="400" alt="Delta bar"><br><sub><b>Delta bar</b></sub></td>
+    <td align="center"><img src="docs/screenshots/speed.png" width="400" alt="Speed"><br><sub><b>Speed</b></sub></td>
+  </tr>
+</table>
+</div>
+
 <p align="center">
   <img src="docs/gifs/dash.gif" width="740" alt="Dashboard: revving through the gears into the blue over-rev strobe, a lock-up under hard braking, then wheelspin on corner exit"><br>
   <sub><b>Dashboard &amp; Inputs:</b> shift lights fill as you rev and strobe blue only on over-rev; the brake line turns yellow where a wheel locked; wheelspin / lock-up light, gear, speed and steering wheel update live.</sub>
@@ -124,17 +149,9 @@ and show again when you drive.
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose |
-| **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line |
+| **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line. **Off by default**; turn it on in settings |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
-
-| Relative, one class | Relative, multiclass: grouped by class, your class first, ▲ / ▼ = ahead / behind |
-|---|---|
-| ![Relative in a one-class race](docs/screenshots/relative-single.png) | ![Relative in a multiclass race, grouped by class](docs/screenshots/relative.png) |
-| ![Standings](docs/screenshots/standings.png) | ![Track map](docs/screenshots/trackmap.png) |
-| ![Fuel calculator](docs/screenshots/fuel.png) | ![Dashboard & Inputs](docs/screenshots/dash.png) |
-| ![Session info](docs/screenshots/session.png) | ![Lap timing](docs/screenshots/laptiming.png) |
-| ![Delta bar](docs/screenshots/delta.png) | ![Speed](docs/screenshots/speed.png) |
 
 ## Customizing
 

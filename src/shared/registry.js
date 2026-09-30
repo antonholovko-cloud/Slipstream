@@ -230,7 +230,7 @@
       description: 'Auto-learned track map with every car, class colors and pit indicators.',
       bounds: { x: 40, y: 660, width: 320, height: 320 },
       needs: ['player', 'cars', 'trackMap', 'session'],
-      defaults: { bgOpacity: 40, fps: 20 },
+      defaults: { enabled: false, bgOpacity: 40, fps: 20 }, // off on first run; existing layouts keep their choice
       schema: [
         { key: 'dotSize', label: 'Car dot size', type: 'range', min: 3, max: 16, step: 1, default: 7 },
         { key: 'trackWidth', label: 'Track line width', type: 'range', min: 2, max: 20, step: 1, default: 6 },
