@@ -109,9 +109,10 @@ test('overlay-level defaults are within their schema limits', () => {
   }
 });
 
-test('flags are off by default, everything else on', () => {
+test('flags and track map are off by default, everything else on', () => {
   assert.equal(defaultSettingsFor(byId('flags')).enabled, false);
-  for (const o of OVERLAYS) if (o.id !== 'flags') assert.equal(defaultSettingsFor(o).enabled, true, o.id);
+  assert.equal(defaultSettingsFor(byId('trackmap')).enabled, false);
+  for (const o of OVERLAYS) if (o.id !== 'flags' && o.id !== 'trackmap') assert.equal(defaultSettingsFor(o).enabled, true, o.id);
 });
 
 test('every theme has all the colors the overlay host uses', () => {
