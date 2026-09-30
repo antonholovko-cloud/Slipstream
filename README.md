@@ -118,7 +118,7 @@ and show again when you drive.
 | Overlay | What it shows |
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible" |
-| **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, and an info bar (position, SOF, incidents, time left) |
+| **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, cars grouped by class in multiclass races, and an info bar (position, SOF, incidents, time left) |
 | **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Every part can be switched off |
 | **Speed** | Just speed and gear, with a rev indicator behind the gear (rises with RPM, blinks at the shift point) and a wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
@@ -128,13 +128,13 @@ and show again when you drive.
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
 
-| | |
+| Relative, one class | Relative, multiclass: grouped by class, your class first, ▲ / ▼ = ahead / behind |
 |---|---|
-| ![Standings](docs/screenshots/standings.png) | ![Relative](docs/screenshots/relative.png) |
-| ![Track map](docs/screenshots/trackmap.png) | ![Fuel calculator](docs/screenshots/fuel.png) |
-| ![Dashboard & Inputs](docs/screenshots/dash.png) | ![Session info](docs/screenshots/session.png) |
-| ![Lap timing](docs/screenshots/laptiming.png) | ![Delta bar](docs/screenshots/delta.png) |
-| ![Speed](docs/screenshots/speed.png) | |
+| ![Relative in a one-class race](docs/screenshots/relative-single.png) | ![Relative in a multiclass race, grouped by class](docs/screenshots/relative.png) |
+| ![Standings](docs/screenshots/standings.png) | ![Track map](docs/screenshots/trackmap.png) |
+| ![Fuel calculator](docs/screenshots/fuel.png) | ![Dashboard & Inputs](docs/screenshots/dash.png) |
+| ![Session info](docs/screenshots/session.png) | ![Lap timing](docs/screenshots/laptiming.png) |
+| ![Delta bar](docs/screenshots/delta.png) | ![Speed](docs/screenshots/speed.png) |
 
 ## Customizing
 
@@ -152,6 +152,21 @@ Every change you make is saved right away and kept after updates.
 - **Replays and spectating:** the overlays follow the car the camera is on.
 
 ![Settings: standings columns](docs/screenshots/settings-standings.png)
+
+### League class splits (Pro / Am)
+
+Many leagues split one iRacing class into their own classes, for example GT3 into **GT3 Pro** and **GT3 Am**.
+iRacing only knows the car class, so on the *Class splits* page you tell Slipstream who belongs where: by car
+number range, by a list of drivers (names or customer IDs), by iRating range, or "all other cars". A rule can be
+limited to one league ID, so each league's split only applies in its own sessions. The Relative, Standings,
+Delta and Track Map then show positions, gaps, SOF and colors per sub-class. In multiclass sessions the Relative
+groups cars by class (your class first), with ▲ / ▼ showing whether each car is ahead of or behind you.
+
+| Relative | Standings |
+|---|---|
+| ![Relative grouped by Pro / Am class](docs/screenshots/class-splits-relative.png) | ![Standings grouped by sub-class](docs/screenshots/class-splits-standings.png) |
+
+![Class splits settings](docs/screenshots/class-splits-settings.png)
 
 ### Hotkeys
 

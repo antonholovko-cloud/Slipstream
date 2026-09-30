@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const INVOKE = new Set([
   'overlay:init', 'overlay:getBounds',
   'settings:get', 'settings:setOverlay', 'settings:resetOverlay', 'settings:setGlobal', 'settings:setEditMode', 'settings:setHidden',
-  'settings:profile', 'settings:forgetTrack', 'settings:displays', 'settings:update',
+  'settings:profile', 'settings:forgetTrack', 'settings:displays', 'settings:update', 'settings:classes',
 ]);
 const SEND = new Set(['overlay:setBounds']);
 const ON = new Set(['overlay:config', 'overlay:state', 'settings:config', 'settings:status', 'settings:saved', 'settings:update']);

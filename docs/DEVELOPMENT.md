@@ -9,6 +9,7 @@ npm install
 npm start             # live iRacing data, demo preview while configuring
 npm run demo          # force demo data
 npm run check         # self-test: fake iRacing memory map → reader → model
+npm test              # unit tests (node:test + jsdom): main logic, config, every overlay widget, settings UI
 npm run dist          # build installer + portable exe into dist/
 npm run screenshots   # regenerate docs/screenshots
 npm run gifs          # regenerate docs/gifs (scripted demo drive, captured off-screen)

@@ -7,6 +7,7 @@
     "start": "electron .",
     "demo": "electron . --demo",
     "check": "node scripts/check.js",
+    "test": "node --test \"test/**/*.test.js\"",
     "dist": "electron-builder --win --publish never",
     "release": "electron-builder --win --publish never",
     "icon": "electron scripts/render-icon.js",
@@ -28,7 +29,8 @@
   "devDependencies": {
     "electron": "^44.4.5",
     "electron-builder": "^26.15.3",
-    "gifenc": "^1.0.3"
+    "gifenc": "^1.0.3",
+    "jsdom": "^30.1.1"
   },
   "allowScripts": {
     "electron@44.4.5": true,

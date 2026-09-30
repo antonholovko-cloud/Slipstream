@@ -539,6 +539,8 @@ function registerIpc() {
     return true;
   });
 
+  // league class splits: who lands in which sub-class with the given rules (preview on the Classes page)
+  ipcMain.handle('settings:classes', (e, rules) => (model && model.info ? model.classPreview(rules) : null));
   ipcMain.handle('settings:displays', () => screen.getAllDisplays().map((d) => ({ id: d.id, bounds: d.bounds, primary: d.id === screen.getPrimaryDisplay().id })));
 }
 

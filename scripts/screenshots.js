@@ -128,6 +128,23 @@ app.whenReady().then(async () => {
     fs.writeFileSync(path.join(OUT, id + '.png'), buf);
   }
 
+  // Relative comparison: a mixed GT3 / LMP2 pack (grouped by class), then the same pack as a one-class race
+  const relShot = async (name) => {
+    await sleep(2500);
+    const img = await capture(S.overlayWins.get('relative').win);
+    const rb = cfg.overlay('relative').bounds;
+    fs.writeFileSync(path.join(OUT, name), await compose(rb.width + pad * 2, rb.height + pad * 2, [{ url: img.url, x: pad, y: pad, w: rb.width, h: rb.height }], { crop: true }));
+  };
+  S.mock.pinned = [{ idx: 13, meters: 11 }, { idx: 15, meters: -8 }, { idx: 12, meters: 35 },
+    { idx: 2, meters: 25 }, { idx: 6, meters: 55 }, { idx: 4, meters: -25 }, { idx: 8, meters: -45 }, { idx: 3, meters: -70 }];
+  [10, 11, 14, 16, 17, 18, 19, 20, 21, 22].forEach((idx, n) => S.mock.pinned.push({ idx, meters: (n % 2 ? -1 : 1) * (150 + n * 120) }));
+  await relShot('relative.png');
+  const gt3 = S.mock.cars.find((c) => !c.pace && c.cls.short === 'GT3').cls;
+  for (const c of S.mock.cars) if (!c.pace) c.cls = gt3;
+  S.mock.buildSessionInfo();
+  S.mock.sessionInfoUpdate++;
+  await relShot('relative-single.png');
+
   // settings pages
   S.openSettings();
   for (const page of ['home', 'ov:standings', 'appearance']) {

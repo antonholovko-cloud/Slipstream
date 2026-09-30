@@ -26,6 +26,7 @@ function defaultGlobal() {
     showInReplays: false, // keep overlays while watching replays / spectating
     startMinimized: false,
     snapToGrid: 10,
+    classSplits: [], // league sub-classes, e.g. GT3 -> GT3 Pro / GT3 Am (see classes.js)
     masterOpacity: 100, // multiplies every overlay's own opacity
     autoUpdate: null, // null = not asked yet; true/false = the player's choice
   };
@@ -74,7 +75,12 @@ function migrate(cfg) {
       for (const f of odef.schema.concat(Registry.COMMON_SCHEMA)) {
         if (f.type !== 'columns') continue;
         const userCols = Array.isArray(cur[f.key]) ? cur[f.key].filter((c) => f.columns.some((d) => d.id === c.id)) : [];
-        for (const c of base[f.key]) if (!userCols.some((u) => u.id === c.id)) userCols.push(c);
+        // new columns go in after the column they follow by default
+        base[f.key].forEach((c, i) => {
+          if (userCols.some((u) => u.id === c.id)) return;
+          const prev = i > 0 ? userCols.findIndex((u) => u.id === base[f.key][i - 1].id) : -1;
+          userCols.splice(i === 0 ? 0 : prev >= 0 ? prev + 1 : userCols.length, 0, c);
+        });
         merged[f.key] = userCols;
       }
       p.overlays[odef.id] = merged;
@@ -257,15 +263,17 @@ class ConfigStore {
 
   setOverlay(id, patch) {
     const cur = this.profile.overlays[id];
+    const bounds = patch.bounds && Object.assign({}, cur.bounds, patch.bounds); // merge before assign replaces it
     Object.assign(cur, patch);
-    if (patch.bounds) cur.bounds = Object.assign({}, cur.bounds, patch.bounds);
+    if (bounds) cur.bounds = bounds;
     this.save();
     return cur;
   }
 
   setGlobal(patch) {
+    const hotkeys = patch.hotkeys && Object.assign({}, this.data.global.hotkeys, patch.hotkeys);
     Object.assign(this.data.global, patch);
-    if (patch.hotkeys) this.data.global.hotkeys = Object.assign({}, this.data.global.hotkeys, patch.hotkeys);
+    if (hotkeys) this.data.global.hotkeys = hotkeys;
     this.save();
   }
 
