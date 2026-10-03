@@ -130,6 +130,16 @@ app.whenReady().then(async () => {
     fs.writeFileSync(path.join(OUT, id + '.png'), buf);
   }
 
+  // Radar close-up: three wide (odd car numbers read as left in the demo spotter), a small pack behind
+  S.mock.pinned = [{ idx: 11, meters: 0.9 }, { idx: 12, meters: -0.7 }, { idx: 14, meters: -6.5 }, { idx: 16, meters: -7 },
+    { idx: 18, meters: -13 }, { idx: 13, meters: 12 }];
+  await sleep(2500);
+  {
+    const img = await capture(S.overlayWins.get('spotter').win);
+    const sb = cfg.overlay('spotter').bounds;
+    fs.writeFileSync(path.join(OUT, 'spotter.png'), await compose(sb.width + pad * 2, sb.height + pad * 2, [{ url: img.url, x: pad, y: pad, w: sb.width, h: sb.height }], { crop: true }));
+  }
+
   // Relative comparison: a mixed GT3 / LMP2 pack (grouped by class), then the same pack as a one-class race
   const relShot = async (name) => {
     await sleep(2500);

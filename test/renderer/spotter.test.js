@@ -53,6 +53,7 @@ test('the spotter flag wins over our distance estimate: still drawn overlapping'
 test('cars on both sides: each keeps the side it was first seen on; three wide glows orange', async () => {
   const ov = await loadOverlay('spotter');
   ov.renderRaw(st(3, [[9, -3], [5, -12]])); // #9 arrives on the right
+  ov.advance(300);
   ov.renderRaw(st(4, [[9, -1], [5, -3.5]])); // then #5 on the left
   const byY = others(ov).sort((a, b) => a.y - b.y);
   assert.deepEqual(byY.map(side), ['R', 'L']); // #9 (-1 m) right, #5 (-3.5 m) left
@@ -81,6 +82,34 @@ test('a car keeps its side for a while after it drops back, then eases to the ce
   assert.equal(others(ov)[0].kind, 'far');
   ov.advance(6000);
   ov.renderRaw(st(1, [[7, -10]]));
+  assert.equal(side(others(ov)[0]), 'C');
+  ov.close();
+});
+
+test('cars that would overlap are staggered sideways; none is drawn on top of ours', async () => {
+  const ov = await loadOverlay('spotter');
+  ov.renderRaw(st(1, [[3, -8], [4, -8.5], [5, -9], [6, 1]]));
+  const behind = others(ov).filter((c) => c.y > 60).sort((a, b) => a.x - b.x);
+  assert.equal(behind.length, 3);
+  for (let i = 1; i < 3; i++) assert.ok(behind[i].x - behind[i - 1].x > 5, 'side by side, not stacked');
+  // #6 is "1 m ahead" by our estimate but the spotter says clear: drawn just ahead of us, not over us
+  const ahead = others(ov).find((c) => c.y < 50);
+  assert.ok(50 - ahead.y > 11);
+  ov.close();
+});
+
+test('a car tilts while it drifts back to the centre lane, then straightens', async () => {
+  const ov = await loadOverlay('spotter');
+  const tilt = () => { const m = /rotate\((-?[\d.]+)deg\)/.exec(ov.$('.spt .car:not(.me)').style.transform); return m ? parseFloat(m[1]) : 0; };
+  ov.renderRaw(st(2, [[7, -2]]));
+  ov.advance(1000);
+  ov.renderRaw(st(1, [[7, -8]]));
+  assert.equal(tilt(), 0, 'holding its lane');
+  ov.advance(3500); // past the hold: easing to the centre (moving right)
+  for (let i = 0; i < 4; i++) { ov.advance(33); ov.renderRaw(st(1, [[7, -8]])); }
+  assert.ok(tilt() > 3, 'leans right while sliding right: ' + tilt());
+  for (let i = 0; i < 90; i++) { ov.advance(33); ov.renderRaw(st(1, [[7, -8]])); }
+  assert.equal(tilt(), 0);
   assert.equal(side(others(ov)[0]), 'C');
   ov.close();
 });
