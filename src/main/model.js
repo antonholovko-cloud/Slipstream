@@ -198,7 +198,7 @@ class RaceModel {
         tire: v.CarIdxTireCompound?.[i] ?? -1,
         pitStops: st.pitStops, startPos: st.startPos,
         isPlayer: i === focusIdx,
-        gap: null, interval: null, lapsDown: 0, irDelta: null, posGain: null, fastest: false,
+        gap: null, interval: null, liveAhead: null, liveInterval: null, lapsDown: 0, irDelta: null, posGain: null, fastest: false,
       });
     }
 
@@ -280,6 +280,21 @@ class RaceModel {
           c.interval = ahead && ahead.bestLap > 0 ? c.bestLap - ahead.bestLap : null;
         }
       });
+      if (isRace) {
+        // Live running order by distance. iRacing's class positions only move at timing lines,
+        // so after a spin or crash the cars that passed (or that we passed) stay in the wrong
+        // order until the line. The Delta bar's ahead / behind uses this instead.
+        const live = k.cars.filter((c) => c.inWorld && c.dist >= 0).sort((a, b) => b.dist - a.dist);
+        live.forEach((c, n) => {
+          const front = live[n - 1];
+          c.liveAhead = front ? front.idx : null;
+          if (!front) { c.liveInterval = null; return; }
+          // own timing loops; without history yet (session join, tow), distance at the class pace
+          let g = this.gaps.gap(front.idx, c.idx);
+          if (g === null || g > estLap * 3) g = (front.dist - c.dist) * estLap;
+          c.liveInterval = g;
+        });
+      }
       if (isRace || kind === 'qualify') {
         const entries = k.cars.map((c, n) => ({ ir: c.irating || 1350, pos: n + 1 }));
         const deltas = iratingDeltas(entries);

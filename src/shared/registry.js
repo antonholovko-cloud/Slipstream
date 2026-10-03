@@ -63,6 +63,7 @@
       description: 'Full leaderboard with multiclass grouping, gaps, iRating and estimated iRating change.',
       bounds: { x: 40, y: 120, width: 620, height: 520 },
       needs: ['session', 'player', 'cars', 'classes'],
+      defaults: { enabled: false }, // off on first run; existing layouts keep their choice
       schema: [
         { key: 'columns', label: 'Columns', type: 'columns', columns: STANDINGS_COLUMNS },
         { key: 'maxRows', label: 'Max rows per class', type: 'number', min: 3, max: 64, default: 10 },
@@ -226,6 +227,25 @@
       ],
     },
     {
+      id: 'spotter', name: 'Radar', icon: '◎',
+      description: 'Cars around you from above: exact distance ahead / behind, the side from the iRacing spotter, how much a car alongside overlaps you.',
+      bounds: { x: 880, y: 420, width: 220, height: 220 },
+      needs: ['radar'],
+      defaults: { bgOpacity: 0, showHeader: false, fps: 30 },
+      schema: [
+        { key: 'range', label: 'View radius (m)', type: 'range', min: 8, max: 40, step: 1, default: 20 },
+        { key: 'guides', label: 'Rings and crosshair', type: 'bool', default: true },
+        { key: 'showOverlap', label: 'Show overlap in % next to a car alongside', type: 'bool', default: true },
+        { key: 'autoHide', label: 'Only show when a car is near', type: 'bool', default: true },
+        { key: 'closeAt', label: 'Car turns "close" within (m)', type: 'range', min: 2, max: 20, step: 1, default: 8 },
+        { key: 'meColor', label: 'My car', type: 'color', default: '#ef4444' },
+        { key: 'closeColor', label: 'Close car', type: 'color', default: '#facc15' },
+        { key: 'farColor', label: 'Other cars', type: 'color', default: '#f8fafc' },
+        { key: 'warnColor', label: 'Side glow: one car alongside', type: 'color', default: '#facc15' },
+        { key: 'dangerColor', label: 'Side glow: two on that side / three wide', type: 'color', default: '#f97316' },
+      ],
+    },
+    {
       id: 'trackmap', name: 'Track Map', icon: '🗺',
       description: 'Auto-learned track map with every car, class colors and pit indicators.',
       bounds: { x: 40, y: 660, width: 320, height: 320 },
@@ -248,7 +268,7 @@
       description: 'Session type, time/laps left, weather, incidents, SOF and local clock.',
       bounds: { x: 40, y: 20, width: 620, height: 80 },
       needs: ['session', 'player'],
-      defaults: { showHeader: false, fps: 5 },
+      defaults: { enabled: false, showHeader: false, fps: 5 }, // off on first run; existing layouts keep their choice
       schema: [
         { key: 'items', label: 'Items', type: 'columns', columns: [
           { id: 'session', label: 'Session', default: true },

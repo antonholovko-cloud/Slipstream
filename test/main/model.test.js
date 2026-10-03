@@ -175,6 +175,30 @@ test('race gaps: leader 0, gaps grow down the order, interval = gap to car ahead
   }
 });
 
+test('live running order: the car physically ahead / behind, even while iRacing positions lag', () => {
+  // just after a spin: #4 went past (and #5 is towing), but iRacing still has the old order until the line
+  const drivers = [driver(1, GT3), driver(2, GT3), driver(3, GT3), driver(4, GT3), driver(5, GT3), driver(6, LMP2)];
+  const m = new RaceModel();
+  const st = m.update(frame(sessionInfo({ drivers }), vars({
+    2: { lap: 5, pct: 0.60, pos: 1, cpos: 1 },
+    1: { lap: 5, pct: 0.40, pos: 2, cpos: 2 },
+    5: { lap: 5, pct: 0.45, pos: 3, cpos: 3, surf: -1 },
+    3: { lap: 5, pct: 0.39, pos: 4, cpos: 4 },
+    4: { lap: 5, pct: 0.41, pos: 5, cpos: 5 },
+    6: { lap: 5, pct: 0.395, pos: 6, cpos: 1 },
+  })), G());
+  const me = byIdx(st, 1);
+  assert.equal(me.classPosition, 2, 'official position untouched');
+  assert.equal(me.liveAhead, 4);
+  assert.equal(byIdx(st, 4).liveAhead, 2);
+  assert.equal(byIdx(st, 3).liveAhead, 1, 'the car right behind me on track');
+  assert.equal(byIdx(st, 2).liveAhead, null);
+  assert.equal(byIdx(st, 5).liveAhead, null, 'cars out of the world are skipped');
+  assert.equal(byIdx(st, 6).liveAhead, null, 'other classes are not neighbours');
+  assert.ok(me.liveInterval > 0 && me.liveInterval < 3, String(me.liveInterval));
+  assert.ok(byIdx(st, 3).liveInterval > 0 && byIdx(st, 3).liveInterval < 2);
+});
+
 // ---------- relative ----------
 test('relative: sorted ahead -> behind, excludes player and cars not in world, lap differences', () => {
   const drivers = [driver(1, GT3), driver(2, GT3), driver(3, GT3), driver(4, GT3), driver(5, GT3)];

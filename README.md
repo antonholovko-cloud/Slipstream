@@ -45,6 +45,9 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
     <td align="center"><img src="docs/screenshots/delta.png" width="400" alt="Delta bar"><br><sub><b>Delta bar</b></sub></td>
     <td align="center"><img src="docs/screenshots/speed.png" width="400" alt="Speed"><br><sub><b>Speed</b></sub></td>
   </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/screenshots/spotter.png" width="240" alt="Radar: a car alongside on the left, overlapping 61%"><br><sub><b>Radar</b>: a car alongside on the left (61% overlap), one close behind</sub></td>
+  </tr>
 </table>
 </div>
 
@@ -142,15 +145,16 @@ and show again when you drive.
 
 | Overlay | What it shows |
 |---|---|
-| **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible" |
+| **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible". **Off by default**; turn it on in settings |
 | **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, cars grouped by class in multiclass races, and an info bar (position, SOF, incidents, time left) |
 | **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Every part can be switched off |
 | **Speed** | Just speed and gear, with a rev indicator behind the gear (rises with RPM, blinks at the shift point) and a wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
-| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose |
+| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose. In races these are the class cars physically ahead and behind you on track, so after a spin they update at once instead of waiting for the next timing line |
+| **Radar** | Cars around you from above. Distance ahead / behind is exact; the side comes from the iRacing spotter (iRacing doesn't share where other cars are across the track), with a yellow glow on the side a car is alongside, orange when you're three wide, and the overlap in %. A car keeps its side for a few seconds after it pulls ahead or drops back. Hides when nobody is near |
 | **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line. **Off by default**; turn it on in settings |
-| **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time |
+| **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time. **Off by default**; turn it on in settings |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
 
 ## Customizing
