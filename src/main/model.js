@@ -317,7 +317,10 @@ class RaceModel {
     // ---- Relative ----
     const relative = [];
     if (me && me.inWorld) {
-      const lapT = this.classEst(me) || this.car.estLap || 90;
+      const myClassEst = this.classEst(me);
+      // iRacing's relative reads in the player's own estimated lap (DriverCarEstLapTime), which can be a
+      // few % longer than the class estimate: live tests matched the sim only on that scale
+      const lapT = this.car.estLap || myClassEst || 90;
       for (const c of cars) {
         if (!c.inWorld || c.isPlayer) continue;
         let dPct = c.pct - me.pct;
@@ -327,7 +330,8 @@ class RaceModel {
         // so other classes are brought onto ours (otherwise a faster-class car just ahead reads as behind)
         let gap;
         const theirEst = this.classEst(c);
-        const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime, em = me.estTime;
+        const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime;
+        const em = myClassEst > 0 ? me.estTime * (lapT / myClassEst) : me.estTime;
         if (eo > 0 && em > 0) {
           gap = eo - em;
           if (gap > lapT / 2) gap -= lapT;
