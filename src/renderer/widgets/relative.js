@@ -52,12 +52,17 @@ Host.register('relative', function (root) {
         cols = cols.filter((c) => c !== 'class'); // the block header names the class
         let list = ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind);
         // class headers take rows too: keep the box the same height as ungrouped by dropping
-        // the farthest cars, so the nearest ones never fall off the bottom
+        // the farthest car on whichever side has more, so the nearest ones never fall off
         const budget = s.ahead + s.behind + 1;
         const heads = (l) => new Set(l.map((r) => cars.get(r.idx).classId)).size;
         while (list.length > 1 && list.length + heads(list) > budget) {
+          const nA = list.filter((r) => r.idx !== me.idx && r.gap >= 0).length, nB = list.length - 1 - nA;
+          const side = nA > nB ? 1 : nB > nA ? -1 : 0;
           let far = -1;
-          list.forEach((r, i) => { if (r.idx !== me.idx && (far < 0 || Math.abs(r.gap) > Math.abs(list[far].gap))) far = i; });
+          list.forEach((r, i) => {
+            if (r.idx === me.idx || (side > 0 && r.gap < 0) || (side < 0 && r.gap >= 0)) return;
+            if (far < 0 || Math.abs(r.gap) > Math.abs(list[far].gap)) far = i;
+          });
           list = list.filter((_, i) => i !== far);
         }
         const order = [me.classId, ...(state.classes || []).map((k) => k.id)];

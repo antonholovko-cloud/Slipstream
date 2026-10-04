@@ -93,10 +93,15 @@ class GapTracker {
       if (t0 === undefined || t1 === undefined) return undefined;
       return t0 + (t1 - t0) * (x - i);
     };
-    const start = b.p * BINS - BINS; // back's current spot, one lap ago
-    const t0 = at(start), t1 = at(start + ahead);
-    if (t0 === undefined || t1 === undefined || !(t1 > t0)) return null;
-    return t1 - t0;
+    // quickest of its recent passes over that stretch: one slow lap (out-lap, pit lane,
+    // traffic, a spin) shouldn't skew the gap
+    let best = null;
+    for (let k = 1; k < KEEP_LAPS; k++) {
+      const start = b.p * BINS - k * BINS; // back's current spot, k laps ago
+      const t0 = at(start), t1 = at(start + ahead);
+      if (t0 !== undefined && t1 !== undefined && t1 > t0 && (best === null || t1 - t0 < best)) best = t1 - t0;
+    }
+    return best;
   }
 
   // The car's last full-lap time from its own timing points (for sub-bin gaps).

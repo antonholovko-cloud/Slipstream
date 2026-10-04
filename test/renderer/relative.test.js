@@ -104,7 +104,27 @@ test('grouped: class headers count toward the rows, so the farthest cars give wa
   const text = ov.$('table.board').textContent;
   const shown = (c) => text.includes(c.name);
   // the nearest car ahead in each direction is always there, including the FR500S at +6.7
-  for (const i of [4, 5, 6, 1]) assert.ok(shown(others[i]), `${others[i].name} (${gaps[i]}) missing`);
+  for (const i of [4, 5, 6]) assert.ok(shown(others[i]), `${others[i].name} (${gaps[i]}) missing`);
   assert.ok(!shown(others[7]) && !shown(others[0]), 'the farthest cars made room for the headers');
+  ov.close();
+});
+
+test('grouped: trimming for headers keeps ahead and behind balanced', async () => {
+  const { state } = demoRace();
+  const st = structuredClone(state);
+  const me = st.cars.find((c) => c.isPlayer);
+  const others = st.cars.filter((c) => !c.isPlayer).slice(0, 8);
+  const cls = ['a', 'a', 'b', 'b', 'b', 'c', 'a', 'c'];
+  others.forEach((c, i) => { c.classId = cls[i]; c.className = cls[i].toUpperCase(); });
+  me.classId = 'me'; me.className = 'ME';
+  // four close ahead, the cars behind a little further back
+  const gaps = [3.8, 2.9, 3.5, 2.9, -1.8, -3.8, -18.8, -25];
+  st.relative = others.map((c, i) => ({ idx: c.idx, gap: gaps[i], lapDiff: 0 })).sort((a, b) => b.gap - a.gap);
+  st.classes = [];
+  const ov = await loadOverlay('relative', { settings: { ahead: 4, behind: 4 } });
+  ov.render(st);
+  const text = ov.$('table.board').textContent;
+  assert.ok(text.includes(others[4].name) && text.includes(others[5].name), 'the two nearest behind stay');
+  assert.ok(ov.$$('table.board tr').length <= 9);
   ov.close();
 });

@@ -132,3 +132,17 @@ test('paceGap: unknown without a lap of history; side by side uses the lap time 
   run(h, [{ idx: 1, start: 0.5 + 0.2 * speed, speed }, { idx: 2, start: 0.5, speed }], { to: 70 });
   assert.ok(Math.abs(h.paceGap(1, 2) - 0.2) < 0.02);
 });
+
+test('paceGap: one slow lap over that stretch (out-lap, traffic) does not skew the gap', () => {
+  const g = new GapTracker();
+  const speed = 1 / 60;
+  // #2 crawls through 0.2..0.4 on its first lap (pit lane), then laps normally
+  let p = 0, t = 0;
+  for (; t <= 200 + 1e-9; t += 0.05) {
+    const slow = p % 1 > 0.2 && p % 1 < 0.4 && p < 1;
+    p += (slow ? speed / 3 : speed) * 0.05;
+    g.update(t, [{ idx: 2, p }, { idx: 1, p: p + 0.1 }]);
+  }
+  // 0.1 lap ahead at normal pace = 6 s, even though one recorded pass took much longer
+  assert.ok(Math.abs(g.paceGap(1, 2) - 6) < 0.1, String(g.paceGap(1, 2)));
+});
