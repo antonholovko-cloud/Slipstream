@@ -244,6 +244,33 @@ test('relative: a faster-class car just ahead reads as ahead (est times scaled t
   assert.ok(Math.abs(r.gap - 0.5) < 1e-6);
 });
 
+test('relative, multiclass: gaps are measured from our own timing, not iRacing class estimates', () => {
+  // iRacing's class estimates are way off (and EstTime missing); the LMP2 is really closing from behind
+  const drivers = [driver(1, { ...GT3, est: 60 }), driver(2, { ...LMP2, est: 200 })];
+  const info = sessionInfo({ drivers });
+  const m = new RaceModel();
+  const me = { start: 0.30, speed: 1 / 100 }, p2 = { start: 0.25, speed: 1 / 90 };
+  let st, T = 0;
+  for (let t = 0; t <= 20 + 1e-9; t += 0.05) {
+    T = t;
+    const a = me.start + me.speed * t, b = p2.start + p2.speed * t;
+    st = m.update(frame(info, vars({ 1: { pct: a % 1, lap: Math.floor(a) }, 2: { pct: b % 1, lap: Math.floor(b) } }, { SessionTime: t })), G());
+  }
+  const pb = p2.start + p2.speed * T;
+  const expected = -(T - (pb - me.start) / me.speed); // behind: how long ago I was where it is now
+  const r = st.relative.find((x) => x.idx === 2);
+  assert.ok(Math.abs(r.gap - expected) < 0.05, `gap ${r.gap} vs ${expected}`);
+});
+
+test("lap timing 'Best' uses iRacing's own session best lap when it has one", () => {
+  const info = sessionInfo({ drivers: [driver(1, GT3)], type: 'Practice' });
+  const m = new RaceModel();
+  let st = m.update(frame(info, vars({ 1: { pct: 0.2 } }, { LapBestLapTime: 98.765 })), G());
+  assert.equal(st.timing.bestLap, 98.765);
+  st = m.update(frame(info, vars({ 1: { pct: 0.21 } }, { SessionTime: 101, LapBestLapTime: -1 })), G());
+  assert.equal(st.timing.bestLap, null, 'no official best yet: our own (none timed)');
+});
+
 test('relative / radar are empty when the player is not in the world', () => {
   const drivers = [driver(1, GT3), driver(2, GT3)];
   const st = new RaceModel().update(frame(sessionInfo({ drivers }), vars({ 1: { pct: -1, lap: -1 }, 2: { pct: 0.3 } })), G());

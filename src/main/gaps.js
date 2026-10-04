@@ -75,6 +75,25 @@ class GapTracker {
     return Math.max(0, this.lastTime - t);
   }
 
+  // Seconds since the car `front` was at the current track position of `back`, ignoring laps:
+  // "physically ahead on track" timing for the relative, where the two cars can be laps apart
+  // and in different classes. Null without enough history (just joined, after a tow).
+  trackGap(front, back) {
+    const f = this.cars.get(front), b = this.cars.get(back);
+    if (!f || !b) return null;
+    const x = (((b.p % 1) + 1) % 1) * BINS; // back's position in this lap, in bins
+    const fx = (((f.p % 1) + 1) % 1) * BINS;
+    let ahead = fx - x; // bins front is ahead of back on track
+    if (ahead < 0) ahead += BINS;
+    if (ahead < 1) { const lt = this.lapTime(f); return lt ? (ahead / BINS) * lt : null; }
+    // front's most recent pass of that point: absolute position f.p * BINS - ahead
+    const at = f.p * BINS - ahead, i = Math.floor(at);
+    const t0 = f.cross.get(i), t1 = f.cross.get(i + 1);
+    if (t0 === undefined) return null;
+    const t = t1 === undefined ? t0 : t0 + (t1 - t0) * (at - i);
+    return Math.max(0, this.lastTime - t);
+  }
+
   // The car's last full-lap time from its own timing points (for sub-bin gaps).
   lapTime(c) {
     const a = c.cross.get(c.bin), z = c.cross.get(c.bin - BINS);

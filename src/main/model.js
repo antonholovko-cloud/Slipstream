@@ -321,18 +321,24 @@ class RaceModel {
         let dPct = c.pct - me.pct;
         if (dPct > 0.5) dPct -= 1;
         if (dPct < -0.5) dPct += 1;
+        // Measured: how long ago the car in front passed the other car's spot (our own timing
+        // loops). Real time, so classes with different pace and wrong iRacing estimates don't matter.
+        const measured = dPct >= 0 ? this.gaps.trackGap(c.idx, me.idx) : this.gaps.trackGap(me.idx, c.idx);
         let gap;
-        // CarIdxEstTime runs on each car's own class lap estimate, so bring other classes onto ours
-        // (otherwise a faster-class car just ahead reads as behind)
-        const theirEst = this.classEst(c);
-        const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime, em = me.estTime;
-        if (eo > 0 && em > 0) {
-          gap = eo - em;
-          if (gap > lapT / 2) gap -= lapT;
-          if (gap < -lapT / 2) gap += lapT;
-          // fall back when est time disagrees wildly with track position
-          if (Math.sign(gap) !== Math.sign(dPct) && Math.abs(dPct) > 0.02) gap = dPct * lapT;
-        } else gap = dPct * lapT;
+        if (measured !== null && measured < lapT / 2) gap = dPct >= 0 ? measured : -measured;
+        else {
+          // Without history yet: CarIdxEstTime runs on each car's own class lap estimate, so bring
+          // other classes onto ours (otherwise a faster-class car just ahead reads as behind)
+          const theirEst = this.classEst(c);
+          const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime, em = me.estTime;
+          if (eo > 0 && em > 0) {
+            gap = eo - em;
+            if (gap > lapT / 2) gap -= lapT;
+            if (gap < -lapT / 2) gap += lapT;
+            // fall back when est time disagrees wildly with track position
+            if (Math.sign(gap) !== Math.sign(dPct) && Math.abs(dPct) > 0.02) gap = dPct * lapT;
+          } else gap = dPct * lapT;
+        }
         const raceDiff = c.dist - me.dist;
         const lapDiff = isRace ? (raceDiff > 0.5 ? 1 : raceDiff < -0.5 ? -1 : 0) : 0;
         relative.push({ idx: c.idx, gap, dPct, lapDiff, meters: dPct * this.track.length });
@@ -386,6 +392,9 @@ class RaceModel {
 
     // ---- Sector timing & slip ----
     const timing = this.timing.update(v, playerIdx, (i) => (this.drivers.get(i) || {}).classId);
+    // iRacing's own best lap for the session, so "Best" matches the sim: ours misses laps from
+    // before Slipstream started and laps we flagged as off-track that iRacing still counts
+    if (v.LapBestLapTime > 0) timing.bestLap = v.LapBestLapTime;
     const slip = this.slip.update(v);
 
     // ---- Track map learning ----
