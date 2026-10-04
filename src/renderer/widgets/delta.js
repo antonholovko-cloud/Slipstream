@@ -132,10 +132,11 @@ Host.register('delta', function (root) {
     const f = Math.max(-1, Math.min(1, d / s.sectorRange));
     bar.style.left = f < 0 ? (50 + f * 50) + '%' : '50%';
     bar.style.width = (Math.abs(f) * 50) + '%';
-    bar.style.background = d <= 0 ? t.green : t.red;
-    val.textContent = Fmt.signed(d, s.decimals);
-    val.style.color = d <= 0 ? t.green : t.red;
-    val.className = 'snum num ' + (d > 0 ? 'l' : 'r');
+    const losing = +d.toFixed(s.decimals) > 0; // what reads as +0.00 isn't losing time
+    bar.style.background = losing ? t.red : t.green;
+    val.textContent = Fmt.signed(+d.toFixed(s.decimals) === 0 ? 0 : d, s.decimals);
+    val.style.color = losing ? t.red : t.green;
+    val.className = 'snum num ' + (losing ? 'l' : 'r');
   }
 
   return {
@@ -165,9 +166,10 @@ Host.register('delta', function (root) {
         if (f < 0) { fill.style.left = (50 + f * 50) + '%'; fill.style.width = (-f * 50) + '%'; }
         else { fill.style.left = '50%'; fill.style.width = (f * 50) + '%'; }
         fill.style.background = color;
-        val.textContent = Fmt.signed(d, s.decimals);
-        val.style.color = d <= 0 ? t.green : t.red;
-        val.className = 'val num ' + (d > 0 ? 'l' : 'r'); // next to the centre line, on the empty side
+        const losing = +d.toFixed(s.decimals) > 0; // what reads as +0.00 isn't losing time
+        val.textContent = Fmt.signed(+d.toFixed(s.decimals) === 0 ? 0 : d, s.decimals);
+        val.style.color = losing ? t.red : t.green;
+        val.className = 'val num ' + (losing ? 'l' : 'r'); // next to the centre line, on the empty side
         if (s.showLapTimes) {
           const refLap = s.reference === 'best' ? p.bestLap : s.reference === 'sessionLast' ? p.lastLap : 0;
           q('.l').textContent = Fmt.lapTime(p.lapTime, 1);

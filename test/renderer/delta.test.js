@@ -32,7 +32,7 @@ const gap = (ov, side) => {
 };
 
 test('gaining: green bar to the left of centre, signed value, lap times', async () => {
-  const ov = await loadOverlay('delta', { settings: { range: 1, decimals: 2 } });
+  const ov = await loadOverlay('delta', { settings: { range: 1, decimals: 2, showLapTimes: true } });
   ov.render(withDelta([-0.25, -0.1, true]));
   assert.equal(ov.$('.val').textContent, '-0.25');
   assert.equal(ov.$('.val').style.color, rgb(T.green));
@@ -77,7 +77,7 @@ test('no valid delta: dash, reference label, empty bar', async () => {
 });
 
 test('reference: each choice reads its own delta; predicted lap only for best / last', async () => {
-  const ov = await loadOverlay('delta', { settings: { reference: 'optimal' } });
+  const ov = await loadOverlay('delta', { settings: { reference: 'optimal', showLapTimes: true } });
   const st = withDelta([0, 0, false]);
   st.player.deltas.optimal = [0.5, 0, true];
   ov.render(st);
@@ -243,5 +243,16 @@ test('the delta sits inside the bar next to the centre line, on the empty side',
   assert.ok(ov.$('.bar .val').classList.contains('r'));
   ov.render(withDelta([0, 0, false]));
   assert.ok(ov.$('.bar .val').classList.contains('c'), 'no delta: dash in the middle');
+  ov.close();
+});
+
+test('a delta that rounds to zero reads ±0.00 in green, not +0.00 in red', async () => {
+  const ov = await loadOverlay('delta', { settings: { decimals: 2 } });
+  const st = withDelta([0.001, 0, true]);
+  st.player.sectorDelta = { sector: 1, of: 3, d: { best: -0.002 } };
+  ov.render(st);
+  assert.equal(ov.$('.bar .val').textContent, '±0.00');
+  assert.equal(ov.$('.bar .val').style.color, rgb(T.green));
+  assert.equal(ov.$('.sector .snum').textContent, '±0.00');
   ov.close();
 });
