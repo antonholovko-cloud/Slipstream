@@ -318,10 +318,8 @@ class RaceModel {
     const relative = [];
     if (me && me.inWorld) {
       const myClassEst = this.classEst(me);
-      // Gaps read on the player's real pace: live tests showed the sim's relative a steady few % above
-      // the class estimate on every car, i.e. scaled to how fast you actually lap. Best lap this session,
-      // else the estimates.
-      const lapT = (me.bestLap > 0 ? me.bestLap : 0) || this.car.estLap || myClassEst || 90;
+      // Same class: the sim's relative is exactly the CarIdxEstTime difference (checked live to 0.1 s)
+      const lapT = myClassEst || this.car.estLap || 90;
       for (const c of cars) {
         if (!c.inWorld || c.isPlayer) continue;
         let dPct = c.pct - me.pct;
