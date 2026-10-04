@@ -13,7 +13,7 @@ Host.css(`
   text-shadow: 0 1px 2px rgba(0,0,0,.7); font-variant-numeric: tabular-nums; }
 .delta .num.l { right:calc(50% + .4rem); }
 .delta .num.r { left:calc(50% + .4rem); }
-.delta .num.c { left:50%; transform:translate(-50%, -50%); }
+.delta .num.c { display:none; } /* no delta yet: just the empty bar (a dash would sit on the centre line) */
 .delta .val { font-size:1.15rem; }
 .delta .row small { font-size:.8rem; color:var(--dim); font-weight:600; }
 .delta .sector { display:flex; align-items:center; gap:.4rem; flex:none; font-size:.75rem; font-weight:700; }
