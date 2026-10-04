@@ -50,7 +50,16 @@ Host.register('relative', function (root) {
       if (grouped) {
         // same cars, but each class in its own block (my class first), still in track order inside a block
         cols = cols.filter((c) => c !== 'class'); // the block header names the class
-        const list = ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind);
+        let list = ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind);
+        // class headers take rows too: keep the box the same height as ungrouped by dropping
+        // the farthest cars, so the nearest ones never fall off the bottom
+        const budget = s.ahead + s.behind + 1;
+        const heads = (l) => new Set(l.map((r) => cars.get(r.idx).classId)).size;
+        while (list.length > 1 && list.length + heads(list) > budget) {
+          let far = -1;
+          list.forEach((r, i) => { if (r.idx !== me.idx && (far < 0 || Math.abs(r.gap) > Math.abs(list[far].gap))) far = i; });
+          list = list.filter((_, i) => i !== far);
+        }
         const order = [me.classId, ...(state.classes || []).map((k) => k.id)];
         for (const r of list) order.push(cars.get(r.idx).classId);
         for (const id of new Set(order)) {

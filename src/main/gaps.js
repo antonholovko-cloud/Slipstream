@@ -75,23 +75,28 @@ class GapTracker {
     return Math.max(0, this.lastTime - t);
   }
 
-  // Seconds since the car `front` was at the current track position of `back`, ignoring laps:
-  // "physically ahead on track" timing for the relative, where the two cars can be laps apart
-  // and in different classes. Null without enough history (just joined, after a tow).
-  trackGap(front, back) {
+  // Seconds `back` needs to reach where `front` is now, at back's own pace: how long it took
+  // over that same stretch of track on its previous lap. For the relative: it ignores laps,
+  // works across classes (a faster car behind closes at its own speed), and isn't thrown off
+  // when the car in front stops (pits, spin) the way "time since front was here" is.
+  // Null without a lap of history for that stretch (just joined, after a tow).
+  paceGap(front, back) {
     const f = this.cars.get(front), b = this.cars.get(back);
     if (!f || !b) return null;
-    const x = (((b.p % 1) + 1) % 1) * BINS; // back's position in this lap, in bins
-    const fx = (((f.p % 1) + 1) % 1) * BINS;
-    let ahead = fx - x; // bins front is ahead of back on track
+    const pos = (p) => (((p % 1) + 1) % 1) * BINS;
+    let ahead = pos(f.p) - pos(b.p); // bins front is ahead of back on track
     if (ahead < 0) ahead += BINS;
-    if (ahead < 1) { const lt = this.lapTime(f); return lt ? (ahead / BINS) * lt : null; }
-    // front's most recent pass of that point: absolute position f.p * BINS - ahead
-    const at = f.p * BINS - ahead, i = Math.floor(at);
-    const t0 = f.cross.get(i), t1 = f.cross.get(i + 1);
-    if (t0 === undefined) return null;
-    const t = t1 === undefined ? t0 : t0 + (t1 - t0) * (at - i);
-    return Math.max(0, this.lastTime - t);
+    const lt = this.lapTime(b);
+    if (ahead < 1) return lt ? (ahead / BINS) * lt : null;
+    const at = (x) => {
+      const i = Math.floor(x), t0 = b.cross.get(i), t1 = b.cross.get(i + 1);
+      if (t0 === undefined || t1 === undefined) return undefined;
+      return t0 + (t1 - t0) * (x - i);
+    };
+    const start = b.p * BINS - BINS; // back's current spot, one lap ago
+    const t0 = at(start), t1 = at(start + ahead);
+    if (t0 === undefined || t1 === undefined || !(t1 > t0)) return null;
+    return t1 - t0;
   }
 
   // The car's last full-lap time from its own timing points (for sub-bin gaps).

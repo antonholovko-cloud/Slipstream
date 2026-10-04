@@ -249,15 +249,15 @@ test('relative, multiclass: gaps are measured from our own timing, not iRacing c
   const drivers = [driver(1, { ...GT3, est: 60 }), driver(2, { ...LMP2, est: 200 })];
   const info = sessionInfo({ drivers });
   const m = new RaceModel();
-  const me = { start: 0.30, speed: 1 / 100 }, p2 = { start: 0.25, speed: 1 / 90 };
+  const me = { start: 0.30, speed: 1 / 100 }, p2 = { start: 0.10, speed: 1 / 90 };
   let st, T = 0;
-  for (let t = 0; t <= 20 + 1e-9; t += 0.05) {
+  for (let t = 0; t <= 100 + 1e-9; t += 0.05) {
     T = t;
     const a = me.start + me.speed * t, b = p2.start + p2.speed * t;
     st = m.update(frame(info, vars({ 1: { pct: a % 1, lap: Math.floor(a) }, 2: { pct: b % 1, lap: Math.floor(b) } }, { SessionTime: t })), G());
   }
-  const pb = p2.start + p2.speed * T;
-  const expected = -(T - (pb - me.start) / me.speed); // behind: how long ago I was where it is now
+  const dist = (me.start + me.speed * T) - (p2.start + p2.speed * T);
+  const expected = -dist / p2.speed; // behind: how long it needs to reach me, at its own pace
   const r = st.relative.find((x) => x.idx === 2);
   assert.ok(Math.abs(r.gap - expected) < 0.05, `gap ${r.gap} vs ${expected}`);
 });

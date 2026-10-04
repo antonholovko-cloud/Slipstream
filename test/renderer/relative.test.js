@@ -84,3 +84,27 @@ test('country flag column: a flag per driver with a country, toggled off in sett
   assert.equal(ov.$$('td.c-flag').length, 0);
   ov.close();
 });
+
+test('grouped: class headers count toward the rows, so the farthest cars give way, never the nearest', async () => {
+  // practice with four classes (like an MX-5 / SR8 / Porsche / FR500S session)
+  const { state } = demoRace();
+  const st = structuredClone(state);
+  const me = st.cars.find((c) => c.isPlayer);
+  const others = st.cars.filter((c) => !c.isPlayer).slice(0, 8);
+  const cls = [['sr8', 'SR8'], ['sr8', 'SR8'], ['sr8', 'SR8'], ['sr8', 'SR8'], ['p992', 'PORSCHE 992'], ['p992', 'PORSCHE 992'], ['fr', 'FR500S'], ['fr', 'FR500S']];
+  others.forEach((c, i) => { [c.classId, c.className] = cls[i]; });
+  me.classId = 'mx5'; me.className = 'MX-5';
+  const gaps = [45.5, 10.5, -12.8, -27.2, 2.1, -3.2, 6.7, 60];
+  st.relative = others.map((c, i) => ({ idx: c.idx, gap: gaps[i], lapDiff: 0 })).sort((a, b) => b.gap - a.gap);
+  st.classes = [];
+  const ov = await loadOverlay('relative', { settings: { ahead: 4, behind: 4 } });
+  ov.render(st);
+  const rows = ov.$$('table.board tr');
+  assert.ok(rows.length <= 4 + 4 + 1, `${rows.length} rows`);
+  const text = ov.$('table.board').textContent;
+  const shown = (c) => text.includes(c.name);
+  // the nearest car ahead in each direction is always there, including the FR500S at +6.7
+  for (const i of [4, 5, 6, 1]) assert.ok(shown(others[i]), `${others[i].name} (${gaps[i]}) missing`);
+  assert.ok(!shown(others[7]) && !shown(others[0]), 'the farthest cars made room for the headers');
+  ov.close();
+});

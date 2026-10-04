@@ -93,34 +93,42 @@ test('null progress entries are skipped', () => {
   assert.equal(g.cars.size, 0);
 });
 
-test('trackGap: time on track between two cars, ignoring laps (a lapped car just ahead)', () => {
+test('paceGap: time on track between two cars, ignoring laps (a lapped car just ahead)', () => {
   const g = new GapTracker();
   const speed = 1 / 90;
   // #1 is a lap and 2 s up the road in the race, but on track it's 2 s ahead of #2
   run(g, [{ idx: 1, start: 1.1, speed }, { idx: 2, start: 0.1 - 2 * speed, speed }], { to: 120 });
   assert.ok(Math.abs(g.gap(1, 2) - 92) < 0.1, 'race gap counts the lap');
-  assert.ok(Math.abs(g.trackGap(1, 2) - 2) < 0.05, `track gap ${g.trackGap(1, 2)}`);
-  // and the other way round: #2 is ~88 s "ahead" of #1 on track
-  assert.ok(Math.abs(g.trackGap(2, 1) - 88) < 0.1);
+  assert.ok(Math.abs(g.paceGap(1, 2) - 2) < 0.05, `pace gap ${g.paceGap(1, 2)}`);
 });
 
-test('trackGap: cars at different pace (multiclass): measured from the car in front', () => {
+test('paceGap: a faster car behind closes at its own pace (multiclass)', () => {
   const g = new GapTracker();
-  const front = { idx: 1, start: 0.2, speed: 1 / 100 }; // slower class, ahead
-  const back = { idx: 2, start: 0.17, speed: 1 / 90 }; // faster class, closing
-  run(g, [front, back], { to: 20 });
-  const T = 20, pb = back.start + back.speed * T;
-  const expected = T - (pb - front.start) / front.speed; // since front was where back is now
-  assert.ok(Math.abs(g.trackGap(1, 2) - expected) < 0.05, `${g.trackGap(1, 2)} vs ${expected}`);
+  const front = { idx: 1, start: 0.5, speed: 1 / 100 }; // slower class, ahead
+  const back = { idx: 2, start: 0.1, speed: 1 / 90 }; // faster class, behind
+  run(g, [front, back], { to: 100 });
+  const T = 100, ahead = (front.start + front.speed * T) - (back.start + back.speed * T);
+  assert.ok(Math.abs(g.paceGap(1, 2) - ahead / back.speed) < 0.05, `${g.paceGap(1, 2)} vs ${ahead / back.speed}`);
 });
 
-test('trackGap: unknown without history, side by side uses the lap time once known', () => {
+test('paceGap: not thrown off when the car in front stops (pits, spin)', () => {
+  const g = new GapTracker();
+  const speed = 1 / 60;
+  run(g, [{ idx: 1, start: 0.5, speed }, { idx: 2, start: 0.4, speed }], { to: 90 });
+  // #1 stops dead; #2 keeps going and closes in (time since #1 was there would read 5 s too long)
+  const p1 = 0.5 + speed * 90;
+  for (let t = 90.05; t <= 95 + 1e-9; t += 0.05) g.update(t, [{ idx: 1, p: p1 }, { idx: 2, p: 0.4 + speed * t }]);
+  const dist = p1 - (0.4 + speed * 95);
+  assert.ok(Math.abs(g.paceGap(1, 2) - dist / speed) < 0.05, `${g.paceGap(1, 2)} vs ${dist / speed}`);
+});
+
+test('paceGap: unknown without a lap of history; side by side uses the lap time once known', () => {
   const g = new GapTracker();
   g.update(0, [{ idx: 1, p: 0.505 }, { idx: 2, p: 0.5 }]);
-  assert.equal(g.trackGap(1, 2), null);
-  assert.equal(g.trackGap(1, 9), null);
+  assert.equal(g.paceGap(1, 2), null);
+  assert.equal(g.paceGap(1, 9), null);
   const speed = 1 / 60;
   const h = new GapTracker();
   run(h, [{ idx: 1, start: 0.5 + 0.2 * speed, speed }, { idx: 2, start: 0.5, speed }], { to: 70 });
-  assert.ok(Math.abs(h.trackGap(1, 2) - 0.2) < 0.02);
+  assert.ok(Math.abs(h.paceGap(1, 2) - 0.2) < 0.02);
 });

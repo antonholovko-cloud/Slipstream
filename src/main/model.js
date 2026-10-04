@@ -323,9 +323,9 @@ class RaceModel {
         let dPct = c.pct - me.pct;
         if (dPct > 0.5) dPct -= 1;
         if (dPct < -0.5) dPct += 1;
-        // Measured: how long ago the car in front passed the other car's spot (our own timing
-        // loops). Real time, so classes with different pace and wrong iRacing estimates don't matter.
-        const measured = dPct >= 0 ? this.gaps.trackGap(c.idx, me.idx) : this.gaps.trackGap(me.idx, c.idx);
+        // Measured: how long the car behind took over this stretch of track on its last lap
+        // (our own timing loops). Real pace, so classes and wrong iRacing estimates don't matter.
+        const measured = dPct >= 0 ? this.gaps.paceGap(c.idx, me.idx) : this.gaps.paceGap(me.idx, c.idx);
         let gap;
         if (measured !== null && measured < lapT / 2) gap = dPct >= 0 ? measured : -measured;
         else {
