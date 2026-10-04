@@ -14,6 +14,7 @@ npm run dist          # build installer + portable exe into dist/
 npm run screenshots   # regenerate docs/screenshots
 npm run gifs          # regenerate docs/gifs (scripted demo drive, captured off-screen)
 npx electron scripts/build-flags.js   # re-render country flags (flag-icons) to src/renderer/flags
+IRO_RELLOG=1 npm start               # log what the Relative is built from to <userData>/relative-log.jsonl
 powershell -ExecutionPolicy Bypass -File scripts/perf.ps1   # memory / CPU benchmark (off-screen demo race)
 ```
 
