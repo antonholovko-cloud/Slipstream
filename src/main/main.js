@@ -252,10 +252,25 @@ function tick() {
 // Diagnostics (IRO_RELLOG=1): what the relative is built from, twice a second, to
 // <userData>/relative-log.jsonl, keyed by session time remaining (shown in the Relative footer)
 // so photos of the sim's own relative can be matched to it.
-let relLogAt = -1;
+let relLogAt = -1, relLogSiu = -1;
 function logRelative(v, st) {
   if (Math.abs(v.SessionTime - relLogAt) < 0.5) return;
   relLogAt = v.SessionTime;
+  const file = path.join(app.getPath('userData'), 'relative-log.jsonl');
+  if (model.siu !== relLogSiu) {
+    // once per session info update: every class's fields, to compare with the sim's own relative
+    relLogSiu = model.siu;
+    const di = (model.info || {}).DriverInfo || {};
+    const classes = {};
+    for (const d of di.Drivers || []) {
+      if (d.CarIsPaceCar || d.IsSpectator) continue;
+      const k = d.CarClassShortName || d.CarScreenNameShort;
+      if (!classes[k]) classes[k] = { id: d.CarClassID, relSpeed: d.CarClassRelSpeed, est: d.CarClassEstLapTime, car: d.CarScreenNameShort, carId: d.CarID };
+    }
+    const wk = (model.info || {}).WeekendInfo || {};
+    const info = { info: true, t: +v.SessionTime.toFixed(2), track: wk.TrackDisplayName, trackTemp: wk.TrackSurfaceTemp, driverCarEst: di.DriverCarEstLapTime, driverCarIdx: di.DriverCarIdx, classes };
+    fs.appendFile(file, JSON.stringify(info) + String.fromCharCode(10), () => {});
+  }
   const me = st.cars.find((c) => c.isPlayer);
   if (!me) return;
   const car = (c) => ({ n: c.number, cls: c.className, pct: +c.pct.toFixed(5), est: +c.estTime.toFixed(3), classEst: model.classEst(c), best: c.bestLap, last: c.lastLap, pit: c.onPitRoad, surf: c.surface });
