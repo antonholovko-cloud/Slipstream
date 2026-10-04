@@ -290,6 +290,13 @@ test('relative: gaps read on the player car est lap (DriverCarEstLapTime), like 
   assert.ok(Math.abs(st.relative[0].gap - 10.45) < 1e-6, String(st.relative[0].gap));
 });
 
+test('relative: once I have a best lap, gaps read on my real pace', () => {
+  const drivers = [driver(1, GT3), driver(2, LMP2)];
+  // GT3 class estimate 100 s, but my best is 104.5 s; the LMP2 is 10 s of its own estimate up the road
+  const st = new RaceModel().update(frame(sessionInfo({ drivers }), vars({ 1: { pct: 0.5, est: 50, best: 104.5 }, 2: { pct: 0.6, est: 0.6 * 90 } })), G());
+  assert.ok(Math.abs(st.relative[0].gap - 10.45) < 1e-6, String(st.relative[0].gap));
+});
+
 test('relative / radar are empty when the player is not in the world', () => {
   const drivers = [driver(1, GT3), driver(2, GT3)];
   const st = new RaceModel().update(frame(sessionInfo({ drivers }), vars({ 1: { pct: -1, lap: -1 }, 2: { pct: 0.3 } })), G());
