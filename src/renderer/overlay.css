@@ -81,6 +81,8 @@ td.c-gap, td.c-interval, td.c-last, td.c-best, td.c-irating, td.c-irDelta, td.c-
 td.c-irating, td.c-lap, td.c-pit { color: var(--dim); }
 td.c-posGain, td.c-tire, td.c-class { text-align: center; font-size: .8rem; }
 td.c-number { padding-left: 0 !important; }
+td.c-flag { width: 1.3rem; padding-right: 0 !important; text-align: center; }
+td.c-flag img.flag { display: block; width: 1.15rem; height: .86rem; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
 td.c-gap .dir { font-size: .6rem; opacity: .6; margin-right: .2rem; vertical-align: 1px; }
 .classbar { display: inline-block; width: .3rem; height: 1.3rem; vertical-align: middle; margin-right: .3rem; border-radius: 1px; }
 .footer { display: flex; justify-content: space-between; gap: .8rem; padding: .2rem .6rem; font-size: .8rem; color: var(--dim); background: var(--header); font-weight: 600; }

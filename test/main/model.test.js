@@ -271,6 +271,14 @@ test("lap timing 'Best' uses iRacing's own session best lap when it has one", ()
   assert.equal(st.timing.bestLap, null, 'no official best yet: our own (none timed)');
 });
 
+test('drivers carry their country flag from the iRacing flair', () => {
+  const drivers = [driver(1, GT3, { FlairName: 'Scotland', FlairID: 237 }), driver(2, GT3, { FlairName: 'iRacing', FlairID: 2 }), driver(3, GT3)];
+  const st = new RaceModel().update(frame(sessionInfo({ drivers }), vars({ 1: { pct: 0.1 }, 2: { pct: 0.2 }, 3: { pct: 0.3 } })), G());
+  assert.deepEqual([byIdx(st, 1).flag, byIdx(st, 1).country], ['gb-sct', 'Scotland']);
+  assert.equal(byIdx(st, 2).flag, null);
+  assert.equal(byIdx(st, 3).flag, null);
+});
+
 test('relative / radar are empty when the player is not in the world', () => {
   const drivers = [driver(1, GT3), driver(2, GT3)];
   const st = new RaceModel().update(frame(sessionInfo({ drivers }), vars({ 1: { pct: -1, lap: -1 }, 2: { pct: 0.3 } })), G());

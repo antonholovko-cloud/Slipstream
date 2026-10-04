@@ -65,3 +65,22 @@ test('shows "Not on track" without a player car', async () => {
   assert.match(ov.document.body.textContent, /Not on track/);
   ov.close();
 });
+
+test('country flag column: a flag per driver with a country, toggled off in settings', async () => {
+  const { state } = demoRace();
+  const ov = await loadOverlay('relative');
+  ov.render(state);
+  const imgs = ov.$$('td.c-flag img.flag');
+  assert.ok(imgs.length > 3);
+  assert.ok(imgs.every((i) => /^flags\/[a-z-]+\.png$/.test(i.getAttribute('src'))));
+  assert.ok(imgs.every((i) => i.title.length > 2), 'country name on hover');
+  // drivers who keep the iRacing logo (no country) get an empty cell
+  const st = structuredClone(state);
+  st.cars.find((c) => c.isPlayer).flag = null;
+  ov.render(st);
+  assert.equal(ov.$('tr.player td.c-flag').innerHTML, '');
+  ov.configure({ columns: ov.settings.columns.map((c) => (c.id === 'flag' ? { ...c, on: false } : c)) });
+  ov.render(state);
+  assert.equal(ov.$$('td.c-flag').length, 0);
+  ov.close();
+});

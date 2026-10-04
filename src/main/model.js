@@ -7,6 +7,7 @@ const { TimingTracker } = require('./timing');
 const { SlipEstimator } = require('./slip');
 const { GapTracker } = require('./gaps');
 const { assignSplits } = require('./classes');
+const { flagCode } = require('./flags');
 
 const TRACK_BINS = 500;
 
@@ -95,6 +96,7 @@ class RaceModel {
         isPace: !!d.CarIsPaceCar,
         isSpectator: !!d.IsSpectator,
         userId: d.UserID,
+        country: String(d.FlairName || ''), flag: flagCode(d.FlairName),
       });
     }
     for (const d of this.drivers.values()) d.base = { classId: d.classId, className: d.className, classColor: d.classColor };
@@ -188,7 +190,7 @@ class RaceModel {
       cars.push({
         idx: i, name: d.name, abbrev: d.abbrev, initials: d.initials, team: d.team, number: d.number, car: d.car,
         classId: d.classId, className: d.className, classColor: d.classColor, baseClass: d.base.className,
-        irating: d.irating, license: d.license, licColor: d.licColor,
+        irating: d.irating, license: d.license, licColor: d.licColor, flag: d.flag, country: d.country,
         position: v.CarIdxPosition?.[i] || 0,
         classPosition: v.CarIdxClassPosition?.[i] || 0,
         lap: v.CarIdxLap?.[i] ?? -1, lapCompleted: lapC, pct, dist: lapDist(i),

@@ -20,6 +20,7 @@ Host.register('relative', function (root) {
         case 'pos': return `<td class="c-pos ${nameCls}">${c.classPosition || ''}</td>`;
         case 'number': return `<td class="c-number"><span class="classbar" style="background:${c.classColor}"></span><span class="num">#${E(c.number)}</span></td>`;
         case 'class': return `<td class="c-class">${multiClass ? `<span class="tag cls" style="background:${c.classColor};color:${Fmt.contrast(c.classColor)}">${E(c.className)}</span>` : ''}</td>`;
+        case 'flag': return `<td class="c-flag">${c.flag ? `<img class="flag" src="flags/${E(c.flag)}.png" alt="" title="${E(c.country)}">` : ''}</td>`;
         case 'name': return `<td class="c-name ${nameCls}">${E(Fmt.driverName(c, s.nameFormat))}</td>`;
         case 'license': return `<td class="c-license">${Fmt.license(c)}</td>`;
         case 'irating': return `<td class="c-irating">${Fmt.irating(c.irating)}</td>`;

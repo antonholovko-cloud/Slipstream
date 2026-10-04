@@ -29,6 +29,7 @@
   "devDependencies": {
     "electron": "^44.4.5",
     "electron-builder": "^26.15.3",
+    "flag-icons": "^7.5.0",
     "gifenc": "^1.0.3",
     "jsdom": "^30.1.1"
   },

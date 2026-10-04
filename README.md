@@ -142,8 +142,8 @@ and show again when you drive.
 
 | Overlay | What it shows |
 |---|---|
-| **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible". **Off by default**; turn it on in settings |
-| **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, cars grouped by class in multiclass races, and an info bar (position, SOF, incidents, time left) |
+| **Standings** | Multiclass grouping with class SOF, **country flags**, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible". **Off by default**; turn it on in settings |
+| **Relative** | Cars around you by live time gap, **country flags**, lapping/lapped colors, pit tags, cars grouped by class in multiclass races, and an info bar (position, SOF, incidents, time left) |
 | **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Every part can be switched off |
 | **Speed** | Just speed and gear, with a rev indicator behind the gear (rises with RPM, blinks at the shift point) and a wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
@@ -160,6 +160,7 @@ Every change you make is saved right away and kept after updates.
 - **Each overlay:** position, size, scale (50–250%), background opacity, header, accent color, refresh rate,
   and which sessions it shows in (practice, qualifying, race).
 - **Columns:** drag to reorder and switch columns on or off in Standings, Relative and Session Info.
+  For example, switch off **Country flag** if you don't want flags.
 - **Themes:** five built-in themes. You can change any color, the font and the corner rounding.
 - **Layouts & profiles:** save different layouts (for example road, oval, streaming) and switch between them
   from the tray or with a hotkey. You can export a profile to share it or move it to another PC.
@@ -247,6 +248,8 @@ Your settings and layouts are always kept.
   engine RPM relates to road speed in each gear, and lights up when the RPM jumps above it (wheelspin) or drops
   below it (lock-up), or when ABS is working. Front lock-ups on rear-drive cars without ABS can't be detected.
 - The **iRating change** in Standings is an estimate based on the community-derived iRacing formula.
+- **Country flags** come from the flag each driver picked in iRacing (their "flair"). Drivers who kept the
+  iRacing logo get no flag. Flag images: [flag-icons](https://github.com/lipis/flag-icons) (MIT).
 - Slipstream is an independent project and is not affiliated with or endorsed by iRacing.com Motorsport Simulations.
 
 <sub>Want to build Slipstream yourself or contribute? See the [developer notes](docs/DEVELOPMENT.md).</sub>
