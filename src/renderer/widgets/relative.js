@@ -42,29 +42,30 @@ Host.register('relative', function (root) {
       const isRace = state.session && state.session.isRace;
       multiClass = new Set((state.cars || []).map((c) => c.classId)).size > 1;
       let rel = state.relative || [];
+      if (s.gapSource === 'measured') rel = rel.map((r) => (r.pace !== null && r.pace !== undefined ? { ...r, gap: r.pace } : r)).sort((a, b) => b.gap - a.gap);
       if (s.hidePitCars) rel = rel.filter((r) => !cars.get(r.idx).onPitRoad);
       const ahead = rel.filter((r) => r.gap >= 0).slice(-s.ahead);
       const behind = rel.filter((r) => r.gap < 0).slice(0, s.behind);
       let html = '<table class="board">';
-      grouped = !!(me && s.groupByClass && multiClass);
+      let list = me ? ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind) : [];
+      const heads = (l) => new Set(l.map((r) => cars.get(r.idx).classId)).size;
+      // Class blocks for one or two classes nearby. Headers take rows too, so the farthest car on
+      // whichever side has more gives way. With three or more classes the headers would push near
+      // cars out, so it's plain track order with class tags instead.
+      grouped = !!(me && s.groupByClass && multiClass && heads(list) <= 2);
       if (grouped) {
-        // same cars, but each class in its own block (my class first), still in track order inside a block
-        cols = cols.filter((c) => c !== 'class'); // the block header names the class
-        let list = ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind);
-        // class headers take rows too: keep the box the same height as ungrouped by dropping
-        // the farthest car on whichever side has more, so the nearest ones never fall off
         const budget = s.ahead + s.behind + 1;
-        const heads = (l) => new Set(l.map((r) => cars.get(r.idx).classId)).size;
         while (list.length > 1 && list.length + heads(list) > budget) {
           const nA = list.filter((r) => r.idx !== me.idx && r.gap >= 0).length, nB = list.length - 1 - nA;
-          const side = nA > nB ? 1 : nB > nA ? -1 : 0;
           let far = -1;
           list.forEach((r, i) => {
-            if (r.idx === me.idx || (side > 0 && r.gap < 0) || (side < 0 && r.gap >= 0)) return;
+            if (r.idx === me.idx || (nA > nB && r.gap < 0) || (nB > nA && r.gap >= 0)) return;
             if (far < 0 || Math.abs(r.gap) > Math.abs(list[far].gap)) far = i;
           });
           list = list.filter((_, i) => i !== far);
         }
+        // same cars, but each class in its own block (my class first), still in track order inside a block
+        cols = cols.filter((c) => c !== 'class'); // the block header names the class
         const order = [me.classId, ...(state.classes || []).map((k) => k.id)];
         for (const r of list) order.push(cars.get(r.idx).classId);
         for (const id of new Set(order)) {

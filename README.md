@@ -143,7 +143,7 @@ and show again when you drive.
 | Overlay | What it shows |
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, **country flags**, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible". **Off by default**; turn it on in settings |
-| **Relative** | Cars around you by live time gap, **country flags**, lapping/lapped colors, pit tags, cars grouped by class in multiclass races, and an info bar (position, SOF, incidents, time left) |
+| **Relative** | Cars around you by live time gap, **country flags**, lapping/lapped colors, pit tags, cars grouped by class in multiclass races (plain track order with class tags when three or more classes are nearby), gaps from iRacing's estimate like the sim's own relative or measured from recent pace, and an info bar (position, SOF, incidents, time left) |
 | **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Every part can be switched off |
 | **Speed** | Just speed and gear, with a rev indicator behind the gear (rises with RPM, blinks at the shift point) and a wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |

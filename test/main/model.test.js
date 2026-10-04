@@ -244,7 +244,7 @@ test('relative: a faster-class car just ahead reads as ahead (est times scaled t
   assert.ok(Math.abs(r.gap - 0.5) < 1e-6);
 });
 
-test('relative, multiclass: gaps are measured from our own timing, not iRacing class estimates', () => {
+test('relative: estimate gap like iRacing, plus a measured gap at the trailing car pace', () => {
   // iRacing's class estimates are way off (and EstTime missing); the LMP2 is really closing from behind
   const drivers = [driver(1, { ...GT3, est: 60 }), driver(2, { ...LMP2, est: 200 })];
   const info = sessionInfo({ drivers });
@@ -259,7 +259,9 @@ test('relative, multiclass: gaps are measured from our own timing, not iRacing c
   const dist = (me.start + me.speed * T) - (p2.start + p2.speed * T);
   const expected = -dist / p2.speed; // behind: how long it needs to reach me, at its own pace
   const r = st.relative.find((x) => x.idx === 2);
-  assert.ok(Math.abs(r.gap - expected) < 0.05, `gap ${r.gap} vs ${expected}`);
+  assert.ok(Math.abs(r.pace - expected) < 0.05, `measured ${r.pace} vs ${expected}`);
+  // no CarIdxEstTime in this session: the estimate falls back to distance at my class pace (60 s)
+  assert.ok(Math.abs(r.gap - r.dPct * 60) < 1e-6);
 });
 
 test("lap timing 'Best' uses iRacing's own session best lap when it has one", () => {

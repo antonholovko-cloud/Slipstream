@@ -323,27 +323,25 @@ class RaceModel {
         let dPct = c.pct - me.pct;
         if (dPct > 0.5) dPct -= 1;
         if (dPct < -0.5) dPct += 1;
-        // Measured: how long the car behind took over this stretch of track on its last lap
-        // (our own timing loops). Real pace, so classes and wrong iRacing estimates don't matter.
-        const measured = dPct >= 0 ? this.gaps.paceGap(c.idx, me.idx) : this.gaps.paceGap(me.idx, c.idx);
+        // Like iRacing's relative: CarIdxEstTime, which runs on each car's own class lap estimate,
+        // so other classes are brought onto ours (otherwise a faster-class car just ahead reads as behind)
         let gap;
-        if (measured !== null && measured < lapT / 2) gap = dPct >= 0 ? measured : -measured;
-        else {
-          // Without history yet: CarIdxEstTime runs on each car's own class lap estimate, so bring
-          // other classes onto ours (otherwise a faster-class car just ahead reads as behind)
-          const theirEst = this.classEst(c);
-          const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime, em = me.estTime;
-          if (eo > 0 && em > 0) {
-            gap = eo - em;
-            if (gap > lapT / 2) gap -= lapT;
-            if (gap < -lapT / 2) gap += lapT;
-            // fall back when est time disagrees wildly with track position
-            if (Math.sign(gap) !== Math.sign(dPct) && Math.abs(dPct) > 0.02) gap = dPct * lapT;
-          } else gap = dPct * lapT;
-        }
+        const theirEst = this.classEst(c);
+        const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime, em = me.estTime;
+        if (eo > 0 && em > 0) {
+          gap = eo - em;
+          if (gap > lapT / 2) gap -= lapT;
+          if (gap < -lapT / 2) gap += lapT;
+          // fall back when est time disagrees wildly with track position
+          if (Math.sign(gap) !== Math.sign(dPct) && Math.abs(dPct) > 0.02) gap = dPct * lapT;
+        } else gap = dPct * lapT;
+        // Measured alternative (Relative setting "Gaps from"): how long the car behind took over this
+        // stretch on its recent laps, from our own timing loops. Null until there's history.
+        const m = dPct >= 0 ? this.gaps.paceGap(c.idx, me.idx) : this.gaps.paceGap(me.idx, c.idx);
+        const pace = m !== null && m < lapT / 2 ? (dPct >= 0 ? m : -m) : null;
         const raceDiff = c.dist - me.dist;
         const lapDiff = isRace ? (raceDiff > 0.5 ? 1 : raceDiff < -0.5 ? -1 : 0) : 0;
-        relative.push({ idx: c.idx, gap, dPct, lapDiff, meters: dPct * this.track.length });
+        relative.push({ idx: c.idx, gap, pace, dPct, lapDiff, meters: dPct * this.track.length });
       }
       relative.sort((a, b) => b.gap - a.gap);
     }

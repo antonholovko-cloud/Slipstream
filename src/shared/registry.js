@@ -88,6 +88,8 @@
       schema: [
         { key: 'columns', label: 'Columns', type: 'columns', columns: RELATIVE_COLUMNS },
         { key: 'groupByClass', label: 'Group cars by class (multiclass only; my class first)', type: 'bool', default: true },
+        { key: 'gapSource', label: 'Gaps from', type: 'select', default: 'estimate',
+          options: [{ value: 'estimate', label: "iRacing's estimate (like the sim's relative)" }, { value: 'measured', label: 'Measured on track (real recent pace)' }] },
         { key: 'ahead', label: 'Cars ahead', type: 'number', min: 0, max: 10, default: 4 },
         { key: 'behind', label: 'Cars behind', type: 'number', min: 0, max: 10, default: 4 },
         { key: 'colorLapping', label: 'Color lapping / lapped cars', type: 'bool', default: true },
