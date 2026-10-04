@@ -213,16 +213,18 @@
     {
       id: 'delta', name: 'Delta Bar', icon: 'Δ',
       description: 'Live delta against best, session best or optimal lap, plus gaps to the cars ahead and behind.',
-      bounds: { x: 760, y: 200, width: 400, height: 110 },
+      bounds: { x: 760, y: 200, width: 400, height: 86 },
       needs: ['player', 'session', 'cars', 'relative'],
-      defaults: { showHeader: false, fps: 30 },
+      defaults: { showHeader: false, fps: 30, deltaV2: true }, // deltaV2: new layouts already have room for the gap bars
       schema: [
         { key: 'reference', label: 'Reference lap', type: 'select', default: 'best',
           options: [{ value: 'best', label: 'My best lap' }, { value: 'optimal', label: 'My optimal lap' }, { value: 'sessionBest', label: 'Session best' }, { value: 'sessionOptimal', label: 'Session optimal' }, { value: 'sessionLast', label: 'My last lap' }] },
         { key: 'range', label: 'Bar range (s)', type: 'range', min: 0.2, max: 5, step: 0.1, default: 1.5 },
         { key: 'showTrend', label: 'Color by trend (gaining/losing)', type: 'bool', default: true },
-        { key: 'showLapTimes', label: 'Show current / predicted lap', type: 'bool', default: true },
+        { key: 'showLapTimes', label: 'Show current / predicted lap', type: 'bool', default: false },
         { key: 'decimals', label: 'Decimals', type: 'number', min: 1, max: 3, default: 2 },
+        { key: 'showSector', label: 'Sector delta bar (current sector only)', type: 'bool', default: true },
+        { key: 'sectorRange', label: 'Sector bar range (s)', type: 'range', min: 0.1, max: 2, step: 0.1, default: 0.5 },
         { key: 'showGaps', label: 'Gap bars to car ahead / behind', type: 'bool', default: true },
         { key: 'gapMode', label: 'Gaps measured to', type: 'select', default: 'auto',
           options: [{ value: 'auto', label: 'Auto (class position in races, track otherwise)' }, { value: 'position', label: 'Car ahead / behind in class position' }, { value: 'track', label: 'Nearest car on track' }] },

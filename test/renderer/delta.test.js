@@ -32,7 +32,7 @@ const gap = (ov, side) => {
 };
 
 test('gaining: green bar to the left of centre, signed value, lap times', async () => {
-  const ov = await loadOverlay('delta', { settings: { range: 1, decimals: 2 } });
+  const ov = await loadOverlay('delta', { settings: { range: 1, decimals: 2, showLapTimes: true } });
   ov.render(withDelta([-0.25, -0.1, true]));
   assert.equal(ov.$('.val').textContent, '-0.25');
   assert.equal(ov.$('.val').style.color, rgb(T.green));
@@ -77,7 +77,7 @@ test('no valid delta: dash, reference label, empty bar', async () => {
 });
 
 test('reference: each choice reads its own delta; predicted lap only for best / last', async () => {
-  const ov = await loadOverlay('delta', { settings: { reference: 'optimal' } });
+  const ov = await loadOverlay('delta', { settings: { reference: 'optimal', showLapTimes: true } });
   const st = withDelta([0, 0, false]);
   st.player.deltas.optimal = [0.5, 0, true];
   ov.render(st);
@@ -205,5 +205,54 @@ test('missing player or deltas: nothing rendered', async () => {
   ov.renderRaw({ connected: true, session: {}, player: {} });
   assert.equal(ov.$('.val').textContent, '–');
   assert.deepEqual(ov.errors, []);
+  ov.close();
+});
+
+test('sector bar: current sector gain (green, left) or loss (red, right) vs the chosen reference', async () => {
+  const st = withDelta([0.4, 0, true]);
+  st.player.sectorDelta = { sector: 2, of: 3, d: { best: -0.125, optimal: 0.3, sessionBest: null, sessionOptimal: null, sessionLast: null } };
+  const ov = await loadOverlay('delta', { settings: { sectorRange: 0.5, decimals: 2 } });
+  ov.render(st);
+  const bar = ov.$('.sector .sbar i').style;
+  assert.equal(ov.$('.sector .lbl').textContent, 'S2');
+  assert.equal(ov.$('.sector .snum').textContent, '-0.13');
+  assert.equal(parseFloat(bar.left), 37.5);
+  assert.equal(parseFloat(bar.width), 12.5);
+  assert.equal(bar.background, rgb(T.green));
+  ov.configure({ reference: 'optimal' });
+  ov.render(st);
+  assert.equal(ov.$('.sector .snum').textContent, '+0.30');
+  assert.equal(parseFloat(bar.left), 50);
+  assert.equal(bar.background, rgb(T.red));
+  ov.configure({ reference: 'sessionBest' });
+  ov.render(st);
+  assert.equal(ov.$('.sector .snum').textContent, '–');
+  ov.configure({ showSector: false });
+  assert.equal(ov.$('.sector').style.display, 'none');
+  ov.close();
+});
+
+test('the delta sits inside the bar next to the centre line, on the empty side', async () => {
+  const ov = await loadOverlay('delta');
+  const st = withDelta([0.4, 0, true]);
+  st.player.sectorDelta = { sector: 1, of: 3, d: { best: -0.2 } };
+  ov.render(st);
+  assert.ok(ov.$('.bar .val').classList.contains('l'), 'losing: bar goes right, number left of centre');
+  assert.ok(ov.$('.sector .snum').classList.contains('r'), 'gaining in the sector: number right of centre');
+  ov.render(withDelta([-0.4, 0, true]));
+  assert.ok(ov.$('.bar .val').classList.contains('r'));
+  ov.render(withDelta([0, 0, false]));
+  assert.ok(ov.$('.bar .val').classList.contains('c'), 'no delta: dash in the middle');
+  ov.close();
+});
+
+test('a delta that rounds to zero reads ±0.00 in green, not +0.00 in red', async () => {
+  const ov = await loadOverlay('delta', { settings: { decimals: 2 } });
+  const st = withDelta([0.001, 0, true]);
+  st.player.sectorDelta = { sector: 1, of: 3, d: { best: -0.002 } };
+  ov.render(st);
+  assert.equal(ov.$('.bar .val').textContent, '±0.00');
+  assert.equal(ov.$('.bar .val').style.color, rgb(T.green));
+  assert.equal(ov.$('.sector .snum').textContent, '±0.00');
   ov.close();
 });
