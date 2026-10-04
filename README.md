@@ -142,15 +142,15 @@ and show again when you drive.
 
 | Overlay | What it shows |
 |---|---|
-| **Standings** | Multiclass grouping with class SOF, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible" |
-| **Relative** | Cars around you by live time gap, lapping/lapped colors, pit tags, cars grouped by class in multiclass races, and an info bar (position, SOF, incidents, time left) |
+| **Standings** | Multiclass grouping with class SOF, **country flags**, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible". **Off by default**; turn it on in settings |
+| **Relative** | Cars around you by live time gap, **country flags**, lapping/lapped colors, pit tags, cars grouped by class in multiclass races (the nearest cars always stay in view), gaps from iRacing's estimate like the sim's own relative or measured from recent pace, and an info bar (position, SOF, incidents, time left) |
 | **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Every part can be switched off |
 | **Speed** | Just speed and gear, with a rev indicator behind the gear (rises with RPM, blinks at the shift point) and a wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
-| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose |
+| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose. In races these are the class cars physically ahead and behind you on track, so after a spin they update at once instead of waiting for the next timing line |
 | **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line. **Off by default**; turn it on in settings |
-| **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time |
+| **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time. **Off by default**; turn it on in settings |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
 
 ## Customizing
@@ -160,6 +160,7 @@ Every change you make is saved right away and kept after updates.
 - **Each overlay:** position, size, scale (50–250%), background opacity, header, accent color, refresh rate,
   and which sessions it shows in (practice, qualifying, race).
 - **Columns:** drag to reorder and switch columns on or off in Standings, Relative and Session Info.
+  For example, switch off **Country flag** if you don't want flags.
 - **Themes:** five built-in themes. You can change any color, the font and the corner rounding.
 - **Layouts & profiles:** save different layouts (for example road, oval, streaming) and switch between them
   from the tray or with a hotkey. You can export a profile to share it or move it to another PC.
@@ -247,6 +248,8 @@ Your settings and layouts are always kept.
   engine RPM relates to road speed in each gear, and lights up when the RPM jumps above it (wheelspin) or drops
   below it (lock-up), or when ABS is working. Front lock-ups on rear-drive cars without ABS can't be detected.
 - The **iRating change** in Standings is an estimate based on the community-derived iRacing formula.
+- **Country flags** come from the flag each driver picked in iRacing (their "flair"). Drivers who kept the
+  iRacing logo get no flag. Flag images: [flag-icons](https://github.com/lipis/flag-icons) (MIT).
 - Slipstream is an independent project and is not affiliated with or endorsed by iRacing.com Motorsport Simulations.
 
 <sub>Want to build Slipstream yourself or contribute? See the [developer notes](docs/DEVELOPMENT.md).</sub>

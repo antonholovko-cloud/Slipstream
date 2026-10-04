@@ -42,13 +42,22 @@ Host.register('delta', function (root) {
     const me = cars.find((c) => c.isPlayer);
     if (!me) return {};
     const byPos = mode === 'position' || (mode === 'auto' && state.session && state.session.isRace);
+    const lapsOf = (x, y) => (state.session && state.session.isRace ? Math.max(0, Math.floor(x.dist - y.dist + 0.0001)) : 0);
+    if (byPos && me.inWorld && state.session && state.session.isRace && me.liveAhead !== undefined) {
+      // live running order in class (model.js): official positions lag until the next timing line
+      const a = me.liveAhead !== null ? cars.find((c) => c.idx === me.liveAhead) : null;
+      const b = cars.find((c) => c.liveAhead === me.idx && c.classId === me.classId);
+      return {
+        ahead: a ? { car: a, gap: me.liveInterval, laps: lapsOf(a, me) } : null,
+        behind: b ? { car: b, gap: b.liveInterval, laps: lapsOf(me, b) } : null,
+      };
+    }
     if (byPos && me.classPosition > 0) {
       const same = cars.filter((c) => c.classId === me.classId && c.classPosition > 0);
       const a = same.find((c) => c.classPosition === me.classPosition - 1);
       const b = same.find((c) => c.classPosition === me.classPosition + 1);
       // interval = seconds to the class car directly ahead; laps by actual distance between the two
       const gapOf = (x, y) => (y.interval !== null && y.interval !== undefined ? y.interval : x.gap !== null && y.gap !== null ? Math.abs(y.gap - x.gap) : null);
-      const lapsOf = (x, y) => (state.session.isRace ? Math.max(0, Math.floor(x.dist - y.dist + 0.0001)) : 0);
       return {
         ahead: a ? { car: a, gap: gapOf(a, me), laps: lapsOf(a, me) } : null,
         behind: b ? { car: b, gap: gapOf(me, b), laps: lapsOf(me, b) } : null,

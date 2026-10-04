@@ -72,7 +72,7 @@ table.board tr.player td { background: var(--player) !important; }
 table.board tr.inpit td { opacity: .6; }
 table.board tr.gone td { opacity: .35; }
 table.board tr.sep td { height: .6rem; background: transparent !important; text-align: center; color: var(--dim); line-height: .4rem; }
-table.board tr.class-head td { background: transparent !important; padding-top: .3rem; font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); height: 1.4rem; }
+table.board tr.class-head td { background: transparent !important; padding-top: .2rem; padding-bottom: 0; font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); height: 1.15rem; line-height: 1; }
 table.board tr.class-head .bar { display: inline-block; width: .35rem; height: .8rem; border-radius: 2px; vertical-align: -1px; margin-right: .35rem; }
 td.c-pos, td.c-classPos { text-align: center; width: 2rem; color: var(--text); }
 td.c-name { width: 100%; overflow: hidden; text-overflow: ellipsis; max-width: 0; }
@@ -81,6 +81,8 @@ td.c-gap, td.c-interval, td.c-last, td.c-best, td.c-irating, td.c-irDelta, td.c-
 td.c-irating, td.c-lap, td.c-pit { color: var(--dim); }
 td.c-posGain, td.c-tire, td.c-class { text-align: center; font-size: .8rem; }
 td.c-number { padding-left: 0 !important; }
+td.c-flag { width: 1.3rem; padding-right: 0 !important; text-align: center; }
+td.c-flag img.flag { display: block; width: 1.15rem; height: .86rem; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
 td.c-gap .dir { font-size: .6rem; opacity: .6; margin-right: .2rem; vertical-align: 1px; }
 .classbar { display: inline-block; width: .3rem; height: 1.3rem; vertical-align: middle; margin-right: .3rem; border-radius: 1px; }
 .footer { display: flex; justify-content: space-between; gap: .8rem; padding: .2rem .6rem; font-size: .8rem; color: var(--dim); background: var(--header); font-weight: 600; }

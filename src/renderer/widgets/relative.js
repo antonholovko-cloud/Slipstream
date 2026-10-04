@@ -20,6 +20,7 @@ Host.register('relative', function (root) {
         case 'pos': return `<td class="c-pos ${nameCls}">${c.classPosition || ''}</td>`;
         case 'number': return `<td class="c-number"><span class="classbar" style="background:${c.classColor}"></span><span class="num">#${E(c.number)}</span></td>`;
         case 'class': return `<td class="c-class">${multiClass ? `<span class="tag cls" style="background:${c.classColor};color:${Fmt.contrast(c.classColor)}">${E(c.className)}</span>` : ''}</td>`;
+        case 'flag': return `<td class="c-flag">${c.flag ? `<img class="flag" src="flags/${E(c.flag)}.png" alt="" title="${E(c.country)}">` : ''}</td>`;
         case 'name': return `<td class="c-name ${nameCls}">${E(Fmt.driverName(c, s.nameFormat))}</td>`;
         case 'license': return `<td class="c-license">${Fmt.license(c)}</td>`;
         case 'irating': return `<td class="c-irating">${Fmt.irating(c.irating)}</td>`;
@@ -41,15 +42,33 @@ Host.register('relative', function (root) {
       const isRace = state.session && state.session.isRace;
       multiClass = new Set((state.cars || []).map((c) => c.classId)).size > 1;
       let rel = state.relative || [];
+      if (s.gapSource === 'measured') rel = rel.map((r) => (r.pace !== null && r.pace !== undefined ? { ...r, gap: r.pace } : r)).sort((a, b) => b.gap - a.gap);
       if (s.hidePitCars) rel = rel.filter((r) => !cars.get(r.idx).onPitRoad);
       const ahead = rel.filter((r) => r.gap >= 0).slice(-s.ahead);
       const behind = rel.filter((r) => r.gap < 0).slice(0, s.behind);
       let html = '<table class="board">';
+      let list = me ? ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind) : [];
+      const heads = (l) => new Set(l.map((r) => cars.get(r.idx).classId)).size;
       grouped = !!(me && s.groupByClass && multiClass);
       if (grouped) {
+        // Class headers take room too. Size them from the rows on screen (or count rows before the
+        // first paint) and drop the farthest car on whichever side has more until it all fits, so the
+        // nearest cars never fall off the bottom.
+        const avail = rowsEl.clientHeight;
+        const h = (sel) => { const el = rowsEl.querySelector(sel); return el ? el.offsetHeight : 0; };
+        const hRow = h('table.board tr:not(.class-head)'), hHead = h('table.board tr.class-head') || hRow * 0.75;
+        const fits = (l) => (avail > 0 && hRow > 0 ? l.length * hRow + heads(l) * hHead <= avail + 1 : l.length + heads(l) <= s.ahead + s.behind + 1);
+        while (list.length > 1 && !fits(list)) {
+          const nA = list.filter((r) => r.idx !== me.idx && r.gap >= 0).length, nB = list.length - 1 - nA;
+          let far = -1;
+          list.forEach((r, i) => {
+            if (r.idx === me.idx || (nA > nB && r.gap < 0) || (nB > nA && r.gap >= 0)) return;
+            if (far < 0 || Math.abs(r.gap) > Math.abs(list[far].gap)) far = i;
+          });
+          list = list.filter((_, i) => i !== far);
+        }
         // same cars, but each class in its own block (my class first), still in track order inside a block
         cols = cols.filter((c) => c !== 'class'); // the block header names the class
-        const list = ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind);
         const order = [me.classId, ...(state.classes || []).map((k) => k.id)];
         for (const r of list) order.push(cars.get(r.idx).classId);
         for (const id of new Set(order)) {

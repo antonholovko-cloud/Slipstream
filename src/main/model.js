@@ -7,6 +7,7 @@ const { TimingTracker } = require('./timing');
 const { SlipEstimator } = require('./slip');
 const { GapTracker } = require('./gaps');
 const { assignSplits } = require('./classes');
+const { flagCode } = require('./flags');
 
 const TRACK_BINS = 500;
 
@@ -95,6 +96,7 @@ class RaceModel {
         isPace: !!d.CarIsPaceCar,
         isSpectator: !!d.IsSpectator,
         userId: d.UserID,
+        country: String(d.FlairName || ''), flag: flagCode(d.FlairName),
       });
     }
     for (const d of this.drivers.values()) d.base = { classId: d.classId, className: d.className, classColor: d.classColor };
@@ -188,7 +190,7 @@ class RaceModel {
       cars.push({
         idx: i, name: d.name, abbrev: d.abbrev, initials: d.initials, team: d.team, number: d.number, car: d.car,
         classId: d.classId, className: d.className, classColor: d.classColor, baseClass: d.base.className,
-        irating: d.irating, license: d.license, licColor: d.licColor,
+        irating: d.irating, license: d.license, licColor: d.licColor, flag: d.flag, country: d.country,
         position: v.CarIdxPosition?.[i] || 0,
         classPosition: v.CarIdxClassPosition?.[i] || 0,
         lap: v.CarIdxLap?.[i] ?? -1, lapCompleted: lapC, pct, dist: lapDist(i),
@@ -198,7 +200,7 @@ class RaceModel {
         tire: v.CarIdxTireCompound?.[i] ?? -1,
         pitStops: st.pitStops, startPos: st.startPos,
         isPlayer: i === focusIdx,
-        gap: null, interval: null, lapsDown: 0, irDelta: null, posGain: null, fastest: false,
+        gap: null, interval: null, liveAhead: null, liveInterval: null, lapsDown: 0, irDelta: null, posGain: null, fastest: false,
       });
     }
 
@@ -280,6 +282,21 @@ class RaceModel {
           c.interval = ahead && ahead.bestLap > 0 ? c.bestLap - ahead.bestLap : null;
         }
       });
+      if (isRace) {
+        // Live running order by distance. iRacing's class positions only move at timing lines,
+        // so after a spin or crash the cars that passed (or that we passed) stay in the wrong
+        // order until the line. The Delta bar's ahead / behind uses this instead.
+        const live = k.cars.filter((c) => c.inWorld && c.dist >= 0).sort((a, b) => b.dist - a.dist);
+        live.forEach((c, n) => {
+          const front = live[n - 1];
+          c.liveAhead = front ? front.idx : null;
+          if (!front) { c.liveInterval = null; return; }
+          // own timing loops; without history yet (session join, tow), distance at the class pace
+          let g = this.gaps.gap(front.idx, c.idx);
+          if (g === null || g > estLap * 3) g = (front.dist - c.dist) * estLap;
+          c.liveInterval = g;
+        });
+      }
       if (isRace || kind === 'qualify') {
         const entries = k.cars.map((c, n) => ({ ir: c.irating || 1350, pos: n + 1 }));
         const deltas = iratingDeltas(entries);
@@ -300,17 +317,20 @@ class RaceModel {
     // ---- Relative ----
     const relative = [];
     if (me && me.inWorld) {
-      const lapT = this.classEst(me) || this.car.estLap || 90;
+      const myClassEst = this.classEst(me);
+      // Same class: the sim's relative is exactly the CarIdxEstTime difference (checked live to 0.1 s)
+      const lapT = myClassEst || this.car.estLap || 90;
       for (const c of cars) {
         if (!c.inWorld || c.isPlayer) continue;
         let dPct = c.pct - me.pct;
         if (dPct > 0.5) dPct -= 1;
         if (dPct < -0.5) dPct += 1;
+        // Like iRacing's relative: CarIdxEstTime, which runs on each car's own class lap estimate,
+        // so other classes are brought onto ours (otherwise a faster-class car just ahead reads as behind)
         let gap;
-        // CarIdxEstTime runs on each car's own class lap estimate, so bring other classes onto ours
-        // (otherwise a faster-class car just ahead reads as behind)
         const theirEst = this.classEst(c);
-        const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime, em = me.estTime;
+        const eo = theirEst > 0 ? c.estTime * (lapT / theirEst) : c.estTime;
+        const em = myClassEst > 0 ? me.estTime * (lapT / myClassEst) : me.estTime;
         if (eo > 0 && em > 0) {
           gap = eo - em;
           if (gap > lapT / 2) gap -= lapT;
@@ -318,9 +338,13 @@ class RaceModel {
           // fall back when est time disagrees wildly with track position
           if (Math.sign(gap) !== Math.sign(dPct) && Math.abs(dPct) > 0.02) gap = dPct * lapT;
         } else gap = dPct * lapT;
+        // Measured alternative (Relative setting "Gaps from"): how long the car behind took over this
+        // stretch on its recent laps, from our own timing loops. Null until there's history.
+        const m = dPct >= 0 ? this.gaps.paceGap(c.idx, me.idx) : this.gaps.paceGap(me.idx, c.idx);
+        const pace = m !== null && m < lapT / 2 ? (dPct >= 0 ? m : -m) : null;
         const raceDiff = c.dist - me.dist;
         const lapDiff = isRace ? (raceDiff > 0.5 ? 1 : raceDiff < -0.5 ? -1 : 0) : 0;
-        relative.push({ idx: c.idx, gap, dPct, lapDiff, meters: dPct * this.track.length });
+        relative.push({ idx: c.idx, gap, pace, dPct, lapDiff, meters: dPct * this.track.length });
       }
       relative.sort((a, b) => b.gap - a.gap);
     }
@@ -371,6 +395,9 @@ class RaceModel {
 
     // ---- Sector timing & slip ----
     const timing = this.timing.update(v, playerIdx, (i) => (this.drivers.get(i) || {}).classId);
+    // iRacing's own best lap for the session, so "Best" matches the sim: ours misses laps from
+    // before Slipstream started and laps we flagged as off-track that iRacing still counts
+    if (v.LapBestLapTime > 0) timing.bestLap = v.LapBestLapTime;
     const slip = this.slip.update(v);
 
     // ---- Track map learning ----

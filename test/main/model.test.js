@@ -175,6 +175,30 @@ test('race gaps: leader 0, gaps grow down the order, interval = gap to car ahead
   }
 });
 
+test('live running order: the car physically ahead / behind, even while iRacing positions lag', () => {
+  // just after a spin: #4 went past (and #5 is towing), but iRacing still has the old order until the line
+  const drivers = [driver(1, GT3), driver(2, GT3), driver(3, GT3), driver(4, GT3), driver(5, GT3), driver(6, LMP2)];
+  const m = new RaceModel();
+  const st = m.update(frame(sessionInfo({ drivers }), vars({
+    2: { lap: 5, pct: 0.60, pos: 1, cpos: 1 },
+    1: { lap: 5, pct: 0.40, pos: 2, cpos: 2 },
+    5: { lap: 5, pct: 0.45, pos: 3, cpos: 3, surf: -1 },
+    3: { lap: 5, pct: 0.39, pos: 4, cpos: 4 },
+    4: { lap: 5, pct: 0.41, pos: 5, cpos: 5 },
+    6: { lap: 5, pct: 0.395, pos: 6, cpos: 1 },
+  })), G());
+  const me = byIdx(st, 1);
+  assert.equal(me.classPosition, 2, 'official position untouched');
+  assert.equal(me.liveAhead, 4);
+  assert.equal(byIdx(st, 4).liveAhead, 2);
+  assert.equal(byIdx(st, 3).liveAhead, 1, 'the car right behind me on track');
+  assert.equal(byIdx(st, 2).liveAhead, null);
+  assert.equal(byIdx(st, 5).liveAhead, null, 'cars out of the world are skipped');
+  assert.equal(byIdx(st, 6).liveAhead, null, 'other classes are not neighbours');
+  assert.ok(me.liveInterval > 0 && me.liveInterval < 3, String(me.liveInterval));
+  assert.ok(byIdx(st, 3).liveInterval > 0 && byIdx(st, 3).liveInterval < 2);
+});
+
 // ---------- relative ----------
 test('relative: sorted ahead -> behind, excludes player and cars not in world, lap differences', () => {
   const drivers = [driver(1, GT3), driver(2, GT3), driver(3, GT3), driver(4, GT3), driver(5, GT3)];
@@ -218,6 +242,43 @@ test('relative: a faster-class car just ahead reads as ahead (est times scaled t
   const r = st.relative[0];
   assert.ok(r.gap > 0, `gap ${r.gap}`);
   assert.ok(Math.abs(r.gap - 0.5) < 1e-6);
+});
+
+test('relative: estimate gap like iRacing, plus a measured gap at the trailing car pace', () => {
+  // iRacing's class estimates are way off (and EstTime missing); the LMP2 is really closing from behind
+  const drivers = [driver(1, { ...GT3, est: 60 }), driver(2, { ...LMP2, est: 200 })];
+  const info = sessionInfo({ drivers });
+  const m = new RaceModel();
+  const me = { start: 0.30, speed: 1 / 100 }, p2 = { start: 0.10, speed: 1 / 90 };
+  let st, T = 0;
+  for (let t = 0; t <= 100 + 1e-9; t += 0.05) {
+    T = t;
+    const a = me.start + me.speed * t, b = p2.start + p2.speed * t;
+    st = m.update(frame(info, vars({ 1: { pct: a % 1, lap: Math.floor(a) }, 2: { pct: b % 1, lap: Math.floor(b) } }, { SessionTime: t })), G());
+  }
+  const dist = (me.start + me.speed * T) - (p2.start + p2.speed * T);
+  const expected = -dist / p2.speed; // behind: how long it needs to reach me, at its own pace
+  const r = st.relative.find((x) => x.idx === 2);
+  assert.ok(Math.abs(r.pace - expected) < 0.05, `measured ${r.pace} vs ${expected}`);
+  // no CarIdxEstTime in this session: the estimate falls back to distance at my class est lap (60 s)
+  assert.ok(Math.abs(r.gap - r.dPct * 60) < 1e-6);
+});
+
+test("lap timing 'Best' uses iRacing's own session best lap when it has one", () => {
+  const info = sessionInfo({ drivers: [driver(1, GT3)], type: 'Practice' });
+  const m = new RaceModel();
+  let st = m.update(frame(info, vars({ 1: { pct: 0.2 } }, { LapBestLapTime: 98.765 })), G());
+  assert.equal(st.timing.bestLap, 98.765);
+  st = m.update(frame(info, vars({ 1: { pct: 0.21 } }, { SessionTime: 101, LapBestLapTime: -1 })), G());
+  assert.equal(st.timing.bestLap, null, 'no official best yet: our own (none timed)');
+});
+
+test('drivers carry their country flag from the iRacing flair', () => {
+  const drivers = [driver(1, GT3, { FlairName: 'Scotland', FlairID: 237 }), driver(2, GT3, { FlairName: 'iRacing', FlairID: 2 }), driver(3, GT3)];
+  const st = new RaceModel().update(frame(sessionInfo({ drivers }), vars({ 1: { pct: 0.1 }, 2: { pct: 0.2 }, 3: { pct: 0.3 } })), G());
+  assert.deepEqual([byIdx(st, 1).flag, byIdx(st, 1).country], ['gb-sct', 'Scotland']);
+  assert.equal(byIdx(st, 2).flag, null);
+  assert.equal(byIdx(st, 3).flag, null);
 });
 
 test('relative / radar are empty when the player is not in the world', () => {
@@ -446,4 +507,12 @@ test('without iRacing deltas, "vs best" comes from our own best lap trace', () =
   }
   assert.equal(st.player.deltas.best[2], true);
   assert.ok(st.player.bestLap > 0);
+});
+
+test('relative, same class: the CarIdxEstTime difference, as the sim shows it (live check: 22.3)', () => {
+  const C = { ...GT3, est: 97.6723 };
+  const drivers = [driver(9, C), driver(8, C)];
+  // logged in a live session at 1:03:45 left, when the sim's relative showed #8 at 22.3
+  const st = new RaceModel().update(frame(sessionInfo({ drivers, player: 9 }), vars({ 9: { pct: 0.12296, est: 11.989, best: 101 }, 8: { pct: 0.36065, est: 34.26 } }, { PlayerCarIdx: 9, CamCarIdx: 9 })), G());
+  assert.equal(st.relative[0].gap.toFixed(1), '22.3');
 });

@@ -13,6 +13,8 @@ npm test              # unit tests (node:test + jsdom): main logic, config, ever
 npm run dist          # build installer + portable exe into dist/
 npm run screenshots   # regenerate docs/screenshots
 npm run gifs          # regenerate docs/gifs (scripted demo drive, captured off-screen)
+npx electron scripts/build-flags.js   # re-render country flags (flag-icons) to src/renderer/flags
+IRO_RELLOG=1 npm start               # log what the Relative is built from to <userData>/relative-log.jsonl
 powershell -ExecutionPolicy Bypass -File scripts/perf.ps1   # memory / CPU benchmark (off-screen demo race)
 ```
 
@@ -20,6 +22,10 @@ The app is built on Electron and reads iRacing's telemetry straight from shared 
 and no extra services.
 
 Screenshots in `docs/screenshots` are generated from the built-in demo race and drawn over a painted backdrop.
+
+Country flags come from each driver's iRacing flair (`DriverInfo.Drivers[].FlairName`), matched to a flag in
+`src/main/flags.js`. The PNGs in `src/renderer/flags` are rendered from the flag-icons package (MIT) and committed,
+so the app has no runtime dependency on it.
 
 ## Architecture
 

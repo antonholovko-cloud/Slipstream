@@ -17,6 +17,7 @@ Host.register('standings', function (root) {
       }
       case 'class': return `<td class="c-class"><span class="tag cls" style="background:${c.classColor};color:${Fmt.contrast(c.classColor)}">${E(c.className)}</span></td>`;
       case 'number': return `<td class="c-number"><span class="classbar" style="background:${c.classColor}"></span><span class="num">#${E(c.number)}</span></td>`;
+      case 'flag': return `<td class="c-flag">${c.flag ? `<img class="flag" src="flags/${E(c.flag)}.png" alt="" title="${E(c.country)}">` : ''}</td>`;
       case 'name': {
         const tag = c.onPitRoad ? ' <span class="tag pit">PIT</span>' : !c.inWorld && s.isRace ? ' <span class="tag out">OUT</span>' : '';
         return `<td class="c-name">${E(Fmt.driverName(c, s.nameFormat))}${tag}</td>`;

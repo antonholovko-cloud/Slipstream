@@ -65,3 +65,86 @@ test('shows "Not on track" without a player car', async () => {
   assert.match(ov.document.body.textContent, /Not on track/);
   ov.close();
 });
+
+test('country flag column: a flag per driver with a country, toggled off in settings', async () => {
+  const { state } = demoRace();
+  const ov = await loadOverlay('relative');
+  ov.render(state);
+  const imgs = ov.$$('td.c-flag img.flag');
+  assert.ok(imgs.length > 3);
+  assert.ok(imgs.every((i) => /^flags\/[a-z-]+\.png$/.test(i.getAttribute('src'))));
+  assert.ok(imgs.every((i) => i.title.length > 2), 'country name on hover');
+  // drivers who keep the iRacing logo (no country) get an empty cell
+  const st = structuredClone(state);
+  st.cars.find((c) => c.isPlayer).flag = null;
+  ov.render(st);
+  assert.equal(ov.$('tr.player td.c-flag').innerHTML, '');
+  ov.configure({ columns: ov.settings.columns.map((c) => (c.id === 'flag' ? { ...c, on: false } : c)) });
+  ov.render(state);
+  assert.equal(ov.$$('td.c-flag').length, 0);
+  ov.close();
+});
+
+test('grouped with many classes: headers fit by dropping the farthest cars, never the nearest', async () => {
+  // practice with four classes (like an MX-5 / SR8 / Porsche / FR500S session)
+  const { state } = demoRace();
+  const st = structuredClone(state);
+  const me = st.cars.find((c) => c.isPlayer);
+  const others = st.cars.filter((c) => !c.isPlayer).slice(0, 8);
+  const cls = [['sr8', 'SR8'], ['sr8', 'SR8'], ['sr8', 'SR8'], ['sr8', 'SR8'], ['p992', 'PORSCHE 992'], ['p992', 'PORSCHE 992'], ['fr', 'FR500S'], ['fr', 'FR500S']];
+  others.forEach((c, i) => { [c.classId, c.className] = cls[i]; });
+  me.classId = 'mx5'; me.className = 'MX-5';
+  const gaps = [45.5, 10.5, -12.8, -27.2, 2.1, -3.2, 6.7, 60];
+  st.relative = others.map((c, i) => ({ idx: c.idx, gap: gaps[i], lapDiff: 0 })).sort((a, b) => b.gap - a.gap);
+  st.classes = [];
+  const ov = await loadOverlay('relative', { settings: { ahead: 4, behind: 4 } });
+  ov.render(st);
+  assert.ok(ov.$$('tr.class-head').length >= 3, 'still grouped');
+  assert.ok(ov.$$('table.board tr').length <= 4 + 4 + 1, 'fits the box');
+  const text = ov.$('table.board').textContent;
+  // the nearest each way stay, including the FR500S at +6.7 in the last block
+  for (const i of [4, 6, 5]) assert.ok(text.includes(others[i].name), `${others[i].name} (${gaps[i]}) missing`);
+  assert.ok(!text.includes(others[0].name), 'the farthest made room');
+  ov.close();
+});
+
+test('grouped: trimming for headers keeps ahead and behind balanced', async () => {
+  const { state } = demoRace();
+  const st = structuredClone(state);
+  const me = st.cars.find((c) => c.isPlayer);
+  const others = st.cars.filter((c) => !c.isPlayer).slice(0, 8);
+  const cls = ['a', 'a', 'a', 'a', 'me', 'a', 'me', 'a']; // two classes: grouped
+  me.classId = 'me'; me.className = 'ME';
+  others.forEach((c, i) => { c.classId = cls[i]; c.className = cls[i].toUpperCase(); });
+  // four close ahead, the cars behind a little further back
+  const gaps = [3.8, 2.9, 3.5, 2.9, -1.8, -3.8, -18.8, -25];
+  st.relative = others.map((c, i) => ({ idx: c.idx, gap: gaps[i], lapDiff: 0 })).sort((a, b) => b.gap - a.gap);
+  st.classes = [];
+  const ov = await loadOverlay('relative', { settings: { ahead: 4, behind: 4 } });
+  ov.render(st);
+  const text = ov.$('table.board').textContent;
+  assert.equal(ov.$$('tr.class-head').length, 2);
+  assert.ok(text.includes(others[4].name) && text.includes(others[5].name), 'the two nearest behind stay');
+  assert.ok(!text.includes(others[7].name) && !text.includes(others[0].name), 'the farthest on each side made room');
+  assert.equal(ov.$$('table.board tr').length, 9);
+  ov.close();
+});
+
+test('"Gaps from": iRacing estimate by default, measured pace when chosen (estimate where none yet)', async () => {
+  const { state } = demoRace();
+  const st = structuredClone(state);
+  const others = st.cars.filter((c) => !c.isPlayer).slice(0, 3);
+  st.relative = [
+    { idx: others[0].idx, gap: 2.4, pace: 2.9, lapDiff: 0 },
+    { idx: others[1].idx, gap: -1.3, pace: -1.8, lapDiff: 0 },
+    { idx: others[2].idx, gap: -3.8, pace: null, lapDiff: 0 },
+  ];
+  const ov = await loadOverlay('relative', { settings: { groupByClass: false, ahead: 1, behind: 2, columns: [{ id: 'name', on: true }, { id: 'gap', on: true }] } });
+  const gapOf = (c) => ov.$$('table.board tr').find((tr) => tr.textContent.includes(c.name)).querySelector('.c-gap').textContent;
+  ov.render(st);
+  assert.deepEqual(others.map(gapOf), ['2.4', '1.3', '3.8']);
+  ov.configure({ gapSource: 'measured' });
+  ov.render(st);
+  assert.deepEqual(others.map(gapOf), ['2.9', '1.8', '3.8']);
+  ov.close();
+});

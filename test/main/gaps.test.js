@@ -92,3 +92,57 @@ test('null progress entries are skipped', () => {
   g.update(0, [{ idx: 1, p: null }]);
   assert.equal(g.cars.size, 0);
 });
+
+test('paceGap: time on track between two cars, ignoring laps (a lapped car just ahead)', () => {
+  const g = new GapTracker();
+  const speed = 1 / 90;
+  // #1 is a lap and 2 s up the road in the race, but on track it's 2 s ahead of #2
+  run(g, [{ idx: 1, start: 1.1, speed }, { idx: 2, start: 0.1 - 2 * speed, speed }], { to: 120 });
+  assert.ok(Math.abs(g.gap(1, 2) - 92) < 0.1, 'race gap counts the lap');
+  assert.ok(Math.abs(g.paceGap(1, 2) - 2) < 0.05, `pace gap ${g.paceGap(1, 2)}`);
+});
+
+test('paceGap: a faster car behind closes at its own pace (multiclass)', () => {
+  const g = new GapTracker();
+  const front = { idx: 1, start: 0.5, speed: 1 / 100 }; // slower class, ahead
+  const back = { idx: 2, start: 0.1, speed: 1 / 90 }; // faster class, behind
+  run(g, [front, back], { to: 100 });
+  const T = 100, ahead = (front.start + front.speed * T) - (back.start + back.speed * T);
+  assert.ok(Math.abs(g.paceGap(1, 2) - ahead / back.speed) < 0.05, `${g.paceGap(1, 2)} vs ${ahead / back.speed}`);
+});
+
+test('paceGap: not thrown off when the car in front stops (pits, spin)', () => {
+  const g = new GapTracker();
+  const speed = 1 / 60;
+  run(g, [{ idx: 1, start: 0.5, speed }, { idx: 2, start: 0.4, speed }], { to: 90 });
+  // #1 stops dead; #2 keeps going and closes in (time since #1 was there would read 5 s too long)
+  const p1 = 0.5 + speed * 90;
+  for (let t = 90.05; t <= 95 + 1e-9; t += 0.05) g.update(t, [{ idx: 1, p: p1 }, { idx: 2, p: 0.4 + speed * t }]);
+  const dist = p1 - (0.4 + speed * 95);
+  assert.ok(Math.abs(g.paceGap(1, 2) - dist / speed) < 0.05, `${g.paceGap(1, 2)} vs ${dist / speed}`);
+});
+
+test('paceGap: unknown without a lap of history; side by side uses the lap time once known', () => {
+  const g = new GapTracker();
+  g.update(0, [{ idx: 1, p: 0.505 }, { idx: 2, p: 0.5 }]);
+  assert.equal(g.paceGap(1, 2), null);
+  assert.equal(g.paceGap(1, 9), null);
+  const speed = 1 / 60;
+  const h = new GapTracker();
+  run(h, [{ idx: 1, start: 0.5 + 0.2 * speed, speed }, { idx: 2, start: 0.5, speed }], { to: 70 });
+  assert.ok(Math.abs(h.paceGap(1, 2) - 0.2) < 0.02);
+});
+
+test('paceGap: one slow lap over that stretch (out-lap, traffic) does not skew the gap', () => {
+  const g = new GapTracker();
+  const speed = 1 / 60;
+  // #2 crawls through 0.2..0.4 on its first lap (pit lane), then laps normally
+  let p = 0, t = 0;
+  for (; t <= 200 + 1e-9; t += 0.05) {
+    const slow = p % 1 > 0.2 && p % 1 < 0.4 && p < 1;
+    p += (slow ? speed / 3 : speed) * 0.05;
+    g.update(t, [{ idx: 2, p }, { idx: 1, p: p + 0.1 }]);
+  }
+  // 0.1 lap ahead at normal pace = 6 s, even though one recorded pass took much longer
+  assert.ok(Math.abs(g.paceGap(1, 2) - 6) < 0.1, String(g.paceGap(1, 2)));
+});

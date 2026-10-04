@@ -8,13 +8,16 @@ const T = THEMES.carbon;
 const race = demoRace();
 const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
 
-// Put the player 2nd in class: ahead = P1, behind = P3, everyone else further back.
+// Put the player 2nd in class: ahead = P1, behind = P3, everyone else further back,
+// both in iRacing's class positions and in the model's live running order.
 function placeP2(st) {
   const me = st.cars.find((c) => c.isPlayer);
   const others = st.cars.filter((c) => c.classId === me.classId && !c.isPlayer);
   others.forEach((c, i) => { c.classPosition = i === 0 ? 1 : i + 2; });
   me.classPosition = 2;
-  return { me, ahead: others[0], behind: others[1] };
+  const order = [others[0], me, ...others.slice(1)];
+  order.forEach((c, i) => { c.liveAhead = i ? order[i - 1].idx : null; c.liveInterval = i ? 1 : null; });
+  return { me, ahead: others[0], behind: others[1], third: others[2] };
 }
 function withDelta(best, p = {}) {
   const st = structuredClone(race.state);
@@ -102,7 +105,7 @@ test('lap times can be hidden', async () => {
 test('gap bars by class position in a race: interval ahead, behind car interval, names', async () => {
   const st = withDelta([0, 0, true]);
   const { me, ahead, behind } = placeP2(st);
-  me.interval = 1.234; behind.interval = 0.5;
+  me.liveInterval = 1.234; behind.liveInterval = 0.5;
   ahead.dist = me.dist + 0.1; behind.dist = me.dist - 0.1;
   const ov = await loadOverlay('delta', { settings: { gapScale: 2 } });
   ov.render(st);
@@ -114,6 +117,30 @@ test('gap bars by class position in a race: interval ahead, behind car interval,
   assert.equal(b.sec, '0.50s');
   assert.equal(b.width, 75);
   assert.equal(b.color, rgb(T.yellow));
+  ov.close();
+});
+
+test('race: ahead / behind follow the live running order, not lagging official positions', async () => {
+  // after a spin: iRacing still has #behind in P3 until the line, but #third went past and sits 1 s back
+  const st = withDelta([0, 0, true]);
+  const { me, behind, third } = placeP2(st);
+  third.liveAhead = me.idx; third.liveInterval = 1.02;
+  behind.liveAhead = third.idx; behind.liveInterval = 4;
+  const ov = await loadOverlay('delta');
+  ov.render(st);
+  assert.match(gap(ov, 'behind').who, new RegExp(`^#${third.number} `));
+  assert.equal(gap(ov, 'behind').sec, '1.02s');
+  ov.close();
+});
+
+test('race, player not in the world (towing): falls back to class positions and intervals', async () => {
+  const st = withDelta([0, 0, true]);
+  const { me, ahead, behind } = placeP2(st);
+  me.inWorld = false; me.interval = 2.5; behind.interval = 0.75;
+  const ov = await loadOverlay('delta');
+  ov.render(st);
+  assert.match(gap(ov, 'ahead').who, new RegExp(`^#${ahead.number} `));
+  assert.deepEqual([gap(ov, 'ahead').sec, gap(ov, 'behind').sec], ['2.50s', '0.75s']);
   ov.close();
 });
 
@@ -133,6 +160,7 @@ test('class leader has no car ahead', async () => {
   const me = st.cars.find((c) => c.isPlayer);
   for (const c of st.cars) if (c.classId === me.classId && c !== me && c.classPosition <= me.classPosition) c.classPosition = me.classPosition + 20;
   me.classPosition = 1;
+  me.liveAhead = null; me.liveInterval = null;
   const ov = await loadOverlay('delta');
   ov.render(st);
   assert.deepEqual(gap(ov, 'ahead'), { who: '', sec: '–', width: 0, color: '' });

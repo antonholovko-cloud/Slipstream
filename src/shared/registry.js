@@ -30,6 +30,7 @@
     { id: 'posGain', label: 'Positions gained', default: true },
     { id: 'number', label: 'Car number', default: true },
     { id: 'class', label: 'Class tag', default: false },
+    { id: 'flag', label: 'Country flag', default: true },
     { id: 'name', label: 'Driver', default: true },
     { id: 'team', label: 'Team', default: false },
     { id: 'car', label: 'Car model', default: false },
@@ -49,6 +50,7 @@
     { id: 'pos', label: 'Position', default: true },
     { id: 'number', label: 'Car number', default: true },
     { id: 'class', label: 'Class tag (multiclass / league splits)', default: true },
+    { id: 'flag', label: 'Country flag', default: true },
     { id: 'name', label: 'Driver', default: true },
     { id: 'license', label: 'License / SR', default: true },
     { id: 'irating', label: 'iRating', default: true },
@@ -63,6 +65,7 @@
       description: 'Full leaderboard with multiclass grouping, gaps, iRating and estimated iRating change.',
       bounds: { x: 40, y: 120, width: 620, height: 520 },
       needs: ['session', 'player', 'cars', 'classes'],
+      defaults: { enabled: false }, // off on first run; existing layouts keep their choice
       schema: [
         { key: 'columns', label: 'Columns', type: 'columns', columns: STANDINGS_COLUMNS },
         { key: 'maxRows', label: 'Max rows per class', type: 'number', min: 3, max: 64, default: 10 },
@@ -85,6 +88,8 @@
       schema: [
         { key: 'columns', label: 'Columns', type: 'columns', columns: RELATIVE_COLUMNS },
         { key: 'groupByClass', label: 'Group cars by class (multiclass only; my class first)', type: 'bool', default: true },
+        { key: 'gapSource', label: 'Gaps from', type: 'select', default: 'estimate',
+          options: [{ value: 'estimate', label: "iRacing's estimate (like the sim's relative)" }, { value: 'measured', label: 'Measured on track (real recent pace)' }] },
         { key: 'ahead', label: 'Cars ahead', type: 'number', min: 0, max: 10, default: 4 },
         { key: 'behind', label: 'Cars behind', type: 'number', min: 0, max: 10, default: 4 },
         { key: 'colorLapping', label: 'Color lapping / lapped cars', type: 'bool', default: true },
@@ -248,7 +253,7 @@
       description: 'Session type, time/laps left, weather, incidents, SOF and local clock.',
       bounds: { x: 40, y: 20, width: 620, height: 80 },
       needs: ['session', 'player'],
-      defaults: { showHeader: false, fps: 5 },
+      defaults: { enabled: false, showHeader: false, fps: 5 }, // off on first run; existing layouts keep their choice
       schema: [
         { key: 'items', label: 'Items', type: 'columns', columns: [
           { id: 'session', label: 'Session', default: true },

@@ -122,6 +122,9 @@ class MockSource {
   }
 
   buildSessionInfo() {
+    // iRacing "flairs": the country flag a driver picked (some keep the iRacing logo)
+    const FLAIRS = ['United States', 'United Kingdom', 'Germany', 'Netherlands', 'Brazil', 'France', 'Spain', 'Italy', 'Japan', 'Australia',
+      'Canada', 'Finland', 'Mexico', 'Belgium', 'Scotland', 'Poland', 'Sweden', 'New Zealand', 'Argentina', 'Denmark', 'Austria', 'iRacing', 'Portugal'];
     const drivers = this.cars.map((c) => c.pace ? {
       CarIdx: 0, UserName: 'Pace Car', AbbrevName: '', Initials: '', UserID: -1, TeamName: 'Pace Car', CarNumber: '0', CarNumberRaw: 0,
       CarClassID: 11, CarClassShortName: '', CarClassColor: 0xffffff, CarScreenNameShort: 'Safety Car', IRating: 0, LicString: 'R 0.00', LicColor: 0xffffff, IsSpectator: 0, CarIsPaceCar: 1,
@@ -129,6 +132,7 @@ class MockSource {
       CarIdx: c.idx, UserName: c.name, AbbrevName: c.name.split(' ')[1] + ', ' + c.name[0], Initials: c.name.split(' ').map((s) => s[0]).join(''), UserID: 100000 + c.idx,
       TeamName: c.name, CarNumber: c.number, CarNumberRaw: +c.number, CarClassID: c.cls.id, CarClassShortName: c.cls.short, CarClassColor: c.cls.color,
       CarClassEstLapTime: this.track.lapTime / c.cls.speed, CarScreenNameShort: c.cls.car, IRating: c.irating, LicString: c.lic, LicColor: c.licColor, IsSpectator: 0, CarIsPaceCar: 0,
+      FlairName: FLAIRS[c.idx % FLAIRS.length], FlairID: 0,
     });
     this.sessionInfo = {
       WeekendInfo: { TrackName: 'demo', TrackID: -1, TrackDisplayName: 'Demo Raceway', TrackConfigName: 'Grand Prix', TrackLength: (TRACK_LEN / 1000).toFixed(2) + ' km', TrackCity: 'Nowhere', TrackCountry: 'Demo', WeekendOptions: { IncidentLimit: 17 }, SubSessionID: 1 },
