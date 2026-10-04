@@ -215,19 +215,33 @@ test('sector bar: current sector gain (green, left) or loss (red, right) vs the 
   ov.render(st);
   const bar = ov.$('.sector .sbar i').style;
   assert.equal(ov.$('.sector .lbl').textContent, 'S2');
-  assert.equal(ov.$('.sector .sval').textContent, '-0.13');
+  assert.equal(ov.$('.sector .snum').textContent, '-0.13');
   assert.equal(parseFloat(bar.left), 37.5);
   assert.equal(parseFloat(bar.width), 12.5);
   assert.equal(bar.background, rgb(T.green));
   ov.configure({ reference: 'optimal' });
   ov.render(st);
-  assert.equal(ov.$('.sector .sval').textContent, '+0.30');
+  assert.equal(ov.$('.sector .snum').textContent, '+0.30');
   assert.equal(parseFloat(bar.left), 50);
   assert.equal(bar.background, rgb(T.red));
   ov.configure({ reference: 'sessionBest' });
   ov.render(st);
-  assert.equal(ov.$('.sector .sval').textContent, '–');
+  assert.equal(ov.$('.sector .snum').textContent, '–');
   ov.configure({ showSector: false });
   assert.equal(ov.$('.sector').style.display, 'none');
+  ov.close();
+});
+
+test('the delta sits inside the bar next to the centre line, on the empty side', async () => {
+  const ov = await loadOverlay('delta');
+  const st = withDelta([0.4, 0, true]);
+  st.player.sectorDelta = { sector: 1, of: 3, d: { best: -0.2 } };
+  ov.render(st);
+  assert.ok(ov.$('.bar .val').classList.contains('l'), 'losing: bar goes right, number left of centre');
+  assert.ok(ov.$('.sector .snum').classList.contains('r'), 'gaining in the sector: number right of centre');
+  ov.render(withDelta([-0.4, 0, true]));
+  assert.ok(ov.$('.bar .val').classList.contains('r'));
+  ov.render(withDelta([0, 0, false]));
+  assert.ok(ov.$('.bar .val').classList.contains('c'), 'no delta: dash in the middle');
   ov.close();
 });
