@@ -49,13 +49,16 @@ Host.register('relative', function (root) {
       let html = '<table class="board">';
       let list = me ? ahead.concat([{ idx: me.idx, gap: 0, lapDiff: 0 }], behind) : [];
       const heads = (l) => new Set(l.map((r) => cars.get(r.idx).classId)).size;
-      // Class blocks for one or two classes nearby. Headers take rows too, so the farthest car on
-      // whichever side has more gives way. With three or more classes the headers would push near
-      // cars out, so it's plain track order with class tags instead.
-      grouped = !!(me && s.groupByClass && multiClass && heads(list) <= 2);
+      grouped = !!(me && s.groupByClass && multiClass);
       if (grouped) {
-        const budget = s.ahead + s.behind + 1;
-        while (list.length > 1 && list.length + heads(list) > budget) {
+        // Class headers take room too. Size them from the rows on screen (or count rows before the
+        // first paint) and drop the farthest car on whichever side has more until it all fits, so the
+        // nearest cars never fall off the bottom.
+        const avail = rowsEl.clientHeight;
+        const h = (sel) => { const el = rowsEl.querySelector(sel); return el ? el.offsetHeight : 0; };
+        const hRow = h('table.board tr:not(.class-head)'), hHead = h('table.board tr.class-head') || hRow * 0.75;
+        const fits = (l) => (avail > 0 && hRow > 0 ? l.length * hRow + heads(l) * hHead <= avail + 1 : l.length + heads(l) <= s.ahead + s.behind + 1);
+        while (list.length > 1 && !fits(list)) {
           const nA = list.filter((r) => r.idx !== me.idx && r.gap >= 0).length, nB = list.length - 1 - nA;
           let far = -1;
           list.forEach((r, i) => {

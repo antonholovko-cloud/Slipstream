@@ -85,7 +85,7 @@ test('country flag column: a flag per driver with a country, toggled off in sett
   ov.close();
 });
 
-test('three or more classes nearby: plain track order with class tags, so no near car is pushed out', async () => {
+test('grouped with many classes: headers fit by dropping the farthest cars, never the nearest', async () => {
   // practice with four classes (like an MX-5 / SR8 / Porsche / FR500S session)
   const { state } = demoRace();
   const st = structuredClone(state);
@@ -99,12 +99,12 @@ test('three or more classes nearby: plain track order with class tags, so no nea
   st.classes = [];
   const ov = await loadOverlay('relative', { settings: { ahead: 4, behind: 4 } });
   ov.render(st);
-  assert.equal(ov.$$('tr.class-head').length, 0);
-  assert.equal(ov.$$('table.board tr').length, 4 + 1 + 4); // the empty slot behind is padded
-  assert.ok(ov.$$('td.c-class .tag').some((t) => t.textContent === 'FR500S'));
+  assert.ok(ov.$$('tr.class-head').length >= 3, 'still grouped');
+  assert.ok(ov.$$('table.board tr').length <= 4 + 4 + 1, 'fits the box');
   const text = ov.$('table.board').textContent;
-  // the four nearest ahead (incl. the FR500S at +6.7) and all three behind
-  for (const i of [1, 4, 6, 0, 2, 3, 5]) assert.ok(text.includes(others[i].name), `${others[i].name} (${gaps[i]}) missing`);
+  // the nearest each way stay, including the FR500S at +6.7 in the last block
+  for (const i of [4, 6, 5]) assert.ok(text.includes(others[i].name), `${others[i].name} (${gaps[i]}) missing`);
+  assert.ok(!text.includes(others[0].name), 'the farthest made room');
   ov.close();
 });
 

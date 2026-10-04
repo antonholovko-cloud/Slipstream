@@ -72,7 +72,7 @@ table.board tr.player td { background: var(--player) !important; }
 table.board tr.inpit td { opacity: .6; }
 table.board tr.gone td { opacity: .35; }
 table.board tr.sep td { height: .6rem; background: transparent !important; text-align: center; color: var(--dim); line-height: .4rem; }
-table.board tr.class-head td { background: transparent !important; padding-top: .3rem; font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); height: 1.4rem; }
+table.board tr.class-head td { background: transparent !important; padding-top: .2rem; padding-bottom: 0; font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); height: 1.15rem; line-height: 1; }
 table.board tr.class-head .bar { display: inline-block; width: .35rem; height: .8rem; border-radius: 2px; vertical-align: -1px; margin-right: .35rem; }
 td.c-pos, td.c-classPos { text-align: center; width: 2rem; color: var(--text); }
 td.c-name { width: 100%; overflow: hidden; text-overflow: ellipsis; max-width: 0; }
