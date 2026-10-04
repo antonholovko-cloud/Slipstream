@@ -223,6 +223,8 @@
         { key: 'showTrend', label: 'Color by trend (gaining/losing)', type: 'bool', default: true },
         { key: 'showLapTimes', label: 'Show current / predicted lap', type: 'bool', default: true },
         { key: 'decimals', label: 'Decimals', type: 'number', min: 1, max: 3, default: 2 },
+        { key: 'showSector', label: 'Sector delta bar (current sector only)', type: 'bool', default: true },
+        { key: 'sectorRange', label: 'Sector bar range (s)', type: 'range', min: 0.1, max: 2, step: 0.1, default: 0.5 },
         { key: 'showGaps', label: 'Gap bars to car ahead / behind', type: 'bool', default: true },
         { key: 'gapMode', label: 'Gaps measured to', type: 'select', default: 'auto',
           options: [{ value: 'auto', label: 'Auto (class position in races, track otherwise)' }, { value: 'position', label: 'Car ahead / behind in class position' }, { value: 'track', label: 'Nearest car on track' }] },

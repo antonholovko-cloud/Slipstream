@@ -207,3 +207,27 @@ test('missing player or deltas: nothing rendered', async () => {
   assert.deepEqual(ov.errors, []);
   ov.close();
 });
+
+test('sector bar: current sector gain (green, left) or loss (red, right) vs the chosen reference', async () => {
+  const st = withDelta([0.4, 0, true]);
+  st.player.sectorDelta = { sector: 2, of: 3, d: { best: -0.125, optimal: 0.3, sessionBest: null, sessionOptimal: null, sessionLast: null } };
+  const ov = await loadOverlay('delta', { settings: { sectorRange: 0.5, decimals: 2 } });
+  ov.render(st);
+  const bar = ov.$('.sector .sbar i').style;
+  assert.equal(ov.$('.sector .lbl').textContent, 'S2');
+  assert.equal(ov.$('.sector .sval').textContent, '-0.13');
+  assert.equal(parseFloat(bar.left), 37.5);
+  assert.equal(parseFloat(bar.width), 12.5);
+  assert.equal(bar.background, rgb(T.green));
+  ov.configure({ reference: 'optimal' });
+  ov.render(st);
+  assert.equal(ov.$('.sector .sval').textContent, '+0.30');
+  assert.equal(parseFloat(bar.left), 50);
+  assert.equal(bar.background, rgb(T.red));
+  ov.configure({ reference: 'sessionBest' });
+  ov.render(st);
+  assert.equal(ov.$('.sector .sval').textContent, '–');
+  ov.configure({ showSector: false });
+  assert.equal(ov.$('.sector').style.display, 'none');
+  ov.close();
+});

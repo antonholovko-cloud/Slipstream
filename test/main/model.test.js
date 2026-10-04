@@ -516,3 +516,29 @@ test('relative, same class: the CarIdxEstTime difference, as the sim shows it (l
   const st = new RaceModel().update(frame(sessionInfo({ drivers, player: 9 }), vars({ 9: { pct: 0.12296, est: 11.989, best: 101 }, 8: { pct: 0.36065, est: 34.26 } }, { PlayerCarIdx: 9, CamCarIdx: 9 })), G());
   assert.equal(st.relative[0].gap.toFixed(1), '22.3');
 });
+
+test('sector delta: time gained or lost in the current sector only, restarting at each sector line', () => {
+  const info = sessionInfo({ drivers: [driver(1, GT3)] });
+  const m = new RaceModel();
+  let st, at = null, last = 0, prev = 0;
+  // 30 s laps from just before the line; iRacing's delta to best grows 0.01 s every second
+  for (let t = 0; t <= 50 + 1e-9; t += 0.05) {
+    const d = 0.95 + t / 30, delta = 0.01 * t;
+    last = delta;
+    st = m.update(frame(info, vars({ 1: { pct: d % 1, lap: Math.floor(d) } }, { SessionTime: t, LapCompleted: Math.floor(d), LapDeltaToBestLap: delta, LapDeltaToBestLap_DD: 0.01, LapDeltaToBestLap_OK: true })), G());
+    const sec = st.player.sectorDelta ? st.player.sectorDelta.sector : 0;
+    if (sec === 2 && prev !== 2) at = delta; // crossed into S2 (latest lap)
+    prev = sec;
+  }
+  const sd = st.player.sectorDelta;
+  assert.equal(sd.sector, 2);
+  assert.equal(sd.of, 3);
+  assert.ok(Math.abs(sd.d.best - (last - at)) < 1e-9, String(sd.d.best));
+  assert.ok(sd.d.best > 0.05 && sd.d.best < 0.12, 'about 8.5 s into the sector at +0.01 s/s');
+  assert.equal(sd.d.optimal, null, 'no valid optimal delta from iRacing here');
+});
+
+test('sector delta is null until a lap is being timed', () => {
+  const st = new RaceModel().update(frame(sessionInfo({ drivers: [driver(1, GT3)] }), vars({ 1: { pct: 0.5 } }, { LapDeltaToBestLap: 0.3, LapDeltaToBestLap_OK: true })), G());
+  assert.equal(st.player.sectorDelta, null);
+});

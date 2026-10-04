@@ -10,6 +10,12 @@ Host.css(`
 .delta .row { display:flex; justify-content:space-between; align-items:baseline; font-weight:700; flex:none; }
 .delta .val { font-size:1.5rem; line-height:1; }
 .delta .row small { font-size:.8rem; color:var(--dim); font-weight:600; }
+.delta .sector { display:flex; align-items:center; gap:.4rem; flex:none; font-size:.75rem; font-weight:700; }
+.delta .sector .lbl { color:var(--dim); letter-spacing:.04em; min-width:1.6rem; }
+.delta .sector .sbar { position:relative; flex:1; height:.45rem; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; }
+.delta .sector .sbar i { position:absolute; top:0; bottom:0; border-radius:2px; }
+.delta .sector .sbar::after { content:''; position:absolute; left:50%; top:-1px; bottom:-1px; width:1px; background:var(--text); opacity:.6; }
+.delta .sector .sval { min-width:3.4rem; text-align:right; font-size:.85rem; }
 .delta .gaps { display:flex; gap:.6rem; flex:none; }
 .delta .gap { flex:1; min-width:0; display:flex; flex-direction:column; gap:.12rem; }
 .delta .gap .top { display:flex; align-items:baseline; gap:.3rem; font-size:.75rem; white-space:nowrap; }
@@ -26,6 +32,7 @@ Host.register('delta', function (root) {
   root.innerHTML = `<div class="delta">
     <div class="row"><small class="l"></small><span class="val">–</span><small class="r"></small></div>
     <div class="bar"><i></i></div>
+    <div class="sector"><span class="lbl">S1</span><div class="sbar"><i></i></div><span class="sval">–</span></div>
     <div class="gaps">
       <div class="gap ahead"><div class="top"><span class="lbl">▲ AHEAD</span><span class="who"></span><span class="sec">–</span></div><div class="gbar"><i></i></div></div>
       <div class="gap behind"><div class="top"><span class="lbl">▼ BEHIND</span><span class="who"></span><span class="sec">–</span></div><div class="gbar"><i></i></div></div>
@@ -107,10 +114,28 @@ Host.register('delta', function (root) {
     bar.style.background = color;
   }
 
+  // Current sector only: time gained (green, left) or lost (red, right) since the sector started.
+  function renderSector(sd, s, t) {
+    const lbl = q('.sector .lbl'), val = q('.sector .sval'), bar = q('.sector .sbar i');
+    const d = sd ? sd.d[s.reference] : null;
+    lbl.textContent = sd ? 'S' + sd.sector : 'S–';
+    if (d === null || d === undefined || !Number.isFinite(d)) {
+      val.textContent = '–'; val.style.color = t.dim; bar.style.width = '0';
+      return;
+    }
+    const f = Math.max(-1, Math.min(1, d / s.sectorRange));
+    bar.style.left = f < 0 ? (50 + f * 50) + '%' : '50%';
+    bar.style.width = (Math.abs(f) * 50) + '%';
+    bar.style.background = d <= 0 ? t.green : t.red;
+    val.textContent = Fmt.signed(d, s.decimals);
+    val.style.color = d <= 0 ? t.green : t.red;
+  }
+
   return {
     configure(ctx) {
       q('.l').style.visibility = q('.r').style.visibility = ctx.settings.showLapTimes ? '' : 'hidden';
       q('.gaps').style.display = ctx.settings.showGaps ? '' : 'none';
+      q('.sector').style.display = ctx.settings.showSector ? '' : 'none';
     },
     update(state, ctx) {
       const s = ctx.settings, p = state.player, t = ctx.theme;
@@ -139,6 +164,7 @@ Host.register('delta', function (root) {
           q('.r').textContent = refLap > 0 ? '≈ ' + Fmt.lapTime(refLap + d, 2) : LABEL[s.reference];
         }
       }
+      if (s.showSector) renderSector(p.sectorDelta, s, t);
       if (s.showGaps) {
         const n = neighbours(state, s.gapMode || 'auto');
         const lapTime = p.bestLap > 0 ? p.bestLap : p.estLap;

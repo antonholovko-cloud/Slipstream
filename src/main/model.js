@@ -454,6 +454,26 @@ class RaceModel {
     const own = (which) => this.timing.delta(which, v.SessionTime, playerIdx);
     if (!player.deltas.best[2]) player.deltas.best = own('best');
     if (!player.deltas.sessionLast[2]) player.deltas.sessionLast = own('last');
+
+    // Sector delta: time gained or lost in the current sector alone, for every reference
+    // (delta now minus the delta when this sector started)
+    const cur = timing.current;
+    if (cur && cur.timed) {
+      if (this.secAt !== cur.sector) {
+        this.secAt = cur.sector;
+        this.secStart = {};
+        for (const [k, [d, , ok]] of Object.entries(player.deltas)) this.secStart[k] = ok && Number.isFinite(d) ? d : null;
+      }
+      const d = {};
+      for (const [k, [dk, , ok]] of Object.entries(player.deltas)) {
+        const s0 = this.secStart[k];
+        d[k] = ok && Number.isFinite(dk) && s0 !== null && s0 !== undefined ? dk - s0 : null;
+      }
+      player.sectorDelta = { sector: cur.sector + 1, of: timing.starts.length, d };
+    } else {
+      this.secAt = null;
+      player.sectorDelta = null;
+    }
     if (!(player.bestLap > 0) && timing.bestLap) player.bestLap = timing.bestLap;
     if (!(player.lastLap > 0) && timing.log.length) player.lastLap = timing.log[timing.log.length - 1].time;
 
