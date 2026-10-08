@@ -105,6 +105,7 @@
     };
   }
 
+  let measuredWithData = false;
   function render(state) {
     lastState = state;
     if (!instance) return;
@@ -113,6 +114,8 @@
     } catch (e) {
       console.error(e);
     }
+    // fit() first runs before any data, when rows may still be empty: measure again once they're filled
+    if (!measuredWithData && instance.fit) { measuredWithData = true; applyFontSize(); }
   }
 
   // ---- edit mode: move & resize via pointer capture ----

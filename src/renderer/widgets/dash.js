@@ -39,7 +39,7 @@ Host.css(`
 .dash .wheel svg.steerbar { flex:none; width:6rem; height:1.4rem; aspect-ratio:auto; filter:none; }
 .dash .wheel .ang { font-size:.75rem; font-weight:700; color:var(--dim); white-space:nowrap; line-height:1; flex:none; }
 .dash .wheel svg { flex:none; height:var(--wheel, 3rem); width:var(--wheel, 3rem); overflow:visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
-.dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; line-height:1.15; flex:none; }
+.dash .foot { display:flex; justify-content:space-between; align-items:center; gap:.6rem; font-size:.85rem; line-height:1.15; min-height:1.15em; flex:none; } /* keeps its line while empty, so fit() measures the same before data arrives */
 .dash .foot span { white-space:nowrap; }
 .dash .foot b { font-weight:700; }
 .dash .warn { display:flex; gap:.25rem; }
