@@ -205,6 +205,7 @@ Host.register('dash', function (root) {
       show(lightsEl, s.shiftLights || s.slipLight);
       show(q('.gearbox'), s.showGear);
       show(q('.rpmbar'), s.showRpmBar);
+      show(q('.rpm'), s.showRpm);
       show(canvas, s.showTrace);
       show(q('.bars'), s.showBars);
       show(bars.cl, s.showClutch);

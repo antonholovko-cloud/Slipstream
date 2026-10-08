@@ -59,6 +59,7 @@ h1 { margin: 0 0 4px; font: 700 26px Rajdhani, sans-serif; letter-spacing: .02em
 .field .ctl { display: flex; align-items: center; gap: 8px; }
 .field input[type=number], .field input[type=text], .field select { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; width: 120px; }
 .field select { width: 190px; }
+#carcard select { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 9px; min-width: 190px; }
 .field input[type=range] { width: 170px; accent-color: var(--accent); }
 .field .val { width: 42px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
 .field input[type=color] { width: 42px; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel2); padding: 2px; cursor: pointer; }

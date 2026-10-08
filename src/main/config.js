@@ -29,6 +29,7 @@ function defaultGlobal() {
     classSplits: [], // league sub-classes, e.g. GT3 -> GT3 Pro / GT3 Am (see classes.js)
     masterOpacity: 100, // multiplies every overlay's own opacity
     autoUpdate: null, // null = not asked yet; true/false = the player's choice
+    autoCarProfiles: true, // a change made in a car without its own profile creates one for it
   };
 }
 
@@ -45,6 +46,9 @@ function defaultConfig() {
     activeProfile: 'default',
     profiles: { default: defaultProfile('Default') },
     trackMaps: {},
+    // per-car profiles: car id (iRacing CarPath) -> { name, profile }; cars with no link use carFallback
+    cars: {},
+    carFallback: null, // profile key; null = the first profile
   };
 }
 
@@ -66,6 +70,7 @@ function migrate(cfg) {
     deltaGaps(p.overlays.delta);
     flagsOff(p.overlays.flags);
     limiterOffset(p.overlays.dash);
+    dashFooter(p.overlays.dash);
     for (const odef of Registry.OVERLAYS) {
       const base = Registry.defaultSettingsFor(odef);
       const cur = p.overlays[odef.id] || {};
@@ -87,6 +92,9 @@ function migrate(cfg) {
     }
   }
   if (!out.profiles[out.activeProfile]) out.activeProfile = Object.keys(out.profiles)[0];
+  out.cars = {};
+  for (const [id, c] of Object.entries(cfg.cars || {})) if (c && out.profiles[c.profile]) out.cars[id] = c;
+  if (!out.profiles[out.carFallback]) out.carFallback = null;
   out.trackMaps = cfg.trackMaps || {};
   out.version = CONFIG_VERSION;
   return out;
@@ -148,6 +156,19 @@ function limiterOffset(dash) {
   if (!dash || dash.limiterV2) return;
   if (!dash.limiterAt || dash.limiterAt === 'car') dash.limiterAt = 'offset';
   dash.limiterV2 = true;
+}
+
+// v0.8.0 hides the Dashboard's bottom row by default: hide it once where it was still all at the old defaults
+// (all on), and fit the box height to what's left so no empty band stays where the row was. A row someone
+// set up themselves stays as it is.
+function dashFooter(dash) {
+  if (!dash || dash.footerV2) return;
+  const keys = ['showLapInfo', 'showFuel', 'showBias', 'showWarnings'];
+  if (keys.every((k) => dash[k] === undefined || dash[k] === true)) {
+    for (const k of keys) dash[k] = false;
+    dash.fitHeight = true;
+  }
+  dash.footerV2 = true;
 }
 
 const MAX_BACKUPS = 15;
@@ -298,6 +319,8 @@ class ConfigStore {
   deleteProfile(key) {
     if (Object.keys(this.data.profiles).length <= 1) return;
     delete this.data.profiles[key];
+    for (const [id, c] of Object.entries(this.data.cars)) if (c.profile === key) delete this.data.cars[id];
+    if (this.data.carFallback === key) this.data.carFallback = null;
     if (this.data.activeProfile === key) this.data.activeProfile = Object.keys(this.data.profiles)[0];
     this.save();
   }
@@ -310,6 +333,52 @@ class ConfigStore {
   setActiveProfile(key) {
     if (this.data.profiles[key]) this.data.activeProfile = key;
     this.save();
+  }
+
+  // ---- per-car profiles ----
+  linkCar(car, profile) {
+    if (!car || !car.id || !this.data.profiles[profile]) return;
+    this.data.cars[car.id] = { name: car.name || car.id, profile };
+    this.save();
+  }
+
+  unlinkCar(id) {
+    delete this.data.cars[id];
+    this.save();
+  }
+
+  setCarFallback(profile) {
+    this.data.carFallback = this.data.profiles[profile] ? profile : null;
+    this.save();
+  }
+
+  // Which profile a car should use: { key, linked }, or null while no car is linked
+  // (then profiles are only switched by hand, as before).
+  profileForCar(id) {
+    if (!Object.keys(this.data.cars).length) return null;
+    const c = id && this.data.cars[id];
+    if (c && this.data.profiles[c.profile]) return { key: c.profile, linked: true };
+    return { key: this.fallbackKey(), linked: false };
+  }
+
+  fallbackKey() {
+    return this.data.profiles[this.data.carFallback] ? this.data.carFallback : Object.keys(this.data.profiles)[0];
+  }
+
+  // Automatic per-car profiles: the first change made in a car with no profile of its own,
+  // while it is on the default profile, copies that profile into a new one named after the
+  // car and links it, so the change lands there and the default stays as it was. A profile
+  // picked by hand takes the change itself. Returns the new profile's key, or null.
+  forkForCar(car) {
+    if (!car || !car.id || this.data.cars[car.id] || this.data.global.autoCarProfiles === false) return null;
+    if (this.data.activeProfile !== this.fallbackKey()) return null;
+    const names = new Set(Object.values(this.data.profiles).map((p) => p.name));
+    const base = car.name || car.id;
+    let name = base;
+    for (let i = 2; names.has(name); i++) name = `${base} ${i}`;
+    const key = this.createProfile(name, this.data.activeProfile);
+    this.linkCar(car, key);
+    return key;
   }
 
   exportProfile(key) {

@@ -379,3 +379,111 @@ test('ConfigStore: setTrackMap stores learned maps', () => {
   s.setTrackMap('163-GP', [[0, 0], [1, 1]]);
   assert.deepEqual(s.data.trackMaps['163-GP'], [[0, 0], [1, 1]]);
 });
+
+// ---------------- per-car profiles ----------------
+
+test('per-car profiles: nothing switches until a car is linked', () => {
+  freshDirs();
+  const s = quiet(store);
+  assert.equal(s.profileForCar('mx5 mx52016'), null);
+});
+
+test('per-car profiles: linked car gets its profile, others the fallback (first profile by default)', () => {
+  freshDirs();
+  const s = quiet(store);
+  const gt3 = s.createProfile('GT3');
+  const mx5 = s.createProfile('MX-5');
+  s.linkCar({ id: 'mx5 mx52016', name: 'Global Mazda MX-5 Cup' }, mx5);
+  assert.deepEqual(s.data.cars['mx5 mx52016'], { name: 'Global Mazda MX-5 Cup', profile: mx5 });
+  assert.deepEqual(s.profileForCar('mx5 mx52016'), { key: mx5, linked: true });
+  assert.deepEqual(s.profileForCar('porsche992rgt3'), { key: 'default', linked: false });
+  s.setCarFallback(gt3);
+  assert.deepEqual(s.profileForCar('porsche992rgt3'), { key: gt3, linked: false });
+  s.setCarFallback('nope');
+  assert.equal(s.data.carFallback, null);
+  s.unlinkCar('mx5 mx52016');
+  assert.equal(s.profileForCar('mx5 mx52016'), null, 'no links left: back to switching by hand');
+});
+
+test('per-car profiles: linking needs a car and an existing profile', () => {
+  freshDirs();
+  const s = quiet(store);
+  s.linkCar(null, 'default');
+  s.linkCar({ id: '' }, 'default');
+  s.linkCar({ id: 'x' }, 'missing');
+  assert.deepEqual(s.data.cars, {});
+  s.linkCar({ id: 'x' }, 'default');
+  assert.equal(s.data.cars.x.name, 'x', 'name falls back to the id');
+});
+
+test('per-car profiles: deleting a profile drops its links and the fallback', () => {
+  freshDirs();
+  const s = quiet(store);
+  const p = s.createProfile('Oval');
+  s.linkCar({ id: 'a', name: 'A' }, p);
+  s.linkCar({ id: 'b', name: 'B' }, 'default');
+  s.setCarFallback(p);
+  s.deleteProfile(p);
+  assert.deepEqual(Object.keys(s.data.cars), ['b']);
+  assert.equal(s.data.carFallback, null);
+});
+
+test('per-car profiles: survive a reload; links to missing profiles are dropped by migrate', () => {
+  const m = migrate({ profiles: { default: { name: 'Default', overlays: {} } }, cars: { a: { name: 'A', profile: 'default' }, b: { name: 'B', profile: 'gone' } }, carFallback: 'gone' });
+  assert.deepEqual(Object.keys(m.cars), ['a']);
+  assert.equal(m.carFallback, null);
+  assert.deepEqual(migrate({}).cars, {});
+});
+
+test('automatic per-car profiles: the first change in a car on the default copies it into a linked profile', () => {
+  freshDirs();
+  const s = quiet(store);
+  const car = { id: 'porsche992rgt3', name: 'Porsche 911 GT3 R (992)' };
+  s.setOverlay('speed', { layout: 'classic' });
+  const key = s.forkForCar(car);
+  assert.ok(key);
+  assert.equal(s.data.activeProfile, key);
+  assert.equal(s.profile.name, 'Porsche 911 GT3 R (992)');
+  assert.equal(s.overlay('speed').layout, 'classic', 'starts as a copy of the default');
+  assert.deepEqual(s.data.cars[car.id], { name: car.name, profile: key });
+  s.setOverlay('speed', { layout: 'strip' }); // the change lands in the car's profile
+  assert.equal(s.data.profiles.default.overlays.speed.layout, 'classic', 'default untouched');
+  assert.equal(s.forkForCar(car), null, 'only once per car');
+});
+
+test('automatic per-car profiles: not for a hand-picked profile, no car, or when turned off', () => {
+  freshDirs();
+  const s = quiet(store);
+  assert.equal(s.forkForCar(null), null);
+  assert.equal(s.forkForCar({ id: '' }), null);
+  s.createProfile('Rain'); // now active: picked by hand
+  assert.equal(s.forkForCar({ id: 'a', name: 'A' }), null);
+  s.setActiveProfile('default');
+  s.setGlobal({ autoCarProfiles: false });
+  assert.equal(s.forkForCar({ id: 'a', name: 'A' }), null);
+  assert.deepEqual(s.data.cars, {});
+});
+
+test('automatic per-car profiles: the fallback counts as the default; names stay unique', () => {
+  freshDirs();
+  const s = quiet(store);
+  const gt3 = s.createProfile('GT3');
+  s.setCarFallback(gt3);
+  s.createProfile('Car');
+  s.setActiveProfile(gt3);
+  const key = s.forkForCar({ id: 'c1', name: 'Car' });
+  assert.equal(s.data.profiles[key].name, 'Car 2');
+});
+
+test('migrate: the Dashboard bottom row is hidden once where it was still all on, kept where set up', () => {
+  const dash = (o) => migrate({ profiles: { default: { name: 'D', overlays: { dash: o } } } }).profiles.default.overlays.dash;
+  const old = dash({ showLapInfo: true, showFuel: true, showBias: true, showWarnings: true });
+  assert.deepEqual([old.showLapInfo, old.showFuel, old.showBias, old.showWarnings], [false, false, false, false]);
+  assert.equal(old.footerV2, true);
+  assert.equal(old.fitHeight, true, 'box shrinks to what is left');
+  const mine = dash({ showLapInfo: false, showFuel: true, showBias: false, showWarnings: true });
+  assert.deepEqual([mine.showFuel, mine.showWarnings], [true, true]);
+  const again = dash({ footerV2: true, showLapInfo: true, showFuel: true, showBias: true, showWarnings: true });
+  assert.equal(again.showLapInfo, true, 'only once: turning it all back on sticks');
+  assert.equal(dash({}).showRpm, false);
+});

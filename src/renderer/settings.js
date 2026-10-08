@@ -551,6 +551,10 @@
   function pageProfiles(el) {
     el.append(h(`<div><h1>Layouts & profiles</h1><p class="lead">Everything you change (positions, sizes, options, theme) is <b>saved automatically</b> and restored the next time Slipstream starts, including after updates. Each profile is a complete layout: switch with the tray menu or <kbd>${esc(keyLabel(cfg.global.hotkeys.nextProfile))}</kbd>.</p></div>`));
 
+    const cars = h('<div class="card" id="carcard"></div>');
+    el.append(cars);
+    renderCarCard(cars);
+
     // save the current layout under a name
     const snap = h(`<div class="card"><h2>Save current layout</h2><div class="row" style="padding:6px 0 14px">
       <input type="text" class="snapname" placeholder="Layout name, e.g. Road race" style="background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;width:280px">
@@ -608,6 +612,45 @@
     el.append(h(`<p style="color:var(--dim);font-size:12px">Settings file: ${esc(cfgFile)}</p>`));
   }
 
+  // Per-car profiles: the car iRacing reports now, which profile it uses, and every linked car.
+  function renderCarCard(el) {
+    const name = (key) => (cfg.profiles[key] || {}).name || '?';
+    const options = (sel) => Object.entries(cfg.profiles).map(([k, p]) => `<option value="${esc(k)}" ${k === sel ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+    const car = status.car, live = status.source === 'iracing', pick = status.carProfile;
+    const linked = Object.entries(cfg.cars || {}).sort((a, b) => a[1].name.localeCompare(b[1].name));
+    const fallback = cfg.profiles[cfg.carFallback] ? cfg.carFallback : Object.keys(cfg.profiles)[0];
+    let now;
+    if (!car) now = 'No car yet: get in a car in iRacing.';
+    else {
+      const uses = !pick ? 'no car has its own profile yet, so it uses the active one'
+        : pick.linked ? `its profile is <b>${esc(name(pick.key))}</b>` : `no profile linked, so it uses the default, <b>${esc(name(pick.key))}</b>`;
+      now = `<b>${esc(car.name)}</b>${live ? '' : ' (demo data, never switches)'}: ${uses}.`;
+    }
+    const mine = car && cfg.cars && cfg.cars[car.id];
+    el.innerHTML = `<h2>Per-car profiles</h2>
+      <p style="color:var(--dim);margin:4px 0 10px;font-size:13px">Slipstream switches to a car's profile when you get in that car in iRacing.
+      A car without one uses the default profile, and ${cfg.global.autoCarProfiles !== false ? 'the first change you make in it (moving, resizing or setting up an overlay) creates a profile for that car, so the default stays as it is' : 'you can link it to the active profile below'}.
+      A profile you pick by hand stays until you change car, and takes your changes itself.</p>
+      <label class="row" style="gap:8px;font-size:13px;padding-bottom:10px;cursor:pointer"><input type="checkbox" class="auto" ${cfg.global.autoCarProfiles !== false ? 'checked' : ''}>
+        Create a profile for a car automatically when I change something in it</label>
+      <div class="row" style="padding-bottom:10px;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:13px">Current car: ${now}</span>
+        ${car && live && !(mine && mine.profile === cfg.activeProfile) ? `<button class="btn small primary link">Use “${esc(profile().name)}” for this car</button>` : ''}</div>
+      <table class="ptable cars">${linked.length ? '<tr><th>Car</th><th>Profile</th><th></th></tr>' : ''}
+        ${linked.map(([id, c]) => `<tr data-car="${esc(id)}"><td>${esc(c.name)}${car && car.id === id ? ' <span class="badge">Now</span>' : ''}</td>
+          <td><select class="prof-sel">${options(c.profile)}</select></td><td><button class="btn small danger unlink">Unlink</button></td></tr>`).join('')}</table>
+      ${linked.length ? '' : '<div style="color:var(--dim);font-size:13px;padding-bottom:6px">No cars linked yet.</div>'}
+      <div class="row" style="padding:10px 0;align-items:center;gap:10px"><span style="font-size:13px">Default profile for other cars</span><select class="fallback">${options(fallback)}</select></div>`;
+    $('.auto', el).onchange = (e) => { setGlobal({ autoCarProfiles: e.target.checked }); renderCarCard(el); };
+    const link = $('.link', el);
+    if (link) link.onclick = () => api.invoke('settings:profile', 'linkCar', cfg.activeProfile);
+    for (const row of el.querySelectorAll('tr[data-car]')) {
+      const id = row.dataset.car;
+      $('.prof-sel', row).onchange = (e) => api.invoke('settings:profile', 'carProfile', id, e.target.value);
+      $('.unlink', row).onclick = () => api.invoke('settings:profile', 'unlinkCar', id);
+    }
+    $('.fallback', el).onchange = (e) => api.invoke('settings:profile', 'carFallback', e.target.value);
+  }
+
   // ---------------- data ----------------
   let cfgPath = '';
   let cfgFile = '';
@@ -643,7 +686,12 @@
     renderNav();
     renderPage();
   });
-  api.on('settings:status', (s) => { status = s; renderStatus(); });
+  api.on('settings:status', (s) => {
+    status = s;
+    renderStatus();
+    const cc = $('#carcard');
+    if (cc && !cc.contains(document.activeElement)) renderCarCard(cc); // don't close an open dropdown
+  });
   api.on('settings:update', (u) => {
     const was = update && update.status + update.percent;
     update = u;

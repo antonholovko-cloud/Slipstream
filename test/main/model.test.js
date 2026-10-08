@@ -542,3 +542,19 @@ test('sector delta is null until a lap is being timed', () => {
   const st = new RaceModel().update(frame(sessionInfo({ drivers: [driver(1, GT3)] }), vars({ 1: { pct: 0.5 } }, { LapDeltaToBestLap: 0.3, LapDeltaToBestLap_OK: true })), G());
   assert.equal(st.player.sectorDelta, null);
 });
+
+test('session.car: the player\'s own car by CarPath, falling back to CarID / name', () => {
+  const m = new RaceModel({});
+  const drivers = [driver(1, GT3, { CarPath: 'porsche992rgt3', CarScreenName: 'Porsche 911 GT3 R (992)' }), driver(2, LMP2, { CarPath: 'dallarap217' })];
+  m.parseInfo(sessionInfo({ drivers, player: 1 }));
+  assert.deepEqual({ id: m.car.id, name: m.car.name }, { id: 'porsche992rgt3', name: 'Porsche 911 GT3 R (992)' });
+  m.parseInfo(sessionInfo({ drivers: [driver(1, GT3, { CarID: 132 })], player: 1 }));
+  assert.equal(m.car.id, '132');
+  assert.equal(m.car.name, 'GT3 car');
+});
+
+test('session.car is in the state (demo race)', () => {
+  const { state } = demoRace({ seconds: 30 });
+  assert.ok(state.session.car.id);
+  assert.ok(state.session.car.name);
+});

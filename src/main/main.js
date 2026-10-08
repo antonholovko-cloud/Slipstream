@@ -48,6 +48,7 @@ let updater = null;
 let updateNotified = '';
 let hotkeyErrors = [];
 let quitting = false;
+let carId = null; // the car the per-car profile was last picked for
 const forceDemo = process.argv.includes('--demo'); // runtime only, never saved
 // Dev/test runs (screenshots) render far off-screen: nothing pops up on the user's
 // desktop, and no tray icon or global hotkeys that would clash with a real instance.
@@ -241,6 +242,7 @@ function tick() {
     try {
       const st = model.update(frame, config.data.global);
       if (st) latestState = st;
+      if (st) followCar(st);
       if (st && process.env.IRO_RELLOG && source === 'iracing') logRelative(frame.vars, st);
     } catch (e) {
       console.error('Model error:', e.stack);
@@ -282,9 +284,40 @@ function logRelative(v, st) {
   fs.appendFile(path.join(app.getPath('userData'), 'relative-log.jsonl'), JSON.stringify(line) + '\n', () => {});
 }
 
+// Per-car profiles: when the player's car changes in iRacing, switch to the profile linked
+// to it (or the fallback profile). Only on a change, so picking a profile by hand sticks
+// for the rest of the session. Demo data never switches or creates profiles: it would
+// undo or redirect your edits.
+function currentCar() {
+  const c = latestState && latestState.session && latestState.session.car;
+  return c && c.id ? c : null;
+}
+
+function followCar(st) {
+  const c = st.session && st.session.car;
+  const id = source === 'iracing' && c && c.id ? c.id : null;
+  if (id === carId) return;
+  carId = id;
+  const pick = id ? config.profileForCar(id) : null;
+  if (pick && pick.key !== config.data.activeProfile) {
+    config.setActiveProfile(pick.key);
+    broadcastConfig();
+    updateTray();
+  }
+  sendSettings('settings:status', statusPayload());
+}
+
+// About to change the active profile (an overlay moved, resized or reconfigured): in a car
+// without its own profile, give it one first so the change lands there (see forkForCar).
+function beforeProfileEdit() {
+  if (!config.forkForCar(source === 'iracing' ? currentCar() : null)) return;
+  setImmediate(() => { updateTray(); sendSettings('settings:status', statusPayload()); });
+}
+
 function setSource(s) {
   if (s === source) return;
   source = s;
+  if (s !== 'iracing') carId = null;
   if (s === 'none') latestState = null;
   sendSettings('settings:status', statusPayload());
   updateTray();
@@ -317,7 +350,8 @@ function settingsPayload() {
 }
 
 function statusPayload() {
-  return { source, editMode, hidden: hiddenByUser, track: latestState && latestState.session ? latestState.session.track.name : '', session: latestState && latestState.session ? latestState.session.type : '' };
+  const car = currentCar();
+  return { source, editMode, hidden: hiddenByUser, car, carProfile: car ? config.profileForCar(car.id) : null, track: latestState && latestState.session ? latestState.session.track.name : '', session: latestState && latestState.session ? latestState.session.type : '' };
 }
 
 function sendSettings(ch, data) {
@@ -493,6 +527,7 @@ function registerIpc() {
     }
     win.setBounds(place(nb));
     if (done) {
+      if (!(opts && opts.exact)) beforeProfileEdit(); // fit-to-content resizes aren't your changes
       config.setOverlay(id, { bounds: nb });
       sendSettings('settings:config', settingsPayload());
     }
@@ -507,8 +542,8 @@ function registerIpc() {
     return updater.state;
   });
 
-  ipcMain.handle('settings:setOverlay', (e, id, patch) => { config.setOverlay(id, patch); broadcastConfig(); });
-  ipcMain.handle('settings:resetOverlay', (e, id) => { config.resetOverlay(id); broadcastConfig(); });
+  ipcMain.handle('settings:setOverlay', (e, id, patch) => { beforeProfileEdit(); config.setOverlay(id, patch); broadcastConfig(); });
+  ipcMain.handle('settings:resetOverlay', (e, id) => { beforeProfileEdit(); config.resetOverlay(id); broadcastConfig(); });
   ipcMain.handle('settings:setGlobal', (e, patch) => {
     config.setGlobal(patch);
     if (patch.hotkeys) registerHotkeys();
@@ -526,6 +561,10 @@ function registerIpc() {
       case 'create': config.createProfile(a, b); break;
       case 'delete': config.deleteProfile(a); break;
       case 'rename': config.renameProfile(a, b); break;
+      case 'linkCar': config.linkCar(currentCar(), a); break; // a = profile key
+      case 'carProfile': config.linkCar({ id: a, name: (config.data.cars[a] || {}).name }, b); break;
+      case 'unlinkCar': config.unlinkCar(a); break;
+      case 'carFallback': config.setCarFallback(a); break;
       case 'export': {
         const r = await dialog.showSaveDialog(settingsWin, { title: 'Export profile', defaultPath: `${config.profile.name}.overlay.json`, filters: [{ name: 'Overlay profile', extensions: ['json'] }] });
         if (!r.canceled) fs.writeFileSync(r.filePath, config.exportProfile(a));
@@ -563,6 +602,7 @@ function registerIpc() {
     }
     broadcastConfig();
     updateTray();
+    sendSettings('settings:status', statusPayload()); // which profile the current car uses may have changed
     return true;
   });
 

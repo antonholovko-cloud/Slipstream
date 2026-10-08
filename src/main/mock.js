@@ -133,6 +133,7 @@ class MockSource {
       TeamName: c.name, CarNumber: c.number, CarNumberRaw: +c.number, CarClassID: c.cls.id, CarClassShortName: c.cls.short, CarClassColor: c.cls.color,
       CarClassEstLapTime: this.track.lapTime / c.cls.speed, CarScreenNameShort: c.cls.car, IRating: c.irating, LicString: c.lic, LicColor: c.licColor, IsSpectator: 0, CarIsPaceCar: 0,
       FlairName: FLAIRS[c.idx % FLAIRS.length], FlairID: 0,
+      CarScreenName: c.cls.car, CarPath: c.cls.car.toLowerCase().replace(/[^a-z0-9]+/g, ''), CarID: c.cls.id,
     });
     this.sessionInfo = {
       WeekendInfo: { TrackName: 'demo', TrackID: -1, TrackDisplayName: 'Demo Raceway', TrackConfigName: 'Grand Prix', TrackLength: (TRACK_LEN / 1000).toFixed(2) + ' km', TrackCity: 'Nowhere', TrackCountry: 'Demo', WeekendOptions: { IncidentLimit: 17 }, SubSessionID: 1 },
@@ -257,9 +258,14 @@ class MockSource {
     let gear = 1;
     while (gear < 6 && vNow > tops[gear] * 0.96) gear++;
     let rpm = Math.max(900, (vNow / tops[gear]) * 8200);
-    // demo: brief wheelspin when flooring it out of slow corners, and a rear lock-up under hard braking
+    // demo: brief wheelspin when flooring it out of slow corners
     if (gear <= 3 && throttle >= 1 && accel > 2 && Math.sin(this.sessionTime * 1.7) > 0.8) rpm *= 1.12;
-    if (brake > 0.7 && gear >= 3 && Math.sin(this.sessionTime * 2.3) > 0.9) rpm *= 0.8;
+    // ...and a rear lock-up in three braking zones out of four, for half a second as the brakes bite
+    if (brake > 0.3) {
+      if (!this.brakeZone) { this.brakeZones = (this.brakeZones || 0) + 1; this.brakeZone = { at: this.sessionTime, lock: this.brakeZones % 4 !== 0 }; }
+    } else if (brake < 0.05) this.brakeZone = null;
+    const inZone = this.brakeZone ? this.sessionTime - this.brakeZone.at : -1;
+    if (this.brakeZone && this.brakeZone.lock && inZone > 0.1 && inZone < 0.6) rpm *= 0.8;
     const steer = Math.max(-4, Math.min(4, Math.atan(T.curv[i] * 2.7) * 14));
 
     this.fuel = Math.max(0, this.fuel - (0.0000285 * throttle * vNow + 0.00001) * dt * 60);

@@ -119,6 +119,10 @@ class RaceModel {
       redline: num(di.DriverCarRedLine), estLap: num(di.DriverCarEstLapTime),
     };
     this.driverCarIdx = di.DriverCarIdx;
+    // the player's own car, for per-car profiles: CarPath is iRacing's stable folder name
+    const mine = (di.Drivers || []).find((d) => d.CarIdx === di.DriverCarIdx) || {};
+    this.car.id = String(mine.CarPath || mine.CarID || mine.CarScreenName || '');
+    this.car.name = String(mine.CarScreenName || mine.CarScreenNameShort || this.car.id);
     this.timing.setSectors(info);
   }
 
@@ -408,6 +412,7 @@ class RaceModel {
     // ---- Session ----
     const pc = me ? classes.find((k) => k.id === me.classId) : null;
     const session = {
+      car: { id: this.car.id, name: this.car.name },
       kind, isRace, type: String(sdef.SessionType || ''), name: String(sdef.SessionName || ''), num: v.SessionNum,
       state: v.SessionState, flags: v.SessionFlags >>> 0, carFlags: me ? (v.CarIdxSessionFlags?.[me.idx] >>> 0) : 0,
       timeRemain, timeTotal: v.SessionTimeTotal < 604800 ? v.SessionTimeTotal : null,

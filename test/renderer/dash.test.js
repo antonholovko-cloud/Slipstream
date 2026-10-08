@@ -20,7 +20,7 @@ const lights = (ov) => ov.$$('.lights i:not(.slip)');
 const litCount = (ov) => lights(ov).filter((i) => i.style.background).length;
 
 test('gear, speed, unit and rpm readout', async () => {
-  const ov = await loadOverlay('dash');
+  const ov = await loadOverlay('dash', { settings: { showRpm: true } });
   ov.render(withPlayer({ gear: 3, speed: 50, rpm: 6123.4 }));
   assert.equal(ov.$('.gear').textContent, '3');
   assert.equal(ov.$('.speed').firstChild.nodeValue, '180');
@@ -278,7 +278,7 @@ test('vertical padding setting', async () => {
 });
 
 test('footer: lap, last, best, delta, fuel and brake bias', async () => {
-  const ov = await loadOverlay('dash');
+  const ov = await loadOverlay('dash', { settings: { showLapInfo: true, showFuel: true, showBias: true, showWarnings: true } });
   const st = withPlayer({ lap: 5, lastLap: 71.5, bestLap: 70.9, fuel: 26.44, brakeBias: 54.5 });
   st.player.deltas.best = [-0.12, 0, true];
   ov.render(st);
@@ -300,7 +300,7 @@ test('footer: lap, last, best, delta, fuel and brake bias', async () => {
 });
 
 test('warnings: pit limiter first, then engine warnings', async () => {
-  const ov = await loadOverlay('dash');
+  const ov = await loadOverlay('dash', { settings: { showLapInfo: true, showFuel: true, showBias: true, showWarnings: true } });
   ov.render(withPlayer({ engineWarnings: 0x10 | 0x01 | 0x04 }));
   const w = ov.$$('.warn span').map((s) => s.textContent);
   assert.deepEqual(w, ['PIT LIMITER', 'WATER', 'OIL P']);
@@ -330,5 +330,13 @@ test('demo race renders without errors', async () => {
   const ov = await loadOverlay('dash');
   for (let i = 0; i < 5; i++) { ov.render(race.step(0.1)); ov.flushFrames(); ov.advance(16); }
   assert.deepEqual(ov.errors, []);
+  ov.close();
+});
+
+test('by default: no bottom row and no RPM number', async () => {
+  const ov = await loadOverlay('dash');
+  assert.equal(ov.$('.foot').style.display, 'none');
+  assert.equal(ov.$('.rpm').style.display, 'none');
+  assert.notEqual(ov.$('.rpmbar').style.display, 'none', 'the RPM bar stays');
   ov.close();
 });
