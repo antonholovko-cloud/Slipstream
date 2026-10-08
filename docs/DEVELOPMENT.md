@@ -12,6 +12,8 @@ npm run check         # self-test: fake iRacing memory map → reader → model
 npm test              # unit tests (node:test + jsdom): main logic, config, every overlay widget, settings UI
 npm run dist          # build installer + portable exe into dist/
 npm run screenshots   # regenerate docs/screenshots
+npm run screenshots:speed  # regenerate docs/screenshots/speed-layouts.png (Speed in every layout)
+npm run screenshots:dash   # regenerate docs/screenshots/dash-layouts.png (a few Dashboard configurations)
 npm run gifs          # regenerate docs/gifs (scripted demo drive, captured off-screen)
 npx electron scripts/build-flags.js   # re-render country flags (flag-icons) to src/renderer/flags
 IRO_RELLOG=1 npm start               # log what the Relative is built from to <userData>/relative-log.jsonl

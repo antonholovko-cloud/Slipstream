@@ -12,6 +12,8 @@
     "release": "electron-builder --win --publish never",
     "icon": "electron scripts/render-icon.js",
     "screenshots": "electron scripts/screenshots.js",
+    "screenshots:speed": "electron scripts/speed-layouts.js",
+    "screenshots:dash": "electron scripts/dash-layouts.js",
     "gifs": "electron scripts/gifs.js",
     "splash": "electron scripts/render-splash.js"
   },

@@ -54,8 +54,8 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
 </p>
 
 <p align="center">
-  <img src="docs/gifs/speed.gif" width="300" alt="Speed overlay: gear with a rev indicator rising behind it, speed, and the wheelspin / lock-up lamp"><br>
-  <sub><b>Speed:</b> just speed and gear. The background behind the gear rises with RPM and blinks at the shift point; the lamp shows SPIN / LOCK.</sub>
+  <img src="docs/gifs/speed.gif" width="300" alt="Speed overlay: rev lights on both sides filling with RPM and strobing at the shift point, lanes strobing on wheelspin and lock-up"><br>
+  <sub><b>Speed:</b> just speed and gear. The side lights fill with RPM and strobe when it's time to shift; the thin outer lanes strobe amber on wheelspin and red on a lock-up.</sub>
 </p>
 
 <p align="center">
@@ -157,14 +157,43 @@ and show again when you drive.
 |---|---|
 | **Standings** | Multiclass grouping with class SOF, **country flags**, gap/interval, last/best lap (purple = fastest), iRating, license/SR, **estimated iRating +/-**, positions gained, pit stops, and "keep my car visible". **Off by default**; turn it on in settings |
 | **Relative** | Cars around you by live time gap, **country flags**, lapping/lapped colors, pit tags, cars grouped by class in multiclass races (the nearest cars always stay in view), gaps from iRacing's estimate like the sim's own relative or measured from recent pace, and an info bar (position, SOF, incidents, time left) |
-| **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, RPM, a throttle/brake/clutch trace, pedal bars, a steering wheel, lap/last/best/delta, fuel, brake bias, engine warnings, pit limiter, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Every part can be switched off |
-| **Speed** | Just speed and gear, with a rev indicator behind the gear (rises with RPM, blinks at the shift point) and a wheelspin / lock-up lamp |
+| **Dashboard & Inputs** | Car-specific shift lights with a bright blue over-rev strobe (you choose where it starts), gear, speed, an RPM bar, a throttle/brake/clutch trace, pedal bars, a steering wheel, and a **wheelspin / lock-up light** that strobes while you're slipping, with the brake trace turning yellow where a wheel locked. Optional: the RPM number and a bottom row with lap/last/best/delta, fuel, brake bias, engine warnings and pit limiter (off by default). Every part can be switched off |
+| **Speed** | Just speed and gear, in three layouts. **Side lights** (default): rev lights on both sides fill green to red with RPM and strobe when it's time to shift, with thin outer lanes that strobe amber on wheelspin and red on a lock-up. **Light strip**: the same rev lights as one bar underneath, and the speed turns amber or red while you slip. **Classic**: a rev indicator behind the gear and a round wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
 | **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, a **sector delta bar** (time gained or lost in the current sector alone), and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose. In races these are the class cars physically ahead and behind you on track, so after a spin they update at once instead of waiting for the next timing line |
 | **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line. **Off by default**; turn it on in settings |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time. **Off by default**; turn it on in settings |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
+
+### Dashboard configurations
+
+Dashboard & Inputs is built from blocks you switch on or off in its settings, and the rest of the overlay
+reflows to fill the space. A few examples:
+
+![Dashboard & Inputs configurations: default, everything on, inputs only, and no wheel](docs/screenshots/dash-layouts.png)
+
+- **Default:** shift lights with the wheelspin / lock-up light, gear and speed with an RPM bar, the pedal trace,
+  pedal bars and a steering wheel.
+- **Everything on:** adds the RPM number, the steering angle and the bottom row (lap, last, best, delta, fuel,
+  brake bias, engine warnings and pit limiter). The bottom row and the RPM number are off by default.
+- **Inputs only:** just the pedal trace and bars with a wheel. Six wheel styles to choose from.
+- **No wheel:** revs, speed and pedals, with the steering drawn as a line in the trace instead.
+
+### Speed layouts
+
+The Speed overlay comes in three layouts. Pick one in its settings under **Layout**.
+
+![Speed overlay layouts: side lights, light strip and classic, at mid revs, at the shift point, in wheelspin and in a lock-up](docs/screenshots/speed-layouts.png)
+
+- **Side lights** (default): a rev light on each side fills green, yellow, then red as the RPM rises, and both
+  strobe blue when it's time to shift. A thin lane on the outer edge of each light strobes **amber on
+  wheelspin** and **red on a lock-up**.
+- **Light strip:** the same rev lights as one bar under the speed. While you slip, the speed turns amber or red.
+- **Classic:** a rev indicator rising behind the gear, and a round wheelspin / lock-up lamp.
+
+In every layout you choose where the shift strobe starts (the same choices as the Dashboard), and the SPIN / LOCK
+text can be switched off.
 
 ## Customizing
 
@@ -177,6 +206,12 @@ Every change you make is saved right away and kept after updates.
 - **Themes:** five built-in themes. You can change any color, the font and the corner rounding.
 - **Layouts & profiles:** save different layouts (for example road, oval, streaming) and switch between them
   from the tray or with a hotkey. You can export a profile to share it or move it to another PC.
+- **A profile per car, automatically:** in a car you haven't set up yet, you drive with the default profile. The
+  first time you change something in that car (move, resize or set up an overlay), Slipstream copies the default
+  into a new profile named after the car and keeps your change there, so the default stays as it was. Next time
+  you get in that car, its profile loads by itself. *Layouts & profiles* shows the current car and which profile
+  it uses, lets you pick a different profile for any car, and has a switch to turn this off. A profile you pick by
+  hand stays until you change car.
 - **Backups:** a backup of your settings is made every time Slipstream starts (the last 15 are kept). Restore
   one from *Layouts & profiles*.
 - **Units** follow your iRacing setting, or can be set to metric or imperial.
