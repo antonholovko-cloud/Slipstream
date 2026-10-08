@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  actions: read # SignPath reads the job details and downloads the artifact to sign
 
 jobs:
   build:
@@ -28,8 +29,71 @@ jobs:
 
       # Build only; publishing from electron-builder raced between the NSIS and
       # portable targets and created duplicate releases.
-      - name: Build
-        run: npx electron-builder --win --publish never
+      #
+      # Code signing (SignPath, see .signpath/ and "Code signing" in docs/DEVELOPMENT.md)
+      # runs only once the SIGNPATH_ORGANIZATION_ID variable is set; without it the
+      # release is built unsigned as before. Two passes: the app folder first, so the
+      # installed Slipstream.exe is signed, then the installers built from it.
+      - name: Build app folder
+        run: npx electron-builder --win --dir --publish never
+
+      - name: Upload app folder for signing
+        id: upload-app
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-app
+          path: dist/win-unpacked
+          if-no-files-found: error
+
+      - name: Sign app
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: Slipstream
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: app
+          github-artifact-id: ${{ steps.upload-app.outputs.artifact-id }}
+          wait-for-completion-timeout-in-seconds: 3600 # every request waits for a manual approval
+          output-artifact-directory: signed/app
+
+      - name: Build installers
+        shell: bash
+        run: npx electron-builder --win --prepackaged "${{ vars.SIGNPATH_ORGANIZATION_ID != '' && 'signed/app' || 'dist/win-unpacked' }}" --publish never
+
+      - name: Upload installers for signing
+        id: upload-installers
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installers
+          path: |
+            dist/Slipstream-Setup-*.exe
+            dist/Slipstream-Portable-*.exe
+          if-no-files-found: error
+
+      - name: Sign installers
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: Slipstream
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: installers
+          github-artifact-id: ${{ steps.upload-installers.outputs.artifact-id }}
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: signed/installers
+
+      # signing changed the installer bytes: refresh latest.yml + blockmap for auto-update
+      - name: Use signed installers
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        shell: bash
+        run: |
+          cp -f signed/installers/*.exe dist/
+          node scripts/rehash.js dist
 
       - name: Publish release
         uses: softprops/action-gh-release@v2

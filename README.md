@@ -83,6 +83,19 @@ anyone can read, build and improve it.
 - Your settings, profiles and learned track maps stay in a local file on your computer
   (`%APPDATA%\Slipstream`), and nowhere else.
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+Every release is built from this repository's source code by GitHub Actions and signed only after a manual approval.
+
+- **Committers and reviewers:** [Anton Holovko](https://github.com/antonholovko-cloud)
+- **Approvers:** [Anton Holovko](https://github.com/antonholovko-cloud)
+
+**Privacy:** this program will not transfer any information to other networked systems unless specifically
+requested by the user. The only connection it can make is the optional update check described in
+[Your privacy](#your-privacy).
+
 ## Getting started
 
 ### 1. Download and install

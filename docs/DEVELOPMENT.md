@@ -56,6 +56,27 @@ git tag v0.2.0; git push origin v0.2.0
 
 The **Release** workflow builds the installer and portable exe on GitHub Actions and publishes them as a GitHub Release.
 
+### Code signing
+
+Releases are signed through the [SignPath Foundation](https://signpath.org) open source program. Signing switches
+on once the repository variable `SIGNPATH_ORGANIZATION_ID` is set; until then releases are built unsigned.
+
+The workflow signs in two passes, and each pass waits up to an hour for an approver to approve it on SignPath:
+
+1. `electron-builder --dir` builds the app folder and SignPath signs `Slipstream.exe` (artifact configuration `app`).
+2. The installer and portable exe are built from the signed folder (`--prepackaged`) and signed too (`installers`).
+3. `scripts/rehash.js` rewrites the sha512/size in `latest.yml` and the `.blockmap`, because signing changed the
+   installer's bytes and auto-update would reject it otherwise.
+
+One-time setup:
+
+1. Apply at [signpath.org/apply](https://signpath.org/apply). Turn on MFA for both GitHub and SignPath.
+2. In SignPath, create project `Slipstream` with the GitHub.com trusted build system, a signing policy
+   `release-signing`, and artifact configurations `app` and `installers` from [`.signpath/`](../.signpath).
+3. In SignPath, create a CI user, add it as a submitter on `release-signing`, and copy its API token.
+4. In GitHub, **Settings → Secrets and variables → Actions**: add secret `SIGNPATH_API_TOKEN`, and variable
+   `SIGNPATH_ORGANIZATION_ID` (from SignPath's organization page).
+
 ## Dev flags
 
 `IRO_USERDATA=<dir>` isolates the config. `IRO_SCREENSHOT=<dir>` captures every window and quits.
