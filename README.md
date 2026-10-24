@@ -4,7 +4,7 @@
 
 <p align="center">
 Free, customizable overlays for iRacing.<br>
-Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learned track map and more.
+Standings, relative, dashboard & inputs, lap timing, fuel, delta, tyres, an auto-learned track map and more.
 </p>
 
 <p align="center">
@@ -44,6 +44,9 @@ Standings, relative, dashboard & inputs, lap timing, fuel, delta, an auto-learne
   <tr>
     <td align="center"><img src="docs/screenshots/delta.png" width="400" alt="Delta bar"><br><sub><b>Delta bar</b></sub></td>
     <td align="center"><img src="docs/screenshots/speed.png" width="400" alt="Speed"><br><sub><b>Speed</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/screenshots/tires.png" width="400" alt="Tyres"><br><sub><b>Tyres</b>: blue = cold, green = in the window, red = overheating</sub></td>
   </tr>
 </table>
 </div>
@@ -161,7 +164,8 @@ and show again when you drive.
 | **Speed** | Just speed and gear, in three layouts. **Side lights** (default): rev lights on both sides fill green to red with RPM and strobe when it's time to shift, with thin outer lanes that strobe amber on wheelspin and red on a lock-up. **Light strip**: the same rev lights as one bar underneath, and the speed turns amber or red while you slip. **Classic**: a rev indicator behind the gear and a round wheelspin / lock-up lamp |
 | **Lap Timing** | Live sector times (green = personal best, purple = class best), last/best/optimal lap, and a lap log with sectors, delta, fuel used, and off-track/pit markers |
 | **Fuel Calculator** | Average, last and max fuel per lap (green-flag laps only), laps left, fuel to finish with a safety margin, amount to add, stops needed |
-| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time, a **sector delta bar** (time gained or lost in the current sector alone), and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose. In races these are the class cars physically ahead and behind you on track, so after a spin they update at once instead of waiting for the next timing line |
+| **Delta Bar** | Live delta to your best, optimal, session best or last lap, predicted lap time (against the lap iRacing really compares you to, which after an off-track can be slower than your fastest lap), a **sector delta bar** (time gained or lost in the current sector alone), and gap bars to the cars directly ahead and behind that turn green while you gain and red while you lose. In races these are the class cars physically ahead and behind you on track, so after a spin they update at once instead of waiting for the next timing line, and the gap to a car stopped on track shrinks as you close in |
+| **Tyres** | Temperatures across each tyre (inside, middle, outside edge), colored blue below your optimal window, green in it and red above it, plus pressures and optional wear. You set the window and the units (°C / °F; psi, bar or kPa); the defaults suit GT3 tyres, and with a profile per car each car keeps its own window. **Off by default**; turn it on in settings |
 | **Track Map** | **Learned automatically** from your first clean lap, then saved for that track. Shows every car in class colors, cars in the pits and the start/finish line. **Off by default**; turn it on in settings |
 | **Session Info** | Session, time or laps left, lap, position, incidents vs limit, SOF, temperatures, track wetness, local and sim time. **Off by default**; turn it on in settings |
 | **Flags** | A big flag indicator: checkered, red, black, meatball, caution, debris, yellow, blue, white, one-to-green and green. **Off by default**; turn it on in settings |
@@ -295,6 +299,9 @@ Your settings and layouts are always kept.
 - The **wheelspin / lock-up light** is an estimate. iRacing doesn't share wheel speeds, so Slipstream learns how
   engine RPM relates to road speed in each gear, and lights up when the RPM jumps above it (wheelspin) or drops
   below it (lock-up), or when ABS is working. Front lock-ups on rear-drive cars without ABS can't be detected.
+- **Tyre temperatures:** iRacing may only send new tyre temperatures while you're in the pit stall. The Tyres
+  header says **LIVE** once they change while you drive; otherwise it says which lap the pit reading is from.
+  Pressures marked *cold* are the cold (garage) pressures.
 - The **iRating change** in Standings is an estimate based on the community-derived iRacing formula.
 - **Country flags** come from the flag each driver picked in iRacing (their "flair"). Drivers who kept the
   iRacing logo get no flag. Flag images: [flag-icons](https://github.com/lipis/flag-icons) (MIT).
