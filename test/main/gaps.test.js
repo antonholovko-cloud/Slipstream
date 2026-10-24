@@ -11,9 +11,17 @@ function run(g, cars, { from = 0, to = 60, dt = 0.05 } = {}) {
 
 test('progress: null when not in world', () => {
   const g = new GapTracker();
-  assert.equal(g.progress(1, -1, 0.5), null);
   assert.equal(g.progress(1, 2, -1), null);
   assert.equal(g.progress(1, 2, NaN), null);
+  assert.equal(g.progress(1, -2, 0.5), null);
+});
+
+test('progress: before the first crossing of the start line (lap completed -1) it is just below 0', () => {
+  const g = new GapTracker();
+  assert.ok(Math.abs(g.progress(1, -1, 0.97) - -0.03) < 1e-9);
+  g.update(0, [{ idx: 1, p: -0.01 }]);
+  // crossed the line, lap count not yet updated
+  assert.ok(Math.abs(g.progress(1, -1, 0.01) - 0.01) < 1e-9);
 });
 
 test('progress: laps + fraction, fixes S/F line disagreements', () => {
@@ -145,4 +153,28 @@ test('paceGap: one slow lap over that stretch (out-lap, traffic) does not skew t
   }
   // 0.1 lap ahead at normal pace = 6 s, even though one recorded pass took much longer
   assert.ok(Math.abs(g.paceGap(1, 2) - 6) < 0.1, String(g.paceGap(1, 2)));
+});
+
+test('gap: close cars in the same timing stretch read their real gap before a lap of history', () => {
+  const g = new GapTracker();
+  // 20 km track, 560 s laps: one timing point covers ~100 m, #2 runs 1 s behind #1 (~37 m)
+  const speed = 1 / 560;
+  run(g, [{ idx: 1, start: 0.1 + speed, speed }, { idx: 2, start: 0.1, speed }], { to: 20 });
+  assert.ok(Math.abs(g.gap(1, 2) - 1) < 0.05, String(g.gap(1, 2)));
+});
+
+test('reachGap: time to get to a car stopped ahead, at our own pace; grows when we stop', () => {
+  const g = new GapTracker();
+  const speed = 1 / 60;
+  // #1 runs 6 s ahead of #2, stops dead at t = 5; #2 keeps going until t = 10
+  run(g, [{ idx: 1, start: 0.5, speed }, { idx: 2, start: 0.4, speed }], { to: 5 });
+  const p1 = 0.5 + speed * 5;
+  for (let t = 5.05; t <= 10 + 1e-9; t += 0.05) g.update(t, [{ idx: 1, p: p1 }, { idx: 2, p: 0.4 + speed * t }]);
+  const dist = p1 - (0.4 + speed * 10);
+  assert.ok(g.gap(1, 2) > 5, 'time since it was here keeps growing');
+  assert.ok(Math.abs(g.reachGap(1, 2) - dist / speed) < 0.1, `${g.reachGap(1, 2)} vs ${dist / speed}`);
+  const p2 = 0.4 + speed * 10;
+  for (let t = 10.05; t <= 20 + 1e-9; t += 0.05) g.update(t, [{ idx: 1, p: p1 }, { idx: 2, p: p2 }]);
+  assert.ok(g.reachGap(1, 2) > dist / speed * 2, 'stopped ourselves: a long way off');
+  assert.equal(g.reachGap(2, 1), null, 'not ahead');
 });

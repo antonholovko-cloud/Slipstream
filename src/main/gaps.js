@@ -23,10 +23,11 @@ class GapTracker {
   /*
    * Race progress for one car, fixing the frame or two where LapCompleted and
    * LapDistPct disagree around the start/finish line. Returns null when the car
-   * is not in the world.
+   * is not in the world. LapCompleted is -1 until a car first crosses the line in
+   * the race (gridded behind it, or still on the pace lap): progress just below 0.
    */
   progress(idx, lapCompleted, pct) {
-    if (!(pct >= 0) || lapCompleted < 0) return null;
+    if (!(pct >= 0) || !(lapCompleted >= -1)) return null;
     let p = lapCompleted + pct;
     const prev = this.cars.get(idx);
     if (prev) {
@@ -67,11 +68,17 @@ class GapTracker {
   gap(front, back) {
     const f = this.cars.get(front), b = this.cars.get(back);
     if (!f || !b || f.p < b.p) return null;
-    if (f.p - b.p < 1 / BINS) return Math.max(0, (f.p - b.p) * (this.lapTime(f) || 0));
     const x = b.p * BINS, i = Math.floor(x);
-    const t0 = f.cross.get(i), t1 = f.cross.get(i + 1);
-    if (t0 === undefined) return null;
-    const t = t1 === undefined ? t0 : t0 + (t1 - t0) * (x - i);
+    const t0 = f.cross.get(i);
+    if (t0 === undefined) {
+      // no timing point yet (just joined, after a tow): close cars at the front car's lap time
+      const lt = this.lapTime(f);
+      return f.p - b.p < 1 / BINS && lt ? (f.p - b.p) * lt : null;
+    }
+    // between two timing points, or between the last one and where the front car is now
+    // (both cars in the same stretch: a timing point covers ~100 m on a 20 km track)
+    const t1 = i < f.bin ? f.cross.get(i + 1) : f.t, x1 = i < f.bin ? i + 1 : f.p * BINS;
+    const t = t1 === undefined || x1 <= i ? t0 : t0 + (t1 - t0) * Math.min(1, (x - i) / (x1 - i));
     return Math.max(0, this.lastTime - t);
   }
 
@@ -102,6 +109,17 @@ class GapTracker {
       if (t0 !== undefined && t1 !== undefined && t1 > t0 && (best === null || t1 - t0 < best)) best = t1 - t0;
     }
     return best;
+  }
+
+  // Seconds `back` needs to reach where `front` is now, at back's current pace (its last ten
+  // timing points). Unlike gap() it stays right when the car in front stops (crash, spin), and
+  // it grows when back itself stops. Null when unknown.
+  reachGap(front, back) {
+    const f = this.cars.get(front), b = this.cars.get(back);
+    if (!f || !b || f.p < b.p) return null;
+    const k = b.bin - 10, t0 = b.cross.get(k);
+    if (t0 === undefined || !(b.t > t0)) return null;
+    return (f.p - b.p) * BINS * ((b.t - t0) / (b.p * BINS - k));
   }
 
   // The car's last full-lap time from its own timing points (for sub-bin gaps).

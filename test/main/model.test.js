@@ -199,6 +199,61 @@ test('live running order: the car physically ahead / behind, even while iRacing 
   assert.ok(byIdx(st, 3).liveInterval > 0 && byIdx(st, 3).liveInterval < 2);
 });
 
+test('live running order at the start: cars that have not crossed the line yet (lap completed -1) still count', () => {
+  // just after the green: #2 and #3 crossed the line, #1 (me) and #4 are still behind it
+  const drivers = [driver(1, GT3), driver(2, GT3), driver(3, GT3), driver(4, GT3)];
+  const m = new RaceModel();
+  const cars = (t) => ({
+    2: { lap: 0, pct: 0.02 + t * 0.01, pos: 1, cpos: 1 },
+    3: { lap: 0, pct: 0.005 + t * 0.01, pos: 2, cpos: 2 },
+    1: { lap: -1, pct: 0.99 + t * 0.001, pos: 3, cpos: 3 },
+    4: { lap: -1, pct: 0.98 + t * 0.001, pos: 4, cpos: 4 },
+  });
+  m.update(frame(sessionInfo({ drivers }), vars(cars(0), { SessionTime: 100 })), G());
+  const st = m.update(frame(sessionInfo({ drivers }), vars(cars(1), { SessionTime: 100.1 })), G());
+  const me = byIdx(st, 1);
+  assert.equal(me.liveAhead, 3);
+  assert.equal(byIdx(st, 4).liveAhead, 1, 'the car behind me, also before the line');
+  assert.ok(me.liveInterval > 0 && me.liveInterval < 5, String(me.liveInterval));
+});
+
+test('gap history from the formation lap is dropped at the green flag', () => {
+  const drivers = [driver(1, GT3), driver(2, GT3)];
+  const m = new RaceModel();
+  const info = sessionInfo({ drivers });
+  // pace lap at a crawl: #2 was at 0.50 ten seconds before #1 got there
+  let t = 0;
+  for (; t <= 30; t += 0.1) {
+    m.update(frame(info, vars({ 2: { lap: -1, pct: 0.45 + t * 0.005 }, 1: { lap: -1, pct: 0.40 + t * 0.005 } }, { SessionTime: t, SessionState: 3 })), G());
+  }
+  assert.ok(m.gaps.cars.get(2).cross.size > 0);
+  const st = m.update(frame(info, vars({ 2: { lap: -1, pct: 0.60 }, 1: { lap: -1, pct: 0.55 } }, { SessionTime: t, SessionState: 4 })), G());
+  assert.equal(m.gaps.cars.get(2).cross.size, 0, 'pace lap timing points are gone');
+  assert.equal(byIdx(st, 1).liveAhead, 2);
+});
+
+test('live running order: a car crashed ahead reads the time to get there; cars in their pit stall are left out', () => {
+  const drivers = [driver(1, GT3), driver(2, GT3), driver(3, GT3), driver(4, GT3)];
+  const m = new RaceModel();
+  const info = sessionInfo({ drivers });
+  const speed = 1 / 100; // 100 s laps
+  let st;
+  for (let t = 0; t <= 40 + 1e-9; t += 0.05) {
+    st = m.update(frame(info, vars({
+      2: { lap: 3, pct: 0.35 + speed * Math.min(t, 20), surf: t < 20 ? 3 : 0 }, // crashes at 0.55, t = 20
+      1: { lap: 3, pct: 0.1 + speed * t }, // me: 0.50 at t = 40
+      4: { lap: 3, pct: 0.45, surf: 1, pit: true }, // parked in its pit stall
+      3: { lap: 3, pct: 0.0 + speed * t },
+    }, { SessionTime: 100 + t })), G());
+  }
+  const me = byIdx(st, 1);
+  assert.equal(me.liveAhead, 2);
+  // it was here 25 s ago, but at my pace I'm 5 s from it
+  assert.ok(Math.abs(me.liveInterval - 5) < 0.2, String(me.liveInterval));
+  assert.equal(byIdx(st, 3).liveAhead, 1, 'the car in its pit stall is not in between');
+  assert.equal(byIdx(st, 4).liveAhead, null);
+});
+
 // ---------- relative ----------
 test('relative: sorted ahead -> behind, excludes player and cars not in world, lap differences', () => {
   const drivers = [driver(1, GT3), driver(2, GT3), driver(3, GT3), driver(4, GT3), driver(5, GT3)];
@@ -413,11 +468,33 @@ test('fuel: per-lap usage from clean green-flag laps only', () => {
   at(5, 35); // lap 4: valid, 3 L
   let st = at(6, 32, { SessionFlags: 0x4000 }); // caution out as lap 5 ends -> not counted
   assert.deepEqual(st.fuel.laps, [3, 2.5, 3]);
-  // refuelling raises the lap's starting fuel
+  // refuelled mid-lap: only part of the lap is measured, the next full one counts
   at(6, 80);
-  st = at(7, 77);
+  at(7, 77);
+  st = at(8, 74);
   assert.deepEqual(st.fuel.laps, [3, 2.5, 3, 3]);
   assert.equal(st.fuel.max, 100);
+});
+
+test('fuel: a practice reset (car moved back, tank refilled) does not count as a lap', () => {
+  const drivers = [driver(1, GT3)];
+  const info = sessionInfo({ drivers });
+  const m = new RaceModel();
+  const at = (lap, pct, fuel) => m.update(frame(info, vars({ 1: { lap, pct } }, { LapCompleted: lap, LapDistPct: pct, FuelLevel: fuel })), G());
+  at(0, 0.9, 50);
+  at(1, 0.01, 49); // full laps from here
+  at(1, 0.6, 43);
+  at(1, 0.5, 55); // reset back to 50 %, fuel refilled
+  at(2, 0.01, 50); // half a lap: 5 L, not a fuel lap
+  at(2, 0.5, 44);
+  at(2, 0.3, 43.9); // reset back, same fuel (no refill)
+  at(3, 0.01, 37); // not counted either
+  let st = at(4, 0.01, 25);
+  assert.deepEqual(st.fuel.laps, [12]);
+  // the lap count jumping (rejoin) starts mid-lap too
+  at(6, 0.5, 20);
+  st = at(7, 0.01, 15);
+  assert.deepEqual(st.fuel.laps, [12]);
 });
 
 test('laps to go: from laps remaining, or from time remaining and the reference lap', () => {
@@ -446,6 +523,36 @@ test('without iRacing deltas, "vs last" comes from our own lap traces and last l
   assert.ok(Math.abs(st.player.deltas.sessionLast[0]) < 0.1);
   assert.ok(Math.abs(st.player.lastLap - 30) < 1e-6);
   assert.ok(st.timing.log.length >= 1);
+});
+
+test('"vs last" prefers our own trace of the previous lap over the iRacing one, which can follow another lap', () => {
+  const drivers = [driver(1, GT3)];
+  const info = sessionInfo({ drivers });
+  const m = new RaceModel();
+  const ir = { LapDeltaToSessionLastlLap: 5, LapDeltaToSessionLastlLap_DD: 0, LapDeltaToSessionLastlLap_OK: true };
+  const at = (t) => { const d = 0.95 + t / 30; return m.update(frame(info, vars({ 1: { pct: d % 1, lap: Math.floor(d) } }, { SessionTime: t, LapCompleted: Math.floor(d), LapDistPct: d % 1, ...ir })), G()); };
+  let st;
+  for (let t = 0; t <= 10; t += 0.05) st = at(t);
+  assert.equal(st.player.deltas.sessionLast[0], 5); // no lap of our own yet: iRacing's
+  for (let t = 10.05; t <= 1.5 + 30 * 2; t += 0.05) st = at(t);
+  assert.equal(st.player.deltas.sessionLast[2], true);
+  assert.ok(Math.abs(st.player.deltas.sessionLast[0]) < 0.1, `${st.player.deltas.sessionLast[0]}`);
+});
+
+test('delta reference: read back at the line, so an off-track best lap is not taken as the reference', () => {
+  const drivers = [driver(1, GT3)];
+  const info = sessionInfo({ drivers });
+  const m = new RaceModel();
+  const at = (t, lap, pct, x) => m.update(frame(info, vars({ 1: { lap, pct } }, { SessionTime: t, LapCompleted: lap, LapDistPct: pct, LapDeltaToBestLap_OK: true, ...x })), G());
+  // before any line: iRacing's best lap
+  let st = at(0, 3, 0.9, { LapDeltaToBestLap: -1.2, LapBestLapTime: 413.1, LapLastLapTime: 413.1 });
+  assert.equal(st.player.deltaRefs.best, 413.1);
+  // a 403.9 lap with an off-track: iRacing calls it best but keeps measuring against 413.1
+  at(1, 3, 0.999, { LapDeltaToBestLap: -9.2, LapBestLapTime: 413.1, LapLastLapTime: 413.1 });
+  at(2, 4, 0.001, { LapDeltaToBestLap: 0, LapBestLapTime: 413.1, LapLastLapTime: 413.1 });
+  st = at(3, 4, 0.003, { LapDeltaToBestLap: 0.1, LapBestLapTime: 403.9, LapLastLapTime: 403.9 });
+  assert.ok(Math.abs(st.player.deltaRefs.best - 413.1) < 1e-9, `${st.player.deltaRefs.best}`);
+  assert.equal(st.player.deltaRefs.sessionLast, 403.9);
 });
 
 test('iRacing deltas are used as-is when valid', () => {
@@ -487,7 +594,7 @@ test('known track maps are used directly (demo track)', () => {
 // ---------- demo integration ----------
 test('demo race: full state shape', () => {
   const { state } = demoRace();
-  for (const k of ['connected', 'session', 'player', 'cars', 'classes', 'relative', 'radar', 'fuel', 'trackMap', 'timing']) assert.ok(k in state, k);
+  for (const k of ['connected', 'session', 'player', 'cars', 'classes', 'relative', 'radar', 'fuel', 'trackMap', 'timing', 'tires']) assert.ok(k in state, k);
   assert.equal(state.cars.length, 22);
   assert.equal(state.cars.filter((c) => c.isPlayer).length, 1);
   assert.equal(state.player.classCount, 14);
@@ -557,4 +664,47 @@ test('session.car is in the state (demo race)', () => {
   const { state } = demoRace({ seconds: 30 });
   assert.ok(state.session.car.id);
   assert.ok(state.session.car.name);
+});
+
+// ---------- tyres ----------
+test('tyres: carcass temps per edge, cold pressure, wear; surface temps and hot pressure win when sent', () => {
+  const drivers = [driver(1, GT3)];
+  const info = sessionInfo({ drivers });
+  const tv = (over = {}) => {
+    const o = {};
+    for (const w of ['LF', 'RF', 'LR', 'RR']) Object.assign(o, { [w + 'tempCL']: 70, [w + 'tempCM']: 75, [w + 'tempCR']: 80, [w + 'coldPressure']: 165, [w + 'wearL']: 0.98, [w + 'wearM']: 0.99, [w + 'wearR']: 0.97 });
+    return Object.assign(o, over);
+  };
+  let st = new RaceModel().update(frame(info, vars({ 1: {} })), G());
+  assert.equal(st.tires.available, false, 'no tyre vars: nothing to show');
+  st = new RaceModel().update(frame(info, vars({ 1: {} }, tv())), G());
+  assert.equal(st.tires.available, true);
+  assert.deepEqual(st.tires.wheels.lf, { temp: [70, 75, 80], pressure: 165, hot: false, wear: [0.98, 0.99, 0.97] });
+  st = new RaceModel().update(frame(info, vars({ 1: {} }, tv({ RFtempL: 90, RFtempM: 91, RFtempR: 92, RFpressure: 186 }))), G());
+  assert.deepEqual(st.tires.wheels.rf.temp, [90, 91, 92]);
+  assert.equal(st.tires.wheels.rf.pressure, 186);
+  assert.equal(st.tires.wheels.rf.hot, true);
+});
+
+test('tyres: pit-stall readings are not live; a change while driving is', () => {
+  const drivers = [driver(1, GT3)];
+  const info = sessionInfo({ drivers });
+  const m = new RaceModel();
+  const at = (lap, temp, x = {}) => {
+    const o = { LapCompleted: lap };
+    for (const w of ['LF', 'RF', 'LR', 'RR']) Object.assign(o, { [w + 'tempCL']: temp, [w + 'tempCM']: temp, [w + 'tempCR']: temp });
+    return m.update(frame(info, vars({ 1: { lap } }, { ...o, ...x })), G());
+  };
+  let st = at(0, 40);
+  assert.equal(st.tires.live, false);
+  st = at(3, 88, { PlayerCarInPitStall: true, OnPitRoad: true }); // measured in the pits after lap 3
+  assert.equal(st.tires.live, false);
+  assert.equal(st.tires.lap, 3);
+  st = at(4, 88, { Speed: 60 });
+  assert.equal(st.tires.live, false, 'unchanged on track');
+  st = at(4, 72, { Speed: 0.06 }); // reset to the pits: stopped, off pit road, new reading
+  assert.equal(st.tires.live, false, 'a reading at a standstill is not live');
+  assert.equal(st.tires.lap, 4);
+  st = at(5, 89, { Speed: 60 });
+  assert.equal(st.tires.live, true, 'changed while driving: live data');
 });

@@ -59,6 +59,7 @@ class RaceModel {
     this.drivers = new Map();
     this.info = null;
     this.sessionNum = -1;
+    this.sessionState = -1;
     this.perCar = new Map(); // idx -> {pitStops, wasPit, startPos, lastPitLap}
     this.fuelLaps = []; // fuel used per lap
     this.fuelLapStart = null;
@@ -153,9 +154,15 @@ class RaceModel {
       this.perCar.clear();
       this.fuelLaps = [];
       this.fuelLapStart = null;
+      this.deltaRef = null;
+      this.tires = null;
       this.timing.reset();
       this.gaps.reset();
     }
+    // Green flag: timing points from the pace laps (a crawl, and iRacing may renumber laps at
+    // the start) would skew the race gaps until every car has done a racing lap.
+    if (v.SessionState >= 4 && this.sessionState >= 0 && this.sessionState < 4) this.gaps.reset();
+    this.sessionState = v.SessionState ?? -1;
     const sdef = this.sessionDef(v.SessionNum);
     const kind = sessionKind(sdef.SessionType);
     const isRace = kind === 'race';
@@ -289,15 +296,21 @@ class RaceModel {
       if (isRace) {
         // Live running order by distance. iRacing's class positions only move at timing lines,
         // so after a spin or crash the cars that passed (or that we passed) stay in the wrong
-        // order until the line. The Delta bar's ahead / behind uses this instead.
-        const live = k.cars.filter((c) => c.inWorld && c.dist >= 0).sort((a, b) => b.dist - a.dist);
+        // order until the line. The Delta bar's ahead / behind uses this instead. Cars that haven't
+        // crossed the line since the start sit just below 0.
+        // Cars parked in their pit stall (serving a stop, towed after a crash) are out of it.
+        const live = k.cars.filter((c) => c.inWorld && !c.inPitStall && c.dist >= -1).sort((a, b) => b.dist - a.dist);
         live.forEach((c, n) => {
           const front = live[n - 1];
           c.liveAhead = front ? front.idx : null;
           if (!front) { c.liveInterval = null; return; }
-          // own timing loops; without history yet (session join, tow), distance at the class pace
+          // own timing loops; without history yet (session join, tow), distance at the class pace.
+          // A car stopped ahead (crash) would read "time since it was here", growing while we close
+          // in: never more than the time we need to get there.
           let g = this.gaps.gap(front.idx, c.idx);
           if (g === null || g > estLap * 3) g = (front.dist - c.dist) * estLap;
+          const reach = this.gaps.reachGap(front.idx, c.idx);
+          if (reach !== null && reach < g) g = reach;
           c.liveInterval = g;
         });
       }
@@ -369,14 +382,21 @@ class RaceModel {
     const lapCompleted = v.LapCompleted ?? -1;
     if (this.fuelLapStart === null && v.IsOnTrack) this.fuelLapStart = { lap: lapCompleted, fuel: fuelLevel, pit: false, partial: true };
     if (this.fuelLapStart) {
-      if (v.OnPitRoad) this.fuelLapStart.pit = true;
-      if (lapCompleted !== this.fuelLapStart.lap) {
-        const used = this.fuelLapStart.fuel - fuelLevel;
-        const valid = lapCompleted === this.fuelLapStart.lap + 1 && !this.fuelLapStart.partial && !this.fuelLapStart.pit && used > 0 && !(v.SessionFlags & 0x4000);
+      const fs = this.fuelLapStart, pct = v.LapDistPct;
+      if (v.OnPitRoad) fs.pit = true;
+      // reset to an earlier spot (practice reset, tow): the car moved back without a lap change
+      if (lapCompleted === fs.lap && pct >= 0 && fs.pct >= 0 && pct < fs.pct - 0.01) fs.partial = true;
+      if (lapCompleted !== fs.lap) {
+        const used = fs.fuel - fuelLevel;
+        const step = lapCompleted === fs.lap + 1;
+        const valid = step && !fs.partial && !fs.pit && used > 0 && !(v.SessionFlags & 0x4000);
         if (valid) { this.fuelLaps.push(used); if (this.fuelLaps.length > 50) this.fuelLaps.shift(); }
-        this.fuelLapStart = { lap: lapCompleted, fuel: fuelLevel, pit: !!v.OnPitRoad };
+        // a lap count that jumped (reset, rejoin) starts mid-lap
+        this.fuelLapStart = { lap: lapCompleted, fuel: fuelLevel, pit: !!v.OnPitRoad, partial: !step };
       }
-      if (fuelLevel > this.fuelLapStart.fuel + 0.5) this.fuelLapStart.fuel = fuelLevel; // refuelled
+      // refuelled (pit stop, or a practice reset that refills the tank): only part of this lap is measured
+      if (fuelLevel > this.fuelLapStart.fuel + 0.5) { this.fuelLapStart.fuel = fuelLevel; this.fuelLapStart.partial = true; }
+      if (pct >= 0) this.fuelLapStart.pct = pct;
     }
     const sessionLaps = num(sdef.SessionLaps, 0);
     let lapsRemain = v.SessionLapsRemainEx;
@@ -403,6 +423,7 @@ class RaceModel {
     // before Slipstream started and laps we flagged as off-track that iRacing still counts
     if (v.LapBestLapTime > 0) timing.bestLap = v.LapBestLapTime;
     const slip = this.slip.update(v);
+    const tires = this.tireState(v, lapCompleted);
 
     // ---- Track map learning ----
     this.learnTrack(v, me);
@@ -454,11 +475,16 @@ class RaceModel {
       slip,
     };
 
-    // Fill in "vs best" / "vs last" from our own lap traces when iRacing has no valid delta
+    // Fill in "vs best" from our own lap traces when iRacing has no valid delta
     // (e.g. no best lap recorded by iRacing yet, or after an off-track).
+    // "vs last" is ours first: iRacing's LapDeltaToSessionLastlLap skips laps it doesn't keep as a
+    // reference (seen after an off-track lap: it followed the best lap, 6 s from the real last lap).
     const own = (which) => this.timing.delta(which, v.SessionTime, playerIdx);
+    const irBest = player.deltas.best;
     if (!player.deltas.best[2]) player.deltas.best = own('best');
-    if (!player.deltas.sessionLast[2]) player.deltas.sessionLast = own('last');
+    const ownLast = own('last');
+    if (ownLast[2] || !player.deltas.sessionLast[2]) player.deltas.sessionLast = ownLast;
+    player.deltaRefs = { best: this.bestRef(v, lapCompleted, player.deltas.best !== irBest), sessionLast: player.lastLap > 0 ? player.lastLap : 0 };
 
     // Sector delta: time gained or lost in the current sector alone, for every reference
     // (delta now minus the delta when this sector started)
@@ -482,7 +508,7 @@ class RaceModel {
     if (!(player.bestLap > 0) && timing.bestLap) player.bestLap = timing.bestLap;
     if (!(player.lastLap > 0) && timing.log.length) player.lastLap = timing.log[timing.log.length - 1].time;
 
-    return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap, timing };
+    return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap, timing, tires };
   }
 
   // League class splits (settings.classSplits): move cars into custom sub-classes.
@@ -499,6 +525,63 @@ class RaceModel {
       Object.assign(d, { classId: sp.id, className: sp.name, classColor: sp.color, classOrder: sp.order });
     }
     for (const d of drivers) if (affected.has(d.base.classId)) d.renumber = true;
+  }
+
+  /*
+   * Tyres: temperatures inside / middle / outside edge per wheel (surface when iRacing sends it,
+   * else carcass), pressure (hot if sent, else the cold garage pressure) and wear. iRacing may only
+   * refresh tyre temps in the pit stall: `live` turns true once they change while driving, and
+   * `lap` says when they were last read.
+   */
+  tireState(v, lapCompleted) {
+    const t = this.tires || (this.tires = { key: null, lap: null, live: false });
+    const wheels = {};
+    let any = false;
+    for (const w of ['LF', 'RF', 'LR', 'RR']) {
+      const surf = [v[w + 'tempL'], v[w + 'tempM'], v[w + 'tempR']];
+      const carcass = [v[w + 'tempCL'], v[w + 'tempCM'], v[w + 'tempCR']];
+      const temp = surf.every((x) => x > 0) ? surf : carcass.every((x) => x > 0) ? carcass : null;
+      const hot = v[w + 'pressure'] > 0 ? v[w + 'pressure'] : null;
+      const cold = v[w + 'coldPressure'] > 0 ? v[w + 'coldPressure'] : null;
+      const wear = [v[w + 'wearL'], v[w + 'wearM'], v[w + 'wearR']];
+      if (temp) any = true;
+      wheels[w.toLowerCase()] = { temp, pressure: hot ?? cold, hot: hot !== null, wear: wear.every((x) => x >= 0 && x <= 1) ? wear : null };
+    }
+    if (!any) return { available: false, wheels, live: false, lap: null };
+    const key = ['lf', 'rf', 'lr', 'rr'].map((w) => (wheels[w].temp || []).map((x) => x.toFixed(1)).join()).join('|');
+    if (key !== t.key) {
+      // a change while driving means live data. Not the first reading, not in the pits, and not
+      // standing still: a reset or tow also brings a new reading (seen at the Nordschleife).
+      if (t.key !== null && v.IsOnTrack && !v.PlayerCarInPitStall && !v.OnPitRoad && v.Speed > 5) t.live = true;
+      t.key = key;
+      t.lap = lapCompleted;
+    }
+    return { available: true, wheels, live: t.live, lap: t.lap };
+  }
+
+  /*
+   * The lap time behind "vs best", for the predicted lap (reference + delta). iRacing compares
+   * against its best lap without an off-track, which can be slower than LapBestLapTime (seen at
+   * the Nordschleife: best 6:43.9 with an off, deltas still against a clean 6:53.1). At each line
+   * we read it back: the lap just completed minus its delta right before the line. Then the new lap
+   * is the reference if it was faster and clean (our own off-track flag), else the old one stays.
+   */
+  bestRef(v, lapCompleted, ownDelta) {
+    if (ownDelta) return this.timing.bestTrace ? this.timing.bestTrace.time : 0;
+    const r = this.deltaRef || (this.deltaRef = { time: 0, lap: lapCompleted, prev: null, pending: null });
+    const best = v.LapBestLapTime > 0 ? v.LapBestLapTime : 0;
+    if (lapCompleted === r.lap + 1 && r.prev && r.prev.pct > 0.95) r.pending = { d: r.prev.d, last: v.LapLastLapTime };
+    r.lap = lapCompleted;
+    // iRacing posts the lap time a second or so after the line
+    if (r.pending && v.LapLastLapTime > 0 && v.LapLastLapTime !== r.pending.last) {
+      const last = v.LapLastLapTime, old = last - r.pending.d;
+      const entry = this.timing.log[this.timing.log.length - 1];
+      const clean = entry && Math.abs(entry.time - last) < 0.3 && !entry.off && !entry.pit;
+      r.time = clean && last < old ? last : old;
+      r.pending = null;
+    }
+    r.prev = v.LapDeltaToBestLap_OK && Number.isFinite(v.LapDeltaToBestLap) ? { d: v.LapDeltaToBestLap, pct: v.LapDistPct } : null;
+    return r.time > 0 ? r.time : best;
   }
 
   // Everyone in the session with their iRacing class and the sub-class they are split into (settings preview).

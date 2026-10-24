@@ -8,7 +8,7 @@ const { OVERLAYS, COMMON_SCHEMA, THEMES, FONTS, defaultSettingsFor, byId } = Reg
 const FIELD_TYPES = new Set(['bool', 'number', 'range', 'select', 'color', 'text', 'columns']);
 const WIDGETS = path.join(__dirname, '..', '..', 'src', 'renderer', 'widgets');
 // state slices RaceModel.update() returns (plus what main.js adds)
-const STATE_KEYS = new Set(['connected', 'session', 'player', 'cars', 'classes', 'relative', 'radar', 'fuel', 'trackMap', 'timing']);
+const STATE_KEYS = new Set(['connected', 'session', 'player', 'cars', 'classes', 'relative', 'radar', 'fuel', 'trackMap', 'timing', 'tires']);
 
 test('every overlay has an id, name, icon, description, bounds, needs and schema', () => {
   assert.ok(OVERLAYS.length > 0);
@@ -109,8 +109,8 @@ test('overlay-level defaults are within their schema limits', () => {
   }
 });
 
-test('flags, track map, session info and standings are off by default, everything else on', () => {
-  const OFF = ['flags', 'trackmap', 'session', 'standings'];
+test('flags, track map, session info, standings and tyres are off by default, everything else on', () => {
+  const OFF = ['flags', 'trackmap', 'session', 'standings', 'tires'];
   for (const id of OFF) assert.equal(defaultSettingsFor(byId(id)).enabled, false, id);
   for (const o of OVERLAYS) if (!OFF.includes(o.id)) assert.equal(defaultSettingsFor(o).enabled, true, o.id);
 });

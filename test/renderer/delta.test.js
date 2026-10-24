@@ -22,7 +22,7 @@ function placeP2(st) {
 function withDelta(best, p = {}) {
   const st = structuredClone(race.state);
   st.player.deltas.best = best;
-  Object.assign(st.player, { lapTime: 30.21, bestLap: 70.9, lastLap: 71.5 }, p);
+  Object.assign(st.player, { lapTime: 30.21, bestLap: 70.9, lastLap: 71.5, deltaRefs: { best: 70.9, sessionLast: 71.5 } }, p);
   return st;
 }
 const fill = (ov) => ov.$('.bar i').style;
@@ -73,6 +73,16 @@ test('no valid delta: dash, reference label, empty bar', async () => {
   assert.equal(ov.$('.val').style.color, rgb(T.dim));
   assert.equal(parseFloat(fill(ov).width), 0);
   assert.equal(ov.$('.r').textContent, 'vs best');
+  ov.close();
+});
+
+test('predicted lap adds the delta to the lap it is measured against, not always the best lap', async () => {
+  const ov = await loadOverlay('delta', { settings: { reference: 'best', showLapTimes: true } });
+  // iRacing's best (70.9) had an off-track: its delta is against a clean 72.0
+  ov.render(withDelta([-0.5, 0, true], { deltaRefs: { best: 72.0, sessionLast: 71.5 } }));
+  assert.equal(ov.$('.r').textContent, '≈ 1:11.50');
+  ov.render(withDelta([-0.5, 0, true], { deltaRefs: undefined }));
+  assert.equal(ov.$('.r').textContent, '≈ 1:10.40', 'falls back to the best lap');
   ov.close();
 });
 

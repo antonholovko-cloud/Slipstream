@@ -157,6 +157,24 @@ class MockSource {
     return this.track.timeAt[i] + (this.track.timeAt[i + 1] - this.track.timeAt[i]) * f;
   }
 
+  // Tyres warming up from cold over the first laps; the right front works hardest, camber
+  // heats the inside edges. Cold pressures as set in a GT3 garage (kPa).
+  tireVars() {
+    const warm = Math.min(1, this.sessionTime / 150), wob = Math.sin(this.sessionTime / 9);
+    const out = {};
+    const wheels = { LF: [4, 0], RF: [12, 0.8], LR: [-3, -0.4], RR: [3, 0.2] };
+    for (const [w, [hot, wear]] of Object.entries(wheels)) {
+      const base = 48 + warm * (82 + hot - 48) + wob * 1.5;
+      const inner = base + 6, mid = base + 2, outer = base - 3;
+      const left = w[0] === 'L';
+      [out[w + 'tempCL'], out[w + 'tempCM'], out[w + 'tempCR']] = left ? [outer, mid, inner] : [inner, mid, outer];
+      out[w + 'coldPressure'] = w[1] === 'F' ? 165 : 160;
+      const worn = 1 - (this.sessionTime / 3600) * (0.04 + wear * 0.02);
+      [out[w + 'wearL'], out[w + 'wearM'], out[w + 'wearR']] = [worn - 0.004, worn, worn - 0.006];
+    }
+    return out;
+  }
+
   // Simulate `seconds` of racing instantly (used to preview a race in progress).
   fastForward(seconds, onFrame) {
     for (let t = 0; t < seconds; t += 1 / 20) {
@@ -325,6 +343,8 @@ class MockSource {
     });
 
     // Scripted demo (scripts/gifs.js): a timeline may overwrite the player's inputs.
+    Object.assign(vars, this.tireVars());
+
     if (this.script) this.script(vars, this);
 
     return {

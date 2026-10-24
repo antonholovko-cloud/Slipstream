@@ -79,13 +79,13 @@ class TimingTracker {
       const isPlayer = i === playerIdx;
       let st = this.cars.get(i);
       if (!st) {
-        st = { pct, t, sector: this.sectorOf(pct), secStart: null, lapStart: null, times: [], dirty: false, off: false, pit: false, fuelStart: null };
+        st = { pct, t, sector: this.sectorOf(pct), secStart: null, lapStart: null, times: [], dirty: false, off: false, secOff: false, pit: false, fuelStart: null };
         this.cars.set(i, st);
         continue;
       }
       if (v.CarIdxOnPitRoad && v.CarIdxOnPitRoad[i]) { st.pit = true; st.dirty = true; }
       const surf = isPlayer ? v.PlayerTrackSurface : v.CarIdxTrackSurface && v.CarIdxTrackSurface[i];
-      if (surf === 0) st.off = true;
+      if (surf === 0) { st.off = true; st.secOff = true; }
 
       let d = pct - st.pct;
       if (d < -0.5) d += 1;
@@ -115,7 +115,8 @@ class TimingTracker {
             if (!this.sessionBest.has(cls)) this.sessionBest.set(cls, []);
             const sbc = this.sessionBest.get(cls);
             if (!(sbc[prev] <= dur)) sbc[prev] = dur;
-            if (isPlayer && !st.off && !(this.personalBest[prev] <= dur)) this.personalBest[prev] = dur;
+            // an off-track spoils that sector's personal best, not the rest of the lap (the lap itself is off)
+            if (isPlayer && !st.secOff && !(this.personalBest[prev] <= dur)) this.personalBest[prev] = dur;
           }
         }
         if (k === 0) {
@@ -142,6 +143,7 @@ class TimingTracker {
           if (isPlayer) { st.fuelStart = v.FuelLevel ?? null; this.trace = new Float64Array(TRACE_BINS).fill(-1); }
         }
         st.secStart = tc;
+        st.secOff = false;
         st.sector = k;
         st.dirty = !!(v.CarIdxOnPitRoad && v.CarIdxOnPitRoad[i]);
       }
@@ -187,7 +189,9 @@ class TimingTracker {
     const n = this.starts.length;
     const st = this.cars.get(playerIdx);
     const pb = this.personalBest;
-    const optimal = pb.length === n && pb.every((x) => x > 0) ? pb.reduce((a, b) => a + b, 0) : null;
+    // every sector timed (a loop: every() skips the holes left by sectors not driven yet, e.g. after joining mid-lap)
+    let optimal = pb.length === n ? 0 : null;
+    for (let k = 0; k < n && optimal !== null; k++) optimal = pb[k] > 0 ? optimal + pb[k] : null;
     return {
       starts: this.starts,
       current: st ? {

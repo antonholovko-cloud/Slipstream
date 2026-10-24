@@ -197,3 +197,26 @@ test('state without a player car', () => {
   assert.equal(st.optimal, null);
   assert.deepEqual(st.log, []);
 });
+
+test('optimal lap needs a personal best in every sector, not just the ones driven since joining', () => {
+  const tr = new TimingTracker();
+  // join at 50 %: sectors 2 and 3 get times on the way to the line, sector 1 not yet
+  const st = drive(tr, [{ idx: 0, lap: 30, start: 0.5 }], { seconds: 16 });
+  assert.ok(st.personalBest[1] > 0 || st.personalBest[2] > 0);
+  assert.equal(st.optimal, null);
+  const full = drive(tr, [{ idx: 0, lap: 30, start: tr.cars.get(0).pct }], { seconds: 31, t0: 16 + DT });
+  assert.ok(Math.abs(full.optimal - 30) < 0.1, `optimal ${full.optimal}`); // plus the one paused frame between drives
+});
+
+test('an off-track spoils the personal best of that sector only, not the later sectors of the lap', () => {
+  const tr = new TimingTracker();
+  // a clean 33 s lap: 11 s sectors
+  drive(tr, [{ idx: 0, lap: 33, start: 0.95 }], { seconds: 0.05 * 33 + 33 });
+  assert.ok(tr.personalBest.every((x) => Math.abs(x - 11) < 0.1), `${tr.personalBest}`);
+  // then a 30 s lap, off in the middle sector: sectors 1 and 3 improve, sector 2 doesn't
+  const st = drive(tr, [{ idx: 0, lap: 30, start: tr.cars.get(0).pct, offAt: (t, d) => d % 1 > 0.4 && d % 1 < 0.45 }], { seconds: 30.5, t0: 34.7 });
+  const [s1, s2, s3] = st.personalBest;
+  assert.ok(Math.abs(s1 - 10) < 0.1 && Math.abs(s3 - 10) < 0.1, `${st.personalBest}`);
+  assert.ok(Math.abs(s2 - 11) < 0.1, `${st.personalBest}`);
+  assert.ok(st.log[st.log.length - 1].off, 'the lap itself is still off');
+});

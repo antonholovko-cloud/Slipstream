@@ -34,6 +34,12 @@ const WANTED = new Set([
   'VelocityX', 'VelocityY', 'Yaw',
   'WaterTemp', 'OilTemp', 'OilPress', 'Voltage', 'EngineWarnings', 'dcBrakeBias',
   'PitSvFuel', 'PitRepairLeft', 'PitOptRepairLeft',
+  // tyres: carcass temps, cold (garage) pressure and wear are in the live data; surface temps and
+  // hot pressure may only be in disk telemetry (read if present)
+  ...['LF', 'RF', 'LR', 'RR'].flatMap((w) => [
+    w + 'tempCL', w + 'tempCM', w + 'tempCR', w + 'tempL', w + 'tempM', w + 'tempR',
+    w + 'coldPressure', w + 'pressure', w + 'wearL', w + 'wearM', w + 'wearR',
+  ]),
 ]);
 
 let k32 = null;

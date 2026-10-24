@@ -348,7 +348,14 @@
     const specific = d.schema.filter((f) => f.type !== 'columns');
     const cols = d.schema.filter((f) => f.type === 'columns');
     for (const f of cols) el.append(card('', [field(f, s[f.key], (v) => setOverlay(id, { [f.key]: v }))], false));
-    if (specific.length) el.append(card('Options', specific.map((f) => field(f, s[f.key], (v) => setOverlay(id, { [f.key]: v })))));
+    if (specific.length) el.append(card('Options', specific.map((f) => field(f, s[f.key], (v) => {
+      // a temperature unit switch converts the temperatures typed in the old unit, so they keep their meaning
+      if (!f.convertsTemps || v === s[f.key]) return setOverlay(id, { [f.key]: v });
+      const conv = v === 'f' ? (c) => Math.round(c * 9 / 5 + 32) : (x) => Math.round((x - 32) * 5 / 9);
+      const patch = { [f.key]: v };
+      for (const k of f.convertsTemps) if (Number.isFinite(s[k])) patch[k] = conv(s[k]);
+      return setOverlay(id, patch).then(renderPage);
+    }))));
     el.append(card('Appearance & visibility', R.COMMON_SCHEMA.map((f) => field(f, s[f.key], (v) => setOverlay(id, { [f.key]: v })))));
   }
 

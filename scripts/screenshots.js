@@ -12,8 +12,8 @@ const os = require('os');
 
 const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
 process.env.IRO_USERDATA = fs.mkdtempSync(path.join(os.tmpdir(), 'slipstream-shots-'));
-// the track map is off on a fresh install; switch it on so it's in the pictures
-fs.writeFileSync(path.join(process.env.IRO_USERDATA, 'overlay-config.json'), JSON.stringify({ activeProfile: 'default', profiles: { default: { name: 'Default', overlays: { trackmap: { enabled: true }, session: { enabled: true }, standings: { enabled: true } } } } }));
+// the track map, tyres and others are off on a fresh install; switch them on so they are in the pictures
+fs.writeFileSync(path.join(process.env.IRO_USERDATA, 'overlay-config.json'), JSON.stringify({ activeProfile: 'default', profiles: { default: { name: 'Default', overlays: { trackmap: { enabled: true }, session: { enabled: true }, standings: { enabled: true }, tires: { enabled: true } } } } }));
 process.env.IRO_DEMO_SKIP = process.env.IRO_DEMO_SKIP || '520';
 process.env.IRO_OFFSCREEN = '1'; // render off-screen so nothing pops up on the desktop
 if (!process.argv.includes('--demo')) process.argv.push('--demo');

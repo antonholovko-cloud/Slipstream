@@ -406,3 +406,17 @@ test('profiles page: rename, duplicate, export, new', async () => {
   assert.deepEqual(sw.calls('settings:profile').pop(), ['create', 'Profile 2']);
   sw.close();
 });
+
+test('tyres: switching °C / °F converts the optimal window so it keeps its meaning', async () => {
+  const sw = await loadSettings({ page: 'ov:tires' });
+  const num = (label) => fieldByLabel(sw, label).querySelector('input[type=number]');
+  assert.equal(num('Optimal from (°C / °F)').value, '80');
+  await sw.input(fieldByLabel(sw, 'Temperature unit').querySelector('select'), 'f', 'change');
+  assert.deepEqual(lastOverlay(sw), ['tires', { tempUnit: 'f', optimalMin: 176, optimalMax: 203 }]);
+  assert.equal(num('Optimal from (°C / °F)').value, '176', 'the page shows the converted numbers');
+  assert.equal(num('Optimal up to (°C / °F)').value, '203');
+  await sw.input(fieldByLabel(sw, 'Temperature unit').querySelector('select'), 'c', 'change');
+  assert.deepEqual(lastOverlay(sw), ['tires', { tempUnit: 'c', optimalMin: 80, optimalMax: 95 }]);
+  assert.deepEqual(sw.errors, []);
+  sw.close();
+});

@@ -214,6 +214,25 @@
       ],
     },
     {
+      id: 'tires', name: 'Tyres', icon: '◎',
+      description: 'Tyre temperatures (inside / middle / outside) colored cold, in the window or overheating, plus pressures and wear.',
+      bounds: { x: 380, y: 660, width: 260, height: 200 }, // right of the track map, clear of the relative
+      needs: ['session', 'tires'],
+      defaults: { enabled: false, fps: 5 }, // off on first run; existing layouts keep their choice
+      schema: [
+        // the unit for the numbers on the tyres and for the window below; switching converts the window
+        { key: 'tempUnit', label: 'Temperature unit', type: 'select', default: 'c', convertsTemps: ['optimalMin', 'optimalMax'],
+          options: [{ value: 'c', label: '°C' }, { value: 'f', label: '°F' }] },
+        // GT3 defaults: the window most GT3 tyres in iRacing work in (80-95 °C)
+        { key: 'optimalMin', label: 'Optimal from (°C / °F)', type: 'number', min: 0, max: 400, default: 80 },
+        { key: 'optimalMax', label: 'Optimal up to (°C / °F)', type: 'number', min: 0, max: 400, default: 95 },
+        { key: 'pressureUnit', label: 'Pressure unit', type: 'select', default: 'auto',
+          options: [{ value: 'auto', label: 'Auto (kPa metric, psi imperial)' }, { value: 'psi', label: 'psi' }, { value: 'bar', label: 'bar' }, { value: 'kpa', label: 'kPa' }] },
+        { key: 'showPressure', label: 'Show pressures', type: 'bool', default: true },
+        { key: 'showWear', label: 'Show wear', type: 'bool', default: false },
+      ],
+    },
+    {
       id: 'delta', name: 'Delta Bar', icon: 'Δ',
       description: 'Live delta against best, session best or optimal lap, plus gaps to the cars ahead and behind.',
       bounds: { x: 760, y: 200, width: 400, height: 86 },

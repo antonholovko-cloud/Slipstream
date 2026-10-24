@@ -275,13 +275,26 @@ function logRelative(v, st) {
   }
   const me = st.cars.find((c) => c.isPlayer);
   if (!me) return;
-  const car = (c) => ({ n: c.number, cls: c.className, pct: +c.pct.toFixed(5), est: +c.estTime.toFixed(3), classEst: model.classEst(c), best: c.bestLap, last: c.lastLap, pit: c.onPitRoad, surf: c.surface });
+  const car = (c) => ({ n: c.number, cls: c.className, lap: c.lapCompleted, pct: +c.pct.toFixed(5), est: +c.estTime.toFixed(3), classEst: model.classEst(c), best: c.bestLap, last: c.lastLap, pit: c.onPitRoad, surf: c.surface });
   const byIdx = new Map(st.cars.map((c) => [c.idx, c]));
   const line = {
-    t: +v.SessionTime.toFixed(2), remain: Math.round(v.SessionTimeRemain), driverEst: model.car.estLap,
+    t: +v.SessionTime.toFixed(2), state: v.SessionState, remain: Math.round(v.SessionTimeRemain), driverEst: model.car.estLap,
     me: car(me), cars: st.relative.map((r) => ({ ...car(byIdx.get(r.idx)), gap: +r.gap.toFixed(3), pace: r.pace === null ? null : +r.pace.toFixed(3) })),
   };
   fs.appendFile(path.join(app.getPath('userData'), 'relative-log.jsonl'), JSON.stringify(line) + '\n', () => {});
+  // the driver's own numbers next to iRacing's raw ones: lap times, deltas, fuel, sectors
+  const p = st.player, f = st.fuel, tm = st.timing, r3 = (x) => (Number.isFinite(x) ? +x.toFixed(3) : x);
+  const drv = {
+    t: +v.SessionTime.toFixed(2), kind: st.session.kind, lapC: v.LapCompleted, pct: r3(v.LapDistPct), spd: r3(v.Speed), surf: v.PlayerTrackSurface, pit: !!v.OnPitRoad,
+    raw: { cur: r3(v.LapCurrentLapTime), last: r3(v.LapLastLapTime), best: r3(v.LapBestLapTime), dBest: r3(v.LapDeltaToBestLap), dBestOk: v.LapDeltaToBestLap_OK, dOpt: r3(v.LapDeltaToOptimalLap), dOptOk: v.LapDeltaToOptimalLap_OK, dLast: r3(v.LapDeltaToSessionLastlLap), dLastOk: v.LapDeltaToSessionLastlLap_OK, fuel: r3(v.FuelLevel), fph: r3(v.FuelUsePerHour) },
+    ui: { last: r3(p.lastLap), best: r3(p.bestLap), dBest: p.deltas.best.map(r3), dLast: p.deltas.sessionLast.map(r3), sec: p.sectorDelta && { s: p.sectorDelta.sector, of: p.sectorDelta.of, best: r3(p.sectorDelta.d.best) }, estLap: r3(p.estLap), refs: p.deltaRefs },
+    fuel: { level: r3(f.level), laps: f.laps.map(r3), lapsToGo: r3(f.lapsToGo), max: f.max },
+    tm: { cur: tm.current && { s: tm.current.sector, times: tm.current.times.map(r3), run: r3(tm.current.running), lapRun: r3(tm.current.lapRunning) }, pb: tm.personalBest.map(r3), opt: r3(tm.optimal), best: r3(tm.bestLap), lastLog: tm.log.length ? tm.log[tm.log.length - 1] : null },
+    own: { best: model.timing.delta('best', v.SessionTime, p.carIdx).map(r3), last: model.timing.delta('last', v.SessionTime, p.carIdx).map(r3) },
+    tires: st.tires && { live: st.tires.live, lap: st.tires.lap, lf: st.tires.wheels.lf && st.tires.wheels.lf.temp && st.tires.wheels.lf.temp.map(r3), raw: { CL: r3(v.LFtempCL), L: r3(v.LFtempL), cold: r3(v.LFcoldPressure), hot: r3(v.LFpressure) } },
+    map: st.trackMap.learning,
+  };
+  fs.appendFile(path.join(app.getPath('userData'), 'driver-log.jsonl'), JSON.stringify(drv) + '\n', () => {});
 }
 
 // Per-car profiles: when the player's car changes in iRacing, switch to the profile linked

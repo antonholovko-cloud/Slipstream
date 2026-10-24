@@ -171,7 +171,8 @@ Host.register('delta', function (root) {
         val.style.color = losing ? t.red : t.green;
         val.className = 'val num ' + (losing ? 'l' : 'r'); // next to the centre line, on the empty side
         if (s.showLapTimes) {
-          const refLap = s.reference === 'best' ? p.bestLap : s.reference === 'sessionLast' ? p.lastLap : 0;
+          const refs = p.deltaRefs || {};
+          const refLap = s.reference === 'best' ? (refs.best || p.bestLap) : s.reference === 'sessionLast' ? (refs.sessionLast || p.lastLap) : 0;
           q('.l').textContent = Fmt.lapTime(p.lapTime, 1);
           q('.r').textContent = refLap > 0 ? '≈ ' + Fmt.lapTime(refLap + d, 2) : LABEL[s.reference];
         }
