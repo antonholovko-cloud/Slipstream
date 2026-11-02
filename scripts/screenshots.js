@@ -12,8 +12,10 @@ const os = require('os');
 
 const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
 process.env.IRO_USERDATA = fs.mkdtempSync(path.join(os.tmpdir(), 'slipstream-shots-'));
-// the track map, tyres and others are off on a fresh install; switch them on so they are in the pictures
-fs.writeFileSync(path.join(process.env.IRO_USERDATA, 'overlay-config.json'), JSON.stringify({ activeProfile: 'default', profiles: { default: { name: 'Default', overlays: { trackmap: { enabled: true }, session: { enabled: true }, standings: { enabled: true }, tires: { enabled: true } } } } }));
+// the track map and others are off on a fresh install; switch them on so they are in the pictures
+fs.writeFileSync(path.join(process.env.IRO_USERDATA, 'overlay-config.json'), JSON.stringify({ activeProfile: 'default', profiles: { default: { name: 'Default', overlays: { trackmap: { enabled: true }, session: { enabled: true }, standings: { enabled: true } } } } }));
+// the demo race isn't recorded in Lap stats: give the Lap stats page a sample history to show
+fs.writeFileSync(path.join(process.env.IRO_USERDATA, 'lap-stats.json'), JSON.stringify({ version: 1, sessions: sampleStats() }));
 process.env.IRO_DEMO_SKIP = process.env.IRO_DEMO_SKIP || '520';
 process.env.IRO_OFFSCREEN = '1'; // render off-screen so nothing pops up on the desktop
 if (!process.argv.includes('--demo')) process.argv.push('--demo');
@@ -22,6 +24,42 @@ require('../src/main/main.js');
 const { app, BrowserWindow } = require('electron');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// A few weeks of practice, qualifying and races (lap-stats.json format, see src/main/stats.js).
+function sampleStats() {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const spa = { id: '163-Grand Prix Pits', name: 'Circuit de Spa-Francorchamps', config: 'Grand Prix Pits' };
+  const monza = { id: '239-Grand Prix', name: 'Autodromo Nazionale Monza', config: 'Grand Prix' };
+  const bmw = { id: 'bmwm4gt3', name: 'BMW M4 GT3' }, porsche = { id: 'porsche992rgt3', name: 'Porsche 911 GT3 R (992)' };
+  const plan = [
+    // days ago, track, car, type, laps, base lap, air, track temp, skies
+    [20, spa, bmw, 'Practice', 9, 139.6, 18, 26, 1],
+    [19, spa, bmw, 'Practice', 12, 138.9, 21, 31, 0],
+    [17, spa, bmw, 'Race', 14, 138.7, 22, 33, 0],
+    [12, monza, porsche, 'Practice', 10, 108.4, 27, 39, 0],
+    [11, monza, porsche, 'Qualify', 3, 107.6, 28, 41, 0],
+    [11, monza, porsche, 'Race', 18, 108.1, 28, 42, 1],
+    [4, spa, porsche, 'Practice', 11, 139.2, 16, 22, 2],
+    [2, spa, bmw, 'Qualify', 3, 138.3, 19, 27, 1],
+    [2, spa, bmw, 'Race', 15, 138.6, 19, 26, 3],
+  ];
+  const now = new Date(2026, 9, 31, 20, 30).getTime();
+  return plan.map(([ago, track, car, type, n, base, air, trk, skies], k) => {
+    const laps = [];
+    for (let i = 1; i <= n; i++) {
+      const pit = (type !== 'Qualify' && i === 1) || (type === 'Race' && i === Math.round(n / 2) + 1);
+      const off = !pit && rnd() < 0.08;
+      const learn = type === 'Practice' ? Math.max(0, 1.4 - i * 0.15) : 0; // getting up to speed
+      const time = base + learn + rnd() * 0.9 + (pit ? 22 : 0) + (off ? 3 + rnd() * 4 : 0) + (type === 'Race' && i === 1 ? 4 : 0);
+      laps.push({ lap: i, time: Math.round(time * 1000) / 1000, off, pit, air: air + Math.round((i / n) * 10) / 10, trk: trk + Math.round((i / n) * 20) / 10 });
+    }
+    return {
+      id: 's' + k, date: now - ago * 86400000 - (plan.length - k) * 3600000, track, car, type, name: type.toUpperCase(), kind: type.toLowerCase(),
+      conditions: { air, trk, wetness: 1, skies }, laps,
+    };
+  });
+}
 
 async function capture(win) {
   const img = await win.webContents.capturePage();
@@ -149,7 +187,7 @@ app.whenReady().then(async () => {
 
   // settings pages
   S.openSettings();
-  for (const page of ['home', 'ov:standings', 'appearance']) {
+  for (const page of ['home', 'ov:standings', 'appearance', 'stats']) {
     await S.settingsWin.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'settings.html'), { query: { page } });
     await sleep(1500);
     const img = await S.settingsWin.webContents.capturePage();
