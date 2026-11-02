@@ -371,6 +371,20 @@ test('pit stops are counted in races and reset on a new session', () => {
   assert.equal(byIdx(at(false, 1), 2).pitStops, 0);
 });
 
+test('a new event starts fresh even when it reuses the last session number', () => {
+  const drivers = [driver(1, GT3), driver(2, GT3)];
+  const event = (id) => { const i = sessionInfo({ drivers }); Object.assign(i.WeekendInfo, { SessionID: id, SubSessionID: id }); return i; };
+  const m = new RaceModel();
+  const at = (info, siu, pit) => m.update(frame(info, vars({ 1: { pct: 0.5, lap: 2 }, 2: { pct: 0.1, lap: 3, pit } }), siu), G());
+  const a = event(100);
+  at(a, 1, false); at(a, 1, true); at(a, 1, false);
+  m.timing.personalBest = [30, 31, 32];
+  assert.equal(byIdx(at(a, 1, false), 2).pitStops, 1);
+  const st = at(event(200), 2, false);
+  assert.equal(byIdx(st, 2).pitStops, 0);
+  assert.deepEqual(st.timing.personalBest, []);
+});
+
 // ---------- class splits ----------
 test('class splits: sub-classes renumber positions 1..n, get their own SOF, colors and order', () => {
   const drivers = [1, 2, 3, 4, 5, 6].map((i) => driver(i, GT3, { CarNumber: String(i * 10), IRating: 1000 * i })).concat([driver(7, LMP2)]);
@@ -594,7 +608,7 @@ test('known track maps are used directly (demo track)', () => {
 // ---------- demo integration ----------
 test('demo race: full state shape', () => {
   const { state } = demoRace();
-  for (const k of ['connected', 'session', 'player', 'cars', 'classes', 'relative', 'radar', 'fuel', 'trackMap', 'timing', 'tires']) assert.ok(k in state, k);
+  for (const k of ['connected', 'session', 'player', 'cars', 'classes', 'relative', 'radar', 'fuel', 'trackMap', 'timing']) assert.ok(k in state, k);
   assert.equal(state.cars.length, 22);
   assert.equal(state.cars.filter((c) => c.isPlayer).length, 1);
   assert.equal(state.player.classCount, 14);
@@ -666,45 +680,3 @@ test('session.car is in the state (demo race)', () => {
   assert.ok(state.session.car.name);
 });
 
-// ---------- tyres ----------
-test('tyres: carcass temps per edge, cold pressure, wear; surface temps and hot pressure win when sent', () => {
-  const drivers = [driver(1, GT3)];
-  const info = sessionInfo({ drivers });
-  const tv = (over = {}) => {
-    const o = {};
-    for (const w of ['LF', 'RF', 'LR', 'RR']) Object.assign(o, { [w + 'tempCL']: 70, [w + 'tempCM']: 75, [w + 'tempCR']: 80, [w + 'coldPressure']: 165, [w + 'wearL']: 0.98, [w + 'wearM']: 0.99, [w + 'wearR']: 0.97 });
-    return Object.assign(o, over);
-  };
-  let st = new RaceModel().update(frame(info, vars({ 1: {} })), G());
-  assert.equal(st.tires.available, false, 'no tyre vars: nothing to show');
-  st = new RaceModel().update(frame(info, vars({ 1: {} }, tv())), G());
-  assert.equal(st.tires.available, true);
-  assert.deepEqual(st.tires.wheels.lf, { temp: [70, 75, 80], pressure: 165, hot: false, wear: [0.98, 0.99, 0.97] });
-  st = new RaceModel().update(frame(info, vars({ 1: {} }, tv({ RFtempL: 90, RFtempM: 91, RFtempR: 92, RFpressure: 186 }))), G());
-  assert.deepEqual(st.tires.wheels.rf.temp, [90, 91, 92]);
-  assert.equal(st.tires.wheels.rf.pressure, 186);
-  assert.equal(st.tires.wheels.rf.hot, true);
-});
-
-test('tyres: pit-stall readings are not live; a change while driving is', () => {
-  const drivers = [driver(1, GT3)];
-  const info = sessionInfo({ drivers });
-  const m = new RaceModel();
-  const at = (lap, temp, x = {}) => {
-    const o = { LapCompleted: lap };
-    for (const w of ['LF', 'RF', 'LR', 'RR']) Object.assign(o, { [w + 'tempCL']: temp, [w + 'tempCM']: temp, [w + 'tempCR']: temp });
-    return m.update(frame(info, vars({ 1: { lap } }, { ...o, ...x })), G());
-  };
-  let st = at(0, 40);
-  assert.equal(st.tires.live, false);
-  st = at(3, 88, { PlayerCarInPitStall: true, OnPitRoad: true }); // measured in the pits after lap 3
-  assert.equal(st.tires.live, false);
-  assert.equal(st.tires.lap, 3);
-  st = at(4, 88, { Speed: 60 });
-  assert.equal(st.tires.live, false, 'unchanged on track');
-  st = at(4, 72, { Speed: 0.06 }); // reset to the pits: stopped, off pit road, new reading
-  assert.equal(st.tires.live, false, 'a reading at a standstill is not live');
-  assert.equal(st.tires.lap, 4);
-  st = at(5, 89, { Speed: 60 });
-  assert.equal(st.tires.live, true, 'changed while driving: live data');
-});

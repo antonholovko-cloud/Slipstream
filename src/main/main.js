@@ -7,6 +7,7 @@ const { IRacingReader } = require('./irsdk');
 const { MockSource } = require('./mock');
 const { RaceModel } = require('./model');
 const { Updater } = require('./updater');
+const { LapStats } = require('./stats');
 
 // Dev helper: IRO_USERDATA isolates config (must run before the single-instance lock, which is per user-data dir).
 if (process.env.IRO_USERDATA) app.setPath('userData', process.env.IRO_USERDATA);
@@ -32,6 +33,7 @@ if (TUNE.has('heap')) app.commandLine.appendSwitch('js-flags', '--max-semi-space
 if (TUNE.has('nogpu')) app.disableHardwareAcceleration();
 
 let config;
+let stats = null; // lap statistics (lap-stats.json)
 let tray = null;
 let settingsWin = null;
 const overlayWins = new Map(); // id -> { win, lastSent, visible }
@@ -209,7 +211,7 @@ function tick() {
       if (!reader) reader = new IRacingReader();
       frame = reader.read();
       if (frame) setSource('iracing');
-      else if (!reader.connected && source === 'iracing') setSource('none');
+      else if (!reader.connected && source === 'iracing') { setSource('none'); model = null; } // next session starts fresh
     } catch (e) {
       console.error('iRacing read error:', e.message);
       reader = null;
@@ -243,6 +245,7 @@ function tick() {
       const st = model.update(frame, config.data.global);
       if (st) latestState = st;
       if (st) followCar(st);
+      if (st && source === 'iracing' && stats) stats.update(model, st);
       if (st && process.env.IRO_RELLOG && source === 'iracing') logRelative(frame.vars, st);
     } catch (e) {
       console.error('Model error:', e.stack);
@@ -291,7 +294,6 @@ function logRelative(v, st) {
     fuel: { level: r3(f.level), laps: f.laps.map(r3), lapsToGo: r3(f.lapsToGo), max: f.max },
     tm: { cur: tm.current && { s: tm.current.sector, times: tm.current.times.map(r3), run: r3(tm.current.running), lapRun: r3(tm.current.lapRunning) }, pb: tm.personalBest.map(r3), opt: r3(tm.optimal), best: r3(tm.bestLap), lastLog: tm.log.length ? tm.log[tm.log.length - 1] : null },
     own: { best: model.timing.delta('best', v.SessionTime, p.carIdx).map(r3), last: model.timing.delta('last', v.SessionTime, p.carIdx).map(r3) },
-    tires: st.tires && { live: st.tires.live, lap: st.tires.lap, lf: st.tires.wheels.lf && st.tires.wheels.lf.temp && st.tires.wheels.lf.temp.map(r3), raw: { CL: r3(v.LFtempCL), L: r3(v.LFtempL), cold: r3(v.LFcoldPressure), hot: r3(v.LFpressure) } },
     map: st.trackMap.learning,
   };
   fs.appendFile(path.join(app.getPath('userData'), 'driver-log.jsonl'), JSON.stringify(drv) + '\n', () => {});
@@ -619,6 +621,9 @@ function registerIpc() {
     return true;
   });
 
+  ipcMain.handle('stats:list', () => (stats ? stats.list() : []));
+  ipcMain.handle('stats:delete', (e, id) => { if (stats) stats.remove(id); return true; });
+
   ipcMain.handle('settings:forgetTrack', (e, id) => {
     if (id === '*') config.data.trackMaps = {}; else delete config.data.trackMaps[id];
     config.save();
@@ -651,6 +656,8 @@ async function captureAll(dir) {
 app.whenReady().then(() => {
   config = new ConfigStore();
   config.onSaved = () => sendSettings('settings:saved', { lastSaved: config.lastSaved });
+  stats = new LapStats(path.join(config.dir, 'lap-stats.json'));
+  stats.onChange = () => sendSettings('stats:changed', null);
   registerIpc();
   if (!OFFSCREEN) {
     registerHotkeys();
@@ -693,4 +700,5 @@ app.on('will-quit', () => {
   clearInterval(loopTimer);
   globalShortcut.unregisterAll();
   if (config) config.saveNow();
+  if (stats) stats.saveNow();
 });

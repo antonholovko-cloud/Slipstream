@@ -27,7 +27,7 @@ Module._load = origLoad;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function loadSettings({ page = 'home', config, global = {}, classes = null, status = { source: 'demo' }, update = null, hotkeyErrors = [] } = {}) {
+async function loadSettings({ page = 'home', config, global = {}, classes = null, stats = [], status = { source: 'demo' }, update = null, hotkeyErrors = [] } = {}) {
   const cfg = migrate(config || {});
   Object.assign(cfg.global, { autoUpdate: false }, global);
   const html = read('renderer/settings.html')
@@ -49,7 +49,8 @@ async function loadSettings({ page = 'home', config, global = {}, classes = null
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const payload = () => ({ config: clone(cfg), hotkeyErrors, userData: tmp, file: path.join(tmp, 'overlay-config.json'), lastSaved: null, backups: [], version: '0.0.0-test' });
   const fake = {
-    classes, // what 'settings:classes' returns (null = no session)
+    classes,
+    stats, // what 'stats:list' returns // what 'settings:classes' returns (null = no session)
     handlers: {
       'settings:get': () => ({ ...payload(), status, update }),
       'settings:displays': () => [{ id: 1, bounds: { x: 0, y: 0, width: 1920, height: 1080 }, primary: true }],
@@ -57,6 +58,8 @@ async function loadSettings({ page = 'home', config, global = {}, classes = null
       'settings:setOverlay': (id, patch) => { Object.assign(cfg.profiles[cfg.activeProfile].overlays[id], clone(patch)); emit('settings:config', payload()); },
       'settings:profile': () => undefined,
       'settings:classes': () => (typeof fake.classes === 'function' ? fake.classes() : fake.classes),
+      'stats:list': () => clone(fake.stats),
+      'stats:delete': (id) => { fake.stats = id === '*' ? [] : fake.stats.filter((r) => r.id !== id); },
     },
   };
   win.api = {

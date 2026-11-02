@@ -22,7 +22,7 @@
   // ---------------- nav ----------------
   function renderNav() {
     $('#profile-name').textContent = (appVersion ? `v${appVersion} · ` : '') + 'Profile: ' + profile().name;
-    const main = [['home', '▦', 'Overview'], ['appearance', '🎨', 'Appearance'], ['general', '⚙', 'General & hotkeys'], ['classes', '🏷', 'Class splits'], ['profiles', '💾', 'Layouts & profiles']];
+    const main = [['home', '▦', 'Overview'], ['appearance', '🎨', 'Appearance'], ['general', '⚙', 'General & hotkeys'], ['classes', '🏷', 'Class splits'], ['profiles', '💾', 'Layouts & profiles'], ['stats', '⏱', 'Lap stats']];
     $('#nav-main').innerHTML = main.map(([id, ico, label]) => `<a data-page="${id}" class="${page === id ? 'active' : ''}"><span class="ico">${ico}</span><span class="grow">${label}</span></a>`).join('');
     $('#nav-overlays').innerHTML = R.OVERLAYS.map((d) => {
       const on = ov(d.id).enabled;
@@ -199,6 +199,7 @@
     else if (page === 'general') pageGeneral(el);
     else if (page === 'profiles') pageProfiles(el);
     else if (page === 'classes') pageClasses(el);
+    else if (page === 'stats') pageStats(el);
     else if (page.startsWith('ov:')) pageOverlay(el, page.slice(3));
     el.scrollTop = scroll;
   }
@@ -348,14 +349,7 @@
     const specific = d.schema.filter((f) => f.type !== 'columns');
     const cols = d.schema.filter((f) => f.type === 'columns');
     for (const f of cols) el.append(card('', [field(f, s[f.key], (v) => setOverlay(id, { [f.key]: v }))], false));
-    if (specific.length) el.append(card('Options', specific.map((f) => field(f, s[f.key], (v) => {
-      // a temperature unit switch converts the temperatures typed in the old unit, so they keep their meaning
-      if (!f.convertsTemps || v === s[f.key]) return setOverlay(id, { [f.key]: v });
-      const conv = v === 'f' ? (c) => Math.round(c * 9 / 5 + 32) : (x) => Math.round((x - 32) * 5 / 9);
-      const patch = { [f.key]: v };
-      for (const k of f.convertsTemps) if (Number.isFinite(s[k])) patch[k] = conv(s[k]);
-      return setOverlay(id, patch).then(renderPage);
-    }))));
+    if (specific.length) el.append(card('Options', specific.map((f) => field(f, s[f.key], (v) => setOverlay(id, { [f.key]: v })))));
     el.append(card('Appearance & visibility', R.COMMON_SCHEMA.map((f) => field(f, s[f.key], (v) => setOverlay(id, { [f.key]: v })))));
   }
 
@@ -658,6 +652,107 @@
     $('.fallback', el).onchange = (e) => api.invoke('settings:profile', 'carFallback', e.target.value);
   }
 
+  // ---------------- lap stats ----------------
+  // Every session driven in iRacing, from src/main/stats.js. Fastest and average count clean laps only.
+  const statsFilter = { track: '', car: '' };
+  let statsOpen = null; // the session whose laps are shown
+  const SKIES = ['Clear', 'Partly cloudy', 'Mostly cloudy', 'Overcast'];
+  const WET = ['', 'Dry', 'Mostly dry', 'Very lightly wet', 'Lightly wet', 'Moderately wet', 'Very wet', 'Extremely wet'];
+  function lapStr(t) {
+    if (!(t > 0)) return '–';
+    const m = Math.floor(t / 60), s = t - m * 60;
+    return `${m}:${s.toFixed(3).padStart(6, '0')}`;
+  }
+  function tempStr(c) {
+    if (!Number.isFinite(c)) return '–';
+    return cfg.global.units === 'imperial' ? `${Math.round(c * 9 / 5 + 32)}°F` : `${Math.round(c)}°C`;
+  }
+  const tempRange = (r) => (Math.round(r[0]) === Math.round(r[1]) ? tempStr(r[0]) : `${tempStr(r[0])}–${tempStr(r[1])}`);
+  const trackName = (t) => t.name + (t.config ? ` – ${t.config}` : '');
+  const row = (html) => h(`<table><tbody>${html}</tbody></table>`).querySelector('tr');
+  function conditions(r) {
+    const c = r.conditions || {}, sm = r.summary;
+    const sky = [SKIES[c.skies], c.wetness > 1 ? WET[c.wetness] : ''].filter(Boolean).join(', ');
+    return `Air ${sm.air ? tempRange(sm.air) : tempStr(c.air)} · Track ${sm.trk ? tempRange(sm.trk) : tempStr(c.trk)}${sky ? ` · ${esc(sky)}` : ''}`;
+  }
+
+  // drawn from the last list right away (no flicker, scroll kept), then refreshed from main
+  let statsCache = null;
+  function pageStats(el) {
+    api.invoke('stats:list').then((list) => {
+      const fresh = list || [];
+      if (statsCache && JSON.stringify(fresh) === JSON.stringify(statsCache)) return;
+      statsCache = fresh;
+      if (page === 'stats') renderPage();
+    });
+    el.append(h('<div><h1>Lap stats</h1><p class="lead">Every session you drive in iRacing is saved with its track, car, date, conditions and laps. Fastest and average count clean laps only (no off-track, no pit lane). Click a session to see its laps.</p></div>'));
+    if (!statsCache) return;
+    const all = statsCache;
+    if (!all.length) {
+      el.append(h('<div class="tip">No laps recorded yet. Drive a lap in iRacing and it shows up here.</div>'));
+      return;
+    }
+    const opts = (key, label) => {
+      const seen = new Map();
+      for (const r of all) seen.set(r[key].id, key === 'track' ? trackName(r.track) : r.car.name);
+      const list = [...seen].sort((a, b) => a[1].localeCompare(b[1]));
+      return `<select data-f="${key}"><option value="">All ${label}</option>${list.map(([id, n]) => `<option value="${esc(id)}" ${statsFilter[key] === id ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+    };
+    const bar = h(`<div class="statsbar">${opts('track', 'tracks')}${opts('car', 'cars')}<span class="grow"></span><button class="btn small danger" data-del="*">Delete all</button></div>`);
+    el.append(bar);
+    const rows = all.filter((r) => (!statsFilter.track || r.track.id === statsFilter.track) && (!statsFilter.car || r.car.id === statsFilter.car));
+
+    // personal bests: the fastest clean lap per track and car
+    const best = new Map();
+    for (const r of rows) {
+      if (!(r.summary.fastest > 0)) continue;
+      const k = r.track.id + '|' + r.car.id, b = best.get(k);
+      if (!b || r.summary.fastest < b.summary.fastest) best.set(k, r);
+    }
+    if (best.size) {
+      const pb = h('<div class="card"><h2>Personal bests</h2><table class="stats"><thead><tr><th>Track</th><th>Car</th><th class="num">Fastest</th><th>Set on</th><th>Conditions</th></tr></thead><tbody></tbody></table></div>');
+      const tb = pb.querySelector('tbody');
+      for (const r of [...best.values()].sort((a, b) => trackName(a.track).localeCompare(trackName(b.track)))) {
+        tb.append(row(`<tr><td>${esc(trackName(r.track))}</td><td>${esc(r.car.name)}</td><td class="num"><b>${lapStr(r.summary.fastest)}</b></td><td>${esc(new Date(r.date).toLocaleDateString())}</td><td class="dim">${conditions(r)}</td></tr>`));
+      }
+      el.append(pb);
+    }
+
+    const sc = h(`<div class="card"><h2>Sessions (${rows.length})</h2><table class="stats"><thead><tr><th>Date</th><th>Track</th><th>Car</th><th>Session</th><th>Conditions</th><th class="num">Laps</th><th class="num">Fastest</th><th class="num">Average</th><th></th></tr></thead><tbody></tbody></table></div>`);
+    const tb = sc.querySelector('tbody');
+    for (const r of rows) {
+      const sm = r.summary, d = new Date(r.date);
+      tb.append(row(`<tr class="sess ${statsOpen === r.id ? 'open' : ''}" data-open="${esc(r.id)}">
+        <td>${esc(d.toLocaleDateString())} <span class="dim">${esc(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</span></td>
+        <td>${esc(trackName(r.track))}</td><td>${esc(r.car.name)}</td><td>${esc(r.name || r.type)}</td><td class="dim">${conditions(r)}</td>
+        <td class="num" title="clean / all laps">${sm.clean}<span class="dim">/${sm.laps}</span></td><td class="num"><b>${lapStr(sm.fastest)}</b></td><td class="num">${lapStr(sm.avg)}</td>
+        <td><button class="btn small ghost danger" data-del="${esc(r.id)}" title="Delete this session">✕</button></td></tr>`));
+      if (statsOpen === r.id) {
+        const laps = r.laps.map((l) => {
+          const clean = !l.off && !l.pit;
+          return `<span class="${clean ? '' : 'dim'} ${clean && l.time === sm.fastest ? 'pb' : ''}">L${l.lap} ${lapStr(l.time)}${l.off ? ' off' : ''}${l.pit ? ' pit' : ''}</span>`;
+        }).join('');
+        tb.append(row(`<tr class="laps"><td colspan="9">${laps}</td></tr>`));
+      }
+    }
+    el.append(sc);
+
+    bar.onchange = (e) => { const f = e.target.dataset.f; if (f) { statsFilter[f] = e.target.value; renderPage(); } };
+    bar.onclick = sc.onclick = async (e) => {
+      const del = e.target.closest('[data-del]');
+      if (del) {
+        const id = del.dataset.del;
+        if (!confirm(id === '*' ? 'Delete all lap stats?' : 'Delete this session from your lap stats?')) return;
+        await api.invoke('stats:delete', id);
+        statsCache = null;
+        renderPage();
+        return;
+      }
+      const tr = e.target.closest('[data-open]');
+      if (tr) { statsOpen = statsOpen === tr.dataset.open ? null : tr.dataset.open; renderPage(); }
+    };
+  }
+
   // ---------------- data ----------------
   let cfgPath = '';
   let cfgFile = '';
@@ -699,6 +794,7 @@
     const cc = $('#carcard');
     if (cc && !cc.contains(document.activeElement)) renderCarCard(cc); // don't close an open dropdown
   });
+  api.on('stats:changed', () => { if (page === 'stats') renderPage(); });
   api.on('settings:update', (u) => {
     const was = update && update.status + update.percent;
     update = u;

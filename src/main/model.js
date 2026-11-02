@@ -59,6 +59,7 @@ class RaceModel {
     this.drivers = new Map();
     this.info = null;
     this.sessionNum = -1;
+    this.sessionKey = null;
     this.sessionState = -1;
     this.perCar = new Map(); // idx -> {pitStops, wasPit, startPos, lastPitLap}
     this.fuelLaps = []; // fuel used per lap
@@ -104,6 +105,7 @@ class RaceModel {
     this.splitRules = undefined; // re-apply league class splits to the new driver list
     const wk = info.WeekendInfo || {};
     this.leagueId = wk.LeagueID || 0;
+    this.eventId = `${wk.SessionID ?? ''}/${wk.SubSessionID ?? ''}`;
     const lenStr = String(wk.TrackLength || '0');
     let len = num(lenStr) * (lenStr.includes('mi') ? 1609.34 : 1000);
     this.track = {
@@ -149,13 +151,15 @@ class RaceModel {
     if (frame.demoTrack && !this.trackMaps[frame.demoTrack.id]) this.trackMaps[frame.demoTrack.id] = frame.demoTrack.points;
     if (frame.demoTrack) this.track.id = frame.demoTrack.id;
 
-    if (v.SessionNum !== this.sessionNum) {
+    // a new session, or a new event (a new race can reuse the last one's SessionNum)
+    const sessionKey = `${this.eventId}/${v.SessionNum}`;
+    if (sessionKey !== this.sessionKey) {
+      this.sessionKey = sessionKey;
       this.sessionNum = v.SessionNum;
       this.perCar.clear();
       this.fuelLaps = [];
       this.fuelLapStart = null;
       this.deltaRef = null;
-      this.tires = null;
       this.timing.reset();
       this.gaps.reset();
     }
@@ -423,7 +427,6 @@ class RaceModel {
     // before Slipstream started and laps we flagged as off-track that iRacing still counts
     if (v.LapBestLapTime > 0) timing.bestLap = v.LapBestLapTime;
     const slip = this.slip.update(v);
-    const tires = this.tireState(v, lapCompleted);
 
     // ---- Track map learning ----
     this.learnTrack(v, me);
@@ -508,7 +511,7 @@ class RaceModel {
     if (!(player.bestLap > 0) && timing.bestLap) player.bestLap = timing.bestLap;
     if (!(player.lastLap > 0) && timing.log.length) player.lastLap = timing.log[timing.log.length - 1].time;
 
-    return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap, timing, tires };
+    return { connected: true, session, player, cars, classes, relative, radar, fuel, trackMap, timing };
   }
 
   // League class splits (settings.classSplits): move cars into custom sub-classes.
@@ -525,38 +528,6 @@ class RaceModel {
       Object.assign(d, { classId: sp.id, className: sp.name, classColor: sp.color, classOrder: sp.order });
     }
     for (const d of drivers) if (affected.has(d.base.classId)) d.renumber = true;
-  }
-
-  /*
-   * Tyres: temperatures inside / middle / outside edge per wheel (surface when iRacing sends it,
-   * else carcass), pressure (hot if sent, else the cold garage pressure) and wear. iRacing may only
-   * refresh tyre temps in the pit stall: `live` turns true once they change while driving, and
-   * `lap` says when they were last read.
-   */
-  tireState(v, lapCompleted) {
-    const t = this.tires || (this.tires = { key: null, lap: null, live: false });
-    const wheels = {};
-    let any = false;
-    for (const w of ['LF', 'RF', 'LR', 'RR']) {
-      const surf = [v[w + 'tempL'], v[w + 'tempM'], v[w + 'tempR']];
-      const carcass = [v[w + 'tempCL'], v[w + 'tempCM'], v[w + 'tempCR']];
-      const temp = surf.every((x) => x > 0) ? surf : carcass.every((x) => x > 0) ? carcass : null;
-      const hot = v[w + 'pressure'] > 0 ? v[w + 'pressure'] : null;
-      const cold = v[w + 'coldPressure'] > 0 ? v[w + 'coldPressure'] : null;
-      const wear = [v[w + 'wearL'], v[w + 'wearM'], v[w + 'wearR']];
-      if (temp) any = true;
-      wheels[w.toLowerCase()] = { temp, pressure: hot ?? cold, hot: hot !== null, wear: wear.every((x) => x >= 0 && x <= 1) ? wear : null };
-    }
-    if (!any) return { available: false, wheels, live: false, lap: null };
-    const key = ['lf', 'rf', 'lr', 'rr'].map((w) => (wheels[w].temp || []).map((x) => x.toFixed(1)).join()).join('|');
-    if (key !== t.key) {
-      // a change while driving means live data. Not the first reading, not in the pits, and not
-      // standing still: a reset or tow also brings a new reading (seen at the Nordschleife).
-      if (t.key !== null && v.IsOnTrack && !v.PlayerCarInPitStall && !v.OnPitRoad && v.Speed > 5) t.live = true;
-      t.key = key;
-      t.lap = lapCompleted;
-    }
-    return { available: true, wheels, live: t.live, lap: t.lap };
   }
 
   /*

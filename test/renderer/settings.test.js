@@ -12,7 +12,7 @@ const fieldByLabel = (sw, text) => sw.$$('.field').find((f) => (f.querySelector(
 test('nav lists the main pages, including Class splits, and every overlay with a toggle', async () => {
   const sw = await loadSettings();
   const main = sw.$$('#nav-main a').map((a) => a.dataset.page);
-  assert.deepEqual(main, ['home', 'appearance', 'general', 'classes', 'profiles']);
+  assert.deepEqual(main, ['home', 'appearance', 'general', 'classes', 'profiles', 'stats']);
   assert.match(sw.$('#nav-main').textContent, /Class splits/);
   const ovs = sw.$$('#nav-overlays a');
   assert.deepEqual(ovs.map((a) => a.dataset.page), Registry.OVERLAYS.map((d) => 'ov:' + d.id));
@@ -407,16 +407,48 @@ test('profiles page: rename, duplicate, export, new', async () => {
   sw.close();
 });
 
-test('tyres: switching °C / °F converts the optimal window so it keeps its meaning', async () => {
-  const sw = await loadSettings({ page: 'ov:tires' });
-  const num = (label) => fieldByLabel(sw, label).querySelector('input[type=number]');
-  assert.equal(num('Optimal from (°C / °F)').value, '80');
-  await sw.input(fieldByLabel(sw, 'Temperature unit').querySelector('select'), 'f', 'change');
-  assert.deepEqual(lastOverlay(sw), ['tires', { tempUnit: 'f', optimalMin: 176, optimalMax: 203 }]);
-  assert.equal(num('Optimal from (°C / °F)').value, '176', 'the page shows the converted numbers');
-  assert.equal(num('Optimal up to (°C / °F)').value, '203');
-  await sw.input(fieldByLabel(sw, 'Temperature unit').querySelector('select'), 'c', 'change');
-  assert.deepEqual(lastOverlay(sw), ['tires', { tempUnit: 'c', optimalMin: 80, optimalMax: 95 }]);
+// ---------------- lap stats ----------------
+
+const { summarize } = require('../../src/main/stats');
+function statRec(id, track, car, laps, date) {
+  const r = { id, date, track: { id: track, name: track, config: '' }, car: { id: car, name: car }, type: 'Practice', name: 'PRACTICE', kind: 'practice',
+    conditions: { air: 22, trk: 31, wetness: 1, skies: 1 }, laps: laps.map((time, i) => ({ lap: i + 1, time, off: false, pit: false, air: 22, trk: 31 })) };
+  return { ...r, summary: summarize(r) };
+}
+
+test('lap stats page: sessions with fastest and average, personal bests per track and car, filters', async () => {
+  const stats = [
+    statRec('b', 'Spa', 'BMW', [140.2, 139.5], Date.UTC(2026, 9, 2)),
+    statRec('a', 'Spa', 'BMW', [139.9, 141.1], Date.UTC(2026, 9, 1)),
+    statRec('c', 'Monza', 'Porsche', [108.25], Date.UTC(2026, 9, 3)),
+  ];
+  const sw = await loadSettings({ page: 'stats', stats });
+  const sessions = sw.$$('.card')[1].querySelectorAll('tr.sess');
+  assert.equal(sessions.length, 3);
+  const cells = [...sessions[0].querySelectorAll('td')].map((td) => td.textContent.trim());
+  assert.equal(cells[1], 'Spa');
+  assert.equal(cells[2], 'BMW');
+  assert.match(cells[4], /Air 22°C · Track 31°C · Partly cloudy/);
+  assert.equal(cells[5], '2/2');
+  assert.equal(cells[6], '2:19.500');
+  assert.equal(cells[7], '2:19.850');
+  const pbs = sw.$$('.card')[0].querySelectorAll('tbody tr');
+  assert.deepEqual([...pbs].map((tr) => tr.children[2].textContent), ['1:48.250', '2:19.500'], 'one best per track and car');
+  const trackSel = sw.$('select[data-f="track"]');
+  trackSel.value = 'Monza';
+  trackSel.dispatchEvent(new sw.window.Event('change', { bubbles: true }));
+  await sw.go('stats');
+  assert.equal(sw.$$('tr.sess').length, 1);
   assert.deepEqual(sw.errors, []);
+  sw.close();
+});
+
+test('lap stats page: a click shows the laps; sessions can be deleted; empty state', async () => {
+  const sw = await loadSettings({ page: 'stats', stats: [statRec('a', 'Spa', 'BMW', [140.2, 139.5], 0)] });
+  await sw.click(sw.$('tr.sess td'));
+  assert.equal(sw.$('tr.laps .pb').textContent, 'L2 2:19.500');
+  await sw.click(sw.$('[data-del="a"]'));
+  assert.deepEqual(sw.calls('stats:delete'), [['a']]);
+  assert.match(sw.$('#page').textContent, /No laps recorded yet/);
   sw.close();
 });
